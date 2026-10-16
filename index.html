@@ -14,12 +14,12 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&display=swap">
 <style>
-:root{--bg:#F4F6FB;--sf:#fff;--tx:#161B3A;--mu:#566083;--ln:#D9DDEE;--pr:#27348B;--pt:#fff;--ac:#E8A200;--ok:#0E8A66;--wn:#9A6700;--er:#B83227;--soft:#E8ECFA;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0F1226;--sf:#181C38;--tx:#ECEEFB;--mu:#A0A7CC;--ln:#2D3258;--pr:#93A0FF;--pt:#10142E;--ac:#F2B429;--ok:#3FCB9F;--wn:#E5B04A;--er:#FF8777;--soft:#232951}}
-:root[data-theme=dark]{--bg:#0F1226;--sf:#181C38;--tx:#ECEEFB;--mu:#A0A7CC;--ln:#2D3258;--pr:#93A0FF;--pt:#10142E;--ac:#F2B429;--ok:#3FCB9F;--wn:#E5B04A;--er:#FF8777;--soft:#232951}
+:root{--h1:#27348B;--h2:#4658D0;--bg:#F4F6FB;--sf:#fff;--tx:#161B3A;--mu:#566083;--ln:#D9DDEE;--pr:#27348B;--pt:#fff;--ac:#E8A200;--ok:#0E8A66;--wn:#9A6700;--er:#B83227;--soft:#E8ECFA;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--h1:#2B3478;--h2:#3D4AA6;--bg:#0F1226;--sf:#181C38;--tx:#ECEEFB;--mu:#A0A7CC;--ln:#2D3258;--pr:#93A0FF;--pt:#10142E;--ac:#F2B429;--ok:#3FCB9F;--wn:#E5B04A;--er:#FF8777;--soft:#232951}}
+:root[data-theme=dark]{--h1:#2B3478;--h2:#3D4AA6;--bg:#0F1226;--sf:#181C38;--tx:#ECEEFB;--mu:#A0A7CC;--ln:#2D3258;--pr:#93A0FF;--pt:#10142E;--ac:#F2B429;--ok:#3FCB9F;--wn:#E5B04A;--er:#FF8777;--soft:#232951}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
-body{margin:0;background:var(--bg);color:var(--tx);font:400 16px/1.5 Mukta,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:84px}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 16px/1.5 Mukta,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:96px}
 [hidden]{display:none!important}
 main{max-width:560px;margin:0 auto;padding:16px}
 h1{font-size:26px;line-height:1.2;font-weight:800;margin:0 0 6px}h2{font-size:19px;font-weight:800;margin:0 0 8px}h3{font-size:16px;font-weight:600;margin:12px 0 0}
@@ -57,13 +57,30 @@ input,select{width:100%;min-height:46px;padding:8px 12px;border:1.5px solid var(
 .bars{flex:1;width:100%;display:flex;gap:2px;align-items:flex-end}.bars i{flex:1;border-radius:4px 4px 0 0;min-height:2px}.pl{background:var(--soft);border:1px solid var(--ln)}.cp{background:var(--pr)}
 details>summary{cursor:pointer;min-height:44px}dt{font-weight:600}dd{margin:0 0 6px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sf);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
-nav button{flex:1;min-height:56px;border:0;background:none;color:var(--mu);font-size:13px;font-weight:600;cursor:pointer}
+nav button{flex:1;min-height:60px;border:0;background:none;color:var(--mu);font-size:13px;font-weight:600;cursor:pointer}
 nav button[aria-current=page]{color:var(--pr);box-shadow:inset 0 3px var(--pr)}
 .dot{background:var(--er);color:var(--pt);border-radius:99px;padding:0 6px;font-size:12px}
 #sh{position:fixed;inset:0;background:rgba(10,12,30,.55);display:none;align-items:flex-end;z-index:20}#sh.on{display:flex}
 #shb{background:var(--sf);width:100%;max-width:560px;margin:0 auto;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
 #ts{position:fixed;left:16px;right:16px;bottom:80px;max-width:520px;margin:0 auto;padding:10px 14px;border-radius:12px;background:var(--tx);color:var(--bg);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}#ts.on{opacity:1}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+body.lv{padding-bottom:164px}.card .card{border:0;padding:0;margin:0}.stack{display:grid;gap:8px;margin-top:12px}
+nav svg{width:22px;height:22px;display:block;margin:0 auto 2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hero{display:flex;gap:16px;align-items:center;background:linear-gradient(135deg,var(--h1),var(--h2));color:#fff;border-radius:22px;padding:18px;margin:0 0 14px;box-shadow:0 8px 24px rgba(39,52,139,.22)}
+.hero h1{color:#fff;font-size:24px;margin:0 0 2px}.hero p{margin:0 0 4px;opacity:.92}.pill{display:inline-block;background:rgba(255,255,255,.18);border-radius:99px;padding:2px 12px;font-size:14px;font-weight:600}
+.ring{width:96px;height:96px;flex:none}.ring circle{fill:none;stroke-width:10}.ring .t{stroke:rgba(255,255,255,.22)}.ring .v{stroke:#FFC94A;stroke-linecap:round}
+.ring text{fill:#fff;font:800 22px Mukta,system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:0 0 14px}
+.wk button{min-height:64px;border:1.5px solid var(--ln);border-radius:14px;background:var(--sf);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.wk b{font-size:18px}.wk i{width:6px;height:6px;border-radius:50%}.wk i.has{background:var(--pr)}.wk button.sel{background:var(--pr);color:var(--pt);border-color:var(--pr)}.wk button.sel i.has{background:var(--pt)}.wk button.now{border-color:var(--ac)}.wk span{color:inherit;opacity:.75}
+.next{border:2px solid var(--pr)}.next .btn{width:100%;margin-top:10px}
+.trow{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--ln)}.trow:last-child{border:0}.trow .m{flex:1;min-width:0}.trow .m b,.trow .m span{display:block;overflow-wrap:anywhere}
+.chk{width:46px;height:46px;flex:none;border-radius:50%;border:2px solid var(--ln);background:var(--sf);color:var(--pt);font-size:20px;font-weight:800;cursor:pointer}
+.chk.done{background:var(--ok);border-color:var(--ok)}.chk.partial{background:var(--ac);border-color:var(--ac)}.chk.incomplete{background:var(--er);border-color:var(--er)}
+.more{min-width:44px;min-height:44px;border:0;background:none;font-size:24px;color:var(--mu);cursor:pointer}
+.live{position:fixed;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom,0px));max-width:536px;margin:0 auto;background:var(--tx);color:var(--bg);border-radius:18px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:12px;z-index:15;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.live .t{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}.live small{display:block;opacity:.8;max-width:50vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live .btn{margin-left:auto;background:#FF7A6B;border-color:#FF7A6B;color:#10142E}
 </style>
 </head>
 <body>
@@ -93,6 +110,21 @@ const EX={
  sscgl:{n:'SSC CGL',mock:60,sub:['Quantitative Aptitude','Reasoning','English','General Awareness']},
  upsc:{n:'UPSC CSE',mock:240,sub:['Polity','History','Geography','Economy','Environment','Science & Tech','Current Affairs','CSAT']},
  neetug:{n:'NEET UG',mock:200,sub:['Physics','Chemistry','Botany','Zoology']}};
+// NEET SS (surgical). Topics are suggested from standard textbook chapter headings: check them against the official NBEMS syllabus.
+EX.neetss={n:'NEET SS (Surgical)',mock:180,t:{
+'Perioperative and critical care':['Fluids, electrolytes and acid-base','Shock and resuscitation','Surgical nutrition','Sepsis, SIRS and organ failure','Transfusion, coagulation and thromboprophylaxis','Antibiotics and surgical site infection'],
+'Trauma, burns and wounds':['Polytrauma and ATLS principles','Head, chest and abdominal trauma','Burns resuscitation and care','Wound healing, grafts and scars','Diabetic foot and pressure ulcers'],
+'Surgical gastroenterology':['Oesophagus: achalasia, GERD, carcinoma','Stomach and duodenum, bariatric surgery','Small bowel, appendix and obstruction','Colorectal: IBD, polyps, carcinoma','Anorectal disorders and fistulas','Hernias and abdominal wall'],
+'HPB and transplant surgery':['Liver: abscess, cysts, tumours','Portal hypertension and liver failure','Biliary stones, strictures and cholangiocarcinoma','Pancreatitis and pseudocyst','Pancreatic and periampullary tumours','Transplantation basics'],
+'Surgical oncology':['Cancer biology, staging and screening','Head and neck cancers','Breast cancer','Sarcoma, skin cancer and melanoma','Chemo-radiotherapy and targeted therapy basics','Oncologic emergencies and palliative care'],
+'Endocrine surgery':['Thyroid nodules and carcinoma','Parathyroid and calcium disorders','Adrenal tumours and phaeochromocytoma','MEN syndromes and neuroendocrine tumours'],
+'Urology':['Urolithiasis','BPH and prostate carcinoma','Bladder and renal tumours','Urinary infection and obstruction','Strictures, hypospadias and reflux','Renal transplantation and trauma'],
+'Cardiothoracic and vascular surgery':['Valvular heart disease','Coronary artery disease and CABG','Congenital heart disease','Aortic disease and dissection','Peripheral arterial and venous disease','Lung cancer and thoracic surgery','Cardiopulmonary bypass'],
+'Neurosurgery':['Head injury and raised ICP','Brain tumours','Spine: degenerative and trauma','Aneurysm, SAH and AVM','Hydrocephalus and paediatric neurosurgery','Functional and peripheral nerve surgery'],
+'Paediatric surgery':['Oesophageal atresia and GI anomalies','Abdominal wall defects and diaphragmatic hernia','Hirschsprung disease and anorectal malformations','Biliary atresia and choledochal cyst','Paediatric tumours: Wilms, neuroblastoma','Paediatric urology'],
+'Plastic and reconstructive surgery':['Flaps and grafts','Hand injuries and tendon repair','Cleft lip and palate, craniofacial','Burn reconstruction','Microsurgery and free tissue transfer'],
+'Applied basic sciences and imaging':['Surgical anatomy: neck, abdomen, pelvis','Physiology of GI, endocrine and cardiac systems','Pathology of tumours and inflammation','Imaging choices: CT, MRI, ultrasound','Research methods and biostatistics']}};
+EX.neetss.sub=Object.keys(EX.neetss.t);
 const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[]},tasks:[],draft:null,sessions:[],timer:null,top:[]});
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false;
 let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:''};
@@ -133,14 +165,14 @@ function gen(p){
  const ex=EX[p.exam],t0=today(),N=Math.min(28,diff(t0,addD(p.examDate,-1))+1),c=(+p.hours)*60,pm=c*.8;
  const nb=Math.max(1,Math.round(pm/60)),bl=Math.max(20,Math.round(pm/nb/5)*5),weak=p.weak||[],dn=p.done||[];
  let core=ex.sub.filter(s=>!dn.includes(s));if(!core.length)core=ex.sub.slice();
- const qu=[...core,...core.filter(s=>weak.includes(s))],cnt={},out=[];let qi=0,cover=[];
+ const qu=[...core,...core.filter(s=>weak.includes(s))],cnt={},last={},out=[];let qi=0,cover=[];
  const mk=(date,s,t,m,pr,type)=>out.push({id:uid(),subject:s,topic:t,mins:m,pri:pr,date,type,status:'todo',gen:true});
  for(let i=0;i<N;i++){const d=addD(t0,i),k=i%7;if(k===0)cover=[];
   if(p.off!==''&&String(pd(d).getDay())===p.off)continue;
-  if(k===5){[...new Set(cover)].slice(-nb).forEach(s=>mk(d,s,'Revision: high-yield notes and recall',bl,'Medium','revision'));
+  if(k===5){[...new Set(cover)].slice(-nb).forEach(s=>mk(d,s,'Revise: '+(last[s]||'high-yield notes and recall'),bl,'Medium','revision'));
    if(dn.length)mk(d,dn[Math.floor(i/7)%dn.length],'Light revision of a completed subject',bl,'Low','revision')}
   else if(k===6){mk(d,'Mock test','Full-length mock for '+ex.n+' (adjust length to your paper)',ex.mock,'High','mock');mk(d,'Mock test','Analyse mistakes and note weak topics',60,'High','mock')}
-  else for(let b=0;b<nb;b++){const s=qu[qi++%qu.length];cnt[s]=(cnt[s]||0)+1;cover.push(s);mk(d,s,'Core concepts and MCQs, part '+cnt[s],bl,weak.includes(s)?'High':'Medium','study')}}
+  else for(let b=0;b<nb;b++){const s=qu[qi++%qu.length],tl=(ex.t||{})[s];cnt[s]=(cnt[s]||0)+1;const tp=tl?tl[(cnt[s]-1)%tl.length]:'Core concepts and MCQs, part '+cnt[s];last[s]=tp;cover.push(s);mk(d,s,tp,bl,weak.includes(s)?'High':'Medium','study')}}
  return{start:t0,tasks:out,at:new Date().toISOString()}}
 
 /* ---------- onboarding ---------- */
@@ -153,7 +185,7 @@ function chk(s){const p=S.p;
  if(s===6)return(p.resOther||'').length>120?'Keep other resources under 120 characters.':'';
  return''}
 function wiz(){const p=S.p,s=V.step;
- if(!s)return`<section><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AimSarthi</h1><p class="lead">Your study guide from today to exam day. Build a realistic roadmap, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p><p class="note">Built first for NEET PG aspirants who are also doing an internship. SSC CGL, UPSC CSE and NEET UG are included too. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button></section>`;
+ if(!s)return`<section><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AimSarthi</h1><p class="lead">Your study guide from today to exam day. Build a realistic roadmap, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p><p class="note">Built first for NEET PG aspirants who are also doing an internship. NEET SS (surgical specialities), SSC CGL, UPSC CSE and NEET UG are included too. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button></section>`;
  const T=['','Create your profile','Choose your exam','Exam date and target','Daily time and commitments','Where you stand','Study resources'][s];let b='';
  if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in with your Claude account. Your plan is saved privately to that account and AimSarthi never sees a password.':'There are no accounts in this version, so your plan is saved on this device only. Clearing browser data erases it. When you return, your saved plan loads automatically.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" value="${esc(p.name||'')}"`);
  if(s===2)b=`<div class="chips">${Object.keys(EX).map(k=>chip('pick','exam',k,p.exam===k,EX[k].n)).join('')}</div><p class="sm mu" style="margin-top:8px">NEET PG is the pilot focus. Other exams use the same planner with their own subject lists.</p>`;
@@ -169,28 +201,34 @@ function cal(){const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new
  for(let d=1;d<=n;d++){const k=y+'-'+pad(m)+'-'+pad(d),T=S.tasks.filter(t=>t.date===k),all=T.length&&T.every(t=>t.status==='done');
   c+=`<button class="cd${k===V.day?' sel':''}${k===today()?' now':''}" data-a="day" data-v="${k}" aria-label="${fD(k)}, ${T.length} tasks" aria-pressed="${k===V.day}">${d}<i class="${all?'ok':T.length?'has':''}"></i></button>`}
  return`<section class="card"><div class="row sp"><button class="btn o s" data-a="cm" data-v="-1" aria-label="Previous month">&lsaquo;</button><h2 style="margin:0">${f.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</h2><button class="btn o s" data-a="cm" data-v="1" aria-label="Next month">&rsaquo;</button></div><div class="grid7">${c}</div></section>`}
-const tcard=t=>`<article class="card tk ${t.status}"><div class="row sp" style="align-items:flex-start"><div><b>${esc(t.subject)}</b><br>${esc(t.topic)}</div><button class="btn o s" data-a="del" data-id="${t.id}" aria-label="Delete task ${esc(t.subject)}">Delete</button></div><p class="sm mu" style="margin:6px 0 8px">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri} priority</span>${t.type!=='study'?' · '+(t.type==='mock'?'mock test':'revision'):''}${t.history?' · moved from '+fD(t.history[t.history.length-1].from):''}</p><div class="seg" role="group" aria-label="Task status">${[['done','Done'],['partial','Partial'],['incomplete','Not done']].map(([s,l])=>`<button data-a="st" data-id="${t.id}" data-v="${s}" aria-pressed="${t.status===s}">${l}</button>`).join('')}</div></article>`;
+const logged=t=>sum(S.sessions.filter(x=>x.taskId===t.id),x=>x.mins);
+const med=a=>{a=a.slice().sort((x,y)=>x-y);const n=a.length;return n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0};
+function agg(x){const E=S.top.filter(e=>e.exam===x),mo=E.map(e=>e.mo||0).filter(v=>v>0),hr=E.map(e=>e.hr||0).filter(v=>v>0);
+ return`<section class="card"><h2>Pattern from your entries</h2><p class="sm mu">Calculated only from entries you added with sources. Treat it as meaningful with 20 or more.</p><div class="bar" style="margin:6px 0"><i style="width:${Math.min(100,E.length*5)}%"></i></div><p class="sm" style="margin:0">${E.length} of 20 entries${mo.length?' · median '+med(mo)+' months reported':''}${hr.length?' · median '+med(hr)+' h/day reported':''}</p></section>`}
+const SYM={done:'&#10003;',partial:'&frac12;',incomplete:'&#10005;',todo:''},LAB={done:'done',partial:'partly done',incomplete:'not done',todo:'not started'};
+const trow=t=>`<div class="trow"><button class="chk ${t.status}" data-a="st" data-id="${t.id}" data-v="done" aria-pressed="${t.status==='done'}" aria-label="${esc(t.subject)}, ${LAB[t.status]}. Tap to mark done">${SYM[t.status]}</button><div class="m"><b>${esc(t.subject)}</b><span class="sm mu">${esc(t.topic)}</span><span class="sm">${hm(t.mins)}${logged(t)?' · studied '+hm(logged(t)):''} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+(t.type==='mock'?'mock test':'revision'):''}${t.history?' · moved':''}</span></div><button class="more" data-a="tm" data-id="${t.id}" aria-label="More options for ${esc(t.subject)}">&#8943;</button></div>`;
+function ring(p){const c=251.3;return`<svg class="ring" viewBox="0 0 96 96" role="img" aria-label="${p}% of the plan done"><circle class="t" cx="48" cy="48" r="40"/><circle class="v" cx="48" cy="48" r="40" stroke-dasharray="${c}" stroke-dashoffset="${(c*(1-p/100)).toFixed(1)}" transform="rotate(-90 48 48)"/><text x="48" y="48">${p}%</text></svg>`}
 function act(){const a=new Set(),m={};S.tasks.forEach(t=>{if(t.doneDate&&(t.status==='done'||t.status==='partial'))a.add(t.doneDate)});S.sessions.forEach(x=>m[x.day]=(m[x.day]||0)+x.mins);for(const k in m)if(m[k]>=20)a.add(k);return a}
 function dayMins(k){return sum(S.sessions.filter(x=>x.day===k),x=>x.mins)+(S.timer&&dk(new Date(S.timer.start))===k?Math.floor((Date.now()-new Date(S.timer.start))/6e4):0)}
 function home(){
  const k=V.day,T=tasksOn(k),est=sum(T,t=>t.mins),dm=sum(T,doneMin),pc=est?Math.round(dm/est*100):0,n=diff(today(),S.p.examDate),M=miss(),a=act(),nd=T.filter(t=>t.status==='done').length;
  let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
- const w7=[...Array(7)].filter((_,i)=>a.has(addD(today(),-i))).length,run=S.timer,open=S.tasks.filter(t=>t.date===today()&&t.status!=='done'),lastS=S.sessions[S.sessions.length-1];
- const up=S.tasks.filter(t=>t.date>today()&&t.status!=='done').sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:P[x.pri]-P[y.pri]).slice(0,5);
- return`<h1>Hello, ${esc(S.p.name)}</h1><p class="mu">${n>0?n+' days to '+EX[S.p.exam].n+' · '+fD(S.p.examDate):'Your exam date has passed. Edit your answers in Roadmap.'}</p>`
- +(M.length?`<div class="note" style="margin:12px 0"><b>${M.length} missed task${M.length>1?'s':''}</b> need your decision.<br><button class="btn s" data-a="tab" data-v="recover" style="margin-top:8px">Review and recover</button></div>`:'')
- +`<section class="card" style="margin-top:12px"><h2>${k===today()?'Daily progress':'Progress for '+fD(k)}</h2><div class="road" role="img" aria-label="${nd} of ${T.length} tasks done">${T.map(t=>`<i class="${t.status}"></i>`).join('')||'<i></i>'}</div><p style="margin:8px 0 10px"><b>${nd} of ${T.length}</b> tasks done · ${pc}% of planned time</p><div class="stats" style="margin:0"><div><b>${hm(est)}</b><span>Planned</span></div><div><b>${hm(dm)}</b><span>Completed</span></div><div><b id="tm2">${hm(dayMins(k))}</b><span>Timed</span></div></div></section>`
- +`<div class="two"><section class="card"><div class="big">${st}</div><p class="sm mu" style="margin:0">day streak</p></section><section class="card"><div class="big">${w7}/7</div><p class="sm mu" style="margin:0">active, last 7 days</p></section></div><p class="sm mu">A day counts with 20+ minutes on the timer, or a task marked done or partial.</p>`
- +`<section class="card"><h2>Study timer</h2><div id="tm" class="big">00:00:00</div><label for="tt">Studying</label><select id="tt" data-g="tt" ${run?'disabled':''}><option value="">General study</option>${open.map(t=>`<option value="${t.id}" ${(run?run.taskId:V.tt)===t.id?'selected':''}>${esc(t.subject)}: ${esc(t.topic)}</option>`).join('')}</select><button class="btn w" style="margin-top:12px" data-a="timer">${run?'Stop and save session':'Start timer'}</button>${lastS?`<p class="sm mu" style="margin:8px 0 0">Last session: ${new Date(lastS.start).toLocaleString(undefined,{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}, ${hm(lastS.mins)}</p>`:''}</section>`
- +cal()
- +`<section><div class="row sp" style="margin:4px 0 8px"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn s" data-a="add">Add task</button></div>${T.length?T.map(tcard).join(''):'<div class="card mu">No tasks on this day. Add one or choose another date on the calendar.</div>'}</section>`
- +`<section class="card"><h2>Upcoming</h2>${up.length?up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join(''):'<p class="mu">No upcoming tasks. Accept a roadmap or add tasks.</p>'}<p class="sm mu" style="margin:8px 0 0">Exam: ${fD(S.p.examDate)}</p></section>`}
+ const next=T.find(t=>t.status==='todo')||T.find(t=>t.status==='partial'),up=S.tasks.filter(t=>t.date>today()&&t.status!=='done').sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:P[x.pri]-P[y.pri]).slice(0,4);
+ const wk=wkDays(0).map(d=>`<button class="${d===V.day?'sel':''}${d===today()?' now':''}" data-a="day" data-v="${d}" aria-pressed="${d===V.day}" aria-label="${fD(d)}"><span class="sm">${pd(d).toLocaleDateString(undefined,{weekday:'narrow'})}</span><b>${pd(d).getDate()}</b><i class="${S.tasks.some(t=>t.date===d)?'has':''}"></i></button>`).join('');
+ return`<div class="hero"><div style="flex:1;min-width:0"><h1>Hi ${esc(S.p.name)}</h1><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done · ${hm(dm)} of ${hm(est)}</p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
+ +(M.length?`<div class="note" style="margin-bottom:14px"><b>${M.length} missed task${M.length>1?'s':''}.</b> <button class="btn s" data-a="tab" data-v="recover" style="margin-left:6px">Fix my plan</button></div>`:'')
+ +`<div class="wk">${wk}</div>`
+ +(next&&k===today()&&!S.timer?`<section class="card next"><p class="sm mu" style="margin:0">Up next</p><h2 style="margin:2px 0">${esc(next.subject)}</h2><p style="margin:0">${esc(next.topic)} · ${hm(next.mins)}</p><button class="btn" data-a="go" data-id="${next.id}">Start studying</button></section>`:'')
+ +`<section class="card"><div class="row sp"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn o s" data-a="add">Add task</button></div>${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done. Tap the three dots for partly done, not done, or delete.</p></section>`
+ +`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
+ +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
+ +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 function roadmap(){
  const d=S.draft,L=d?d.tasks:S.tasks,st=d?d.start:(S.p.planStart||today());
  if(!L.length)return`<h1>Roadmap</h1><div class="card"><h2>No roadmap yet</h2><p class="mu">Build a suggested plan from your answers, review it, then accept it.</p><button class="btn w" data-a="regen">Build my roadmap</button></div>`;
  const W={};L.forEach(t=>{const w=Math.max(0,Math.floor(diff(st,t.date)/7));(W[w]=W[w]||[]).push(t)});
  const ms=L.filter(t=>t.type!=='study'&&t.date>=today()).sort((a,b)=>a.date<b.date?-1:1).slice(0,5),rp=S.tasks.filter(repl).length;
- let h=`<h1>${d?'Review your roadmap':'Your roadmap'}</h1><p class="note"><b>Suggestions, not verified facts.</b> Built by simple rules from your answers: about 80% of your ${S.p.hours} daily hours is planned, and the rest stays free as catch-up buffer. Topic names are generic, so swap in your own syllabus. No plan can guarantee a score or rank.</p>`;
+ let h=`<h1>${d?'Review your roadmap':'Your roadmap'}</h1><p class="note"><b>Suggestions, not verified facts.</b> Built by simple rules from your answers and general study principles (spaced revision, active recall, weekly mocks), not from any topper's plan: about 80% of your ${S.p.hours} daily hours is planned, and the rest stays free as catch-up buffer. Topic names are generic, so swap in your own syllabus. No plan can guarantee a score or rank.</p>`;
  h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p><button class="btn w" data-a="accept">Accept roadmap</button><div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
  :`<div class="row" style="margin:12px 0"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button></div>`;
  h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
@@ -219,14 +257,15 @@ function library(){
  return`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
  +`<section><div class="row sp" style="margin-bottom:8px"><h2 style="margin:0">Source-based entries</h2><button class="btn s" data-a="te">Add entry</button></div><p class="sm mu">Entries appear only when you add them with a source. AimSarthi ships none and never invents interviews, quotes, ranks or preparation histories.</p>`
  +(E.length?E.map(e=>`<article class="card"><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${e.checked?'ok':''}">${e.checked?'Source checked by you':'Source not yet checked'}</span><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl><div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div></article>`).join(''):`<div class="card mu">No entries for ${EX[x].n} yet. Add one with a link or full citation.</div>`)+'</section>'
- +`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`}
+ +agg(x)+`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`}
+const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
 function render(){try{
  const a=$('#app'),nv=$('#nv');
  if(!ready){a.innerHTML='<p class="mu" style="padding:48px 0;text-align:center">Loading your plan...</p>';nv.hidden=true;return}
- if(!S.p.onboarded){nv.hidden=true;a.innerHTML=wiz();return}
- const M=miss().length;nv.hidden=false;
- nv.innerHTML=[['home','Today'],['roadmap','Roadmap'],['recover','Recover'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}>${l}${k==='recover'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
- a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`;tick()
+ if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
+ const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
+ nv.innerHTML=[['home','Today'],['roadmap','Roadmap'],['recover','Recover'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='recover'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
+ a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?`<div class="live" role="group" aria-label="Study timer"><div><div class="t" id="tm">00:00:00</div><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}</small></div><button class="btn s" data-a="timer">Stop</button></div>`:'');tick()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
 /* ---------- sheet, toast, timer ---------- */
@@ -237,9 +276,12 @@ function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 function tick(){const e=$('#tm');if(!e||!S)return;const s=S.timer?Math.max(0,Math.floor((Date.now()-new Date(S.timer.start))/1e3)):0;e.textContent=pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);const t=$('#tm2');if(t)t.textContent=hm(dayMins(V.day))}
 
 /* ---------- recovery helpers ---------- */
-function bestDays(m,x){const e=addD(S.p.examDate,-1),r=[],rc=Math.max(60,cap()*.3);
- for(let i=0;i<14;i++){const k=addD(today(),i);if(k>e)break;if(String(pd(k).getDay())===S.p.off)continue;if(load(k,x)+m>cap()||(x&&(x[k]||0)+m>rc))continue;r.push(k)}
- return r.sort((a,b)=>load(a,x)-load(b,x)||(a<b?-1:1))}
+function bestDays(m,x,t){const e=addD(S.p.examDate,-1),r=[],rc=Math.max(60,cap()*.3);
+ for(let i=0;i<14;i++){const k=addD(today(),i);if(k>e)break;if(String(pd(k).getDay())===S.p.off)continue;
+  const D=S.tasks.filter(z=>z.date===k);if(D.some(z=>z.type==='mock'))continue;
+  if(load(k,x)+m>cap()||(x&&(x[k]||0)+m>rc))continue;
+  r.push([k,load(k,x)-(t&&D.some(z=>z.subject===t.subject)?30:0)-(t&&t.type==='revision'&&D.some(z=>z.type==='revision')?40:0)])}
+ return r.sort((a,b)=>a[1]-b[1]||(a[0]<b[0]?-1:1)).map(z=>z[0])}
 function moveT(t,k,m){const h={from:t.date,to:k,at:new Date().toISOString()};
  if(t.status==='partial'){t.resolved=true;const n={...t,id:uid(),date:k,mins:m,status:'todo',resolved:false,history:[h],gen:false};delete n.doneDate;S.tasks.push(n)}
  else{t.history=(t.history||[]).concat(h);t.date=k;t.mins=m;t.status='todo'}}
@@ -266,6 +308,9 @@ const A={
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
  st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render()},
  x:closeSheet,
+ go:d=>{if(S.timer)A.timer();S.timer={start:new Date().toISOString(),taskId:d.id||''};startTick();closeSheet();save();render();toast('Timer started')},
+ tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
+ st2:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;closeSheet();save();render()},
  add:()=>sheet(`<h2>Add task</h2>${inp('t_s','Subject',`list="sl" maxlength="60"`)}<datalist id="sl">${EX[S.p.exam].sub.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>${inp('t_t','Topic','maxlength="100"')}${inp('t_m','Estimated minutes (5 to 600)','type="number" inputmode="numeric" min="5" max="600" step="5" value="60"')}<label for="t_p">Priority</label><select id="t_p"><option>High</option><option selected>Medium</option><option>Low</option></select>${inp('t_d','Scheduled date',`type="date" min="${today()}" max="${S.p.examDate}" value="${V.day<today()?today():V.day}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="addok">Save task</button></div>`),
  addok:()=>{const s=$('#t_s').value.trim(),t=$('#t_t').value.trim(),m=+$('#t_m').value,d=$('#t_d').value;
   const e=!s?'Enter a subject.':!t?'Enter a topic.':!(Number.isInteger(m)&&m>=5&&m<=600)?'Duration must be a whole number from 5 to 600 minutes.':(!okD(d)||d<today()||d>S.p.examDate)?'Pick a date from today up to your exam date.':'';
@@ -276,25 +321,26 @@ const A={
  timer:()=>{if(S.timer){const s=new Date(S.timer.start),m=Math.min(720,Math.round((Date.now()-s)/6e4));
    if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
    S.timer=null;clearInterval(iv)}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
- rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r)[0]||addD(today(),1);V.rs=t.id;
+ rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r,0,t)[0]||addD(today(),1);V.rs=t.id;
   sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (5 to 600)',`type="number" inputmode="numeric" min="5" max="600" step="5" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
  pickd:d=>{$('#r_d').value=d.v;rsp()},fit:d=>{$('#r_m').value=d.v;rsp()},
  rsok:()=>{const t=byId(V.rs),m=+$('#r_m').value,k=$('#r_d').value;
   if(!(Number.isInteger(m)&&m>=5&&m<=600)||!okD(k)||k<today()||k>=S.p.examDate){$('#se').textContent='Choose a date from today to the day before your exam, and 5 to 600 minutes.';return}
   moveT(t,k,m);closeSheet();save();render();toast('Moved to '+fD(k))},
  skip:d=>{byId(d.id).resolved=true;save();render();toast('Dismissed. The task stays on its original day.')},
- sug:()=>{const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1)),add={},pl=[],un=[];
-  M.forEach(t=>{const r=remain(t);let m=r,d=bestDays(m,add)[0];if(!d&&r>30){m=Math.max(20,Math.round(r/2/5)*5);d=bestDays(m,add)[0]}
-   if(d){add[d]=(add[d]||0)+m;pl.push({id:t.id,d,m,r})}else un.push(t)});V.pl=pl;
-  sheet(`<h2>Suggested recovery plan</h2><p class="sm mu">A suggestion only. Nothing moves until you accept.</p>`+(pl.length?pl.map(x=>{const t=byId(x.id);return`<p><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm">${fD(t.date)} to <b>${fD(x.d)}</b>, ${hm(x.m)}${x.m<x.r?' (shortened from '+hm(x.r)+')':''}</span></p>`}).join('')+`<p class="sm"><b>Workload after:</b> ${Object.keys(add).sort().map(k=>fD(k)+' '+hm(load(k)+add[k])+' of '+hm(cap())).join('; ')}</p>`:'<p>No task fits the next two weeks without going over your daily limit.</p>')+(un.length?`<p class="sm">${un.length} not placed. Reschedule them yourself or dismiss them.</p>`:'')+`<div class="row"><button class="btn o" style="flex:1" data-a="x">Reject</button>${pl.length?'<button class="btn" style="flex:1" data-a="sugok">Accept plan</button>':''}</div>`)},
- sugok:()=>{const n=V.pl.length;V.pl.forEach(x=>moveT(byId(x.id),x.d,x.m));V.pl=[];closeSheet();save();render();toast(n+' task'+(n>1?'s':'')+' rescheduled')},
+ sug:()=>{const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1)),add={},pl=[],un=[],sk=[];
+  M.forEach(t=>{const r=remain(t);let m=r,d=bestDays(m,add,t)[0];if(!d&&r>30){m=Math.max(20,Math.round(r/2/5)*5);d=bestDays(m,add,t)[0]}
+   if(d){add[d]=(add[d]||0)+m;pl.push({id:t.id,d,m,r})}else if(t.pri==='Low'||t.type==='revision')sk.push(t);else un.push(t)});
+  V.pl=pl;V.sk=sk.map(t=>t.id);
+  sheet(`<h2>Suggested recovery plan</h2><p class="sm mu">A suggestion only. Nothing moves until you accept. It spreads work across days, keeps mock days clear, groups related subjects, and trims low-priority items last.</p>`+(pl.length?pl.map(x=>{const t=byId(x.id);return`<p><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm">${fD(t.date)} to <b>${fD(x.d)}</b>, ${hm(x.m)}${x.m<x.r?' (shortened from '+hm(x.r)+')':''}</span></p>`}).join('')+`<p class="sm"><b>Workload after:</b> ${Object.keys(add).sort().map(k=>fD(k)+' '+hm(load(k)+add[k])+' of '+hm(cap())).join('; ')}</p>`:'<p>No task fits the next two weeks without going over your daily limit.</p>')+(sk.length?`<p class="sm"><b>Suggest dismissing (${sk.length}):</b> ${sk.map(t=>esc(t.subject)).join(', ')}. They stay in your history, and you can still reschedule them by hand.</p>`:'')+(un.length?`<p class="sm">${un.length} not placed. Reschedule them yourself.</p>`:'')+`<div class="row"><button class="btn o" style="flex:1" data-a="x">Reject</button>${pl.length||sk.length?'<button class="btn" style="flex:1" data-a="sugok">Accept plan</button>':''}</div>`)},
+ sugok:()=>{const n=V.pl.length,s=V.sk.length;V.pl.forEach(x=>moveT(byId(x.id),x.d,x.m));V.sk.forEach(id=>{byId(id).resolved=true});V.pl=[];V.sk=[];closeSheet();save();render();toast(n+' moved, '+s+' dismissed')},
  wk:d=>{V.wk+=+d.v;render()},
  lx:d=>{V.lx=d.v;render()},
- te:()=>sheet(`<h2>Add a source-based entry</h2><p class="sm mu">Only record what the source states. Do not fill gaps from memory.</p>${inp('e_n','Candidate name','maxlength="60"')}${inp('e_y','Exam year',`type="number" inputmode="numeric" min="1990" max="${new Date().getFullYear()}"`)}${inp('e_d','Reported preparation duration','maxlength="60"')}${inp('e_r','Reported resources','maxlength="200"')}${inp('e_v','Revision approach','maxlength="200"')}${inp('e_s','Source (link or full citation)','maxlength="300"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="teok">Save entry</button></div>`),
+ te:()=>sheet(`<h2>Add a source-based entry</h2><p class="sm mu">Only record what the source states. Do not fill gaps from memory.</p>${inp('e_n','Candidate name','maxlength="60"')}${inp('e_y','Exam year',`type="number" inputmode="numeric" min="1990" max="${new Date().getFullYear()}"`)}${inp('e_d','Reported preparation duration','maxlength="60"')}${inp('e_r','Reported resources','maxlength="200"')}${inp('e_mo','Reported months of preparation (optional)','type="number" inputmode="numeric" min="0" max="60"')}${inp('e_hr','Reported study hours per day (optional)','type="number" inputmode="decimal" step="0.5" min="0" max="16"')}${inp('e_v','Revision approach','maxlength="200"')}${inp('e_s','Source (link or full citation)','maxlength="300"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="teok">Save entry</button></div>`),
  teok:()=>{const g=i=>$(i).value.trim(),n=g('#e_n'),y=+g('#e_y'),s=g('#e_s');
   const e=!n?'Enter the candidate name.':!(Number.isInteger(y)&&y>=1990&&y<=new Date().getFullYear())?'Enter a valid exam year.':s.length<8?'Add a source link or full citation so others can verify it.':'';
   if(e){$('#se').textContent=e;return}
-  S.top.push({id:uid(),exam:V.lx||S.p.exam,name:n,year:y,dur:g('#e_d'),res:g('#e_r'),rev:g('#e_v'),src:s,checked:false});closeSheet();save();render()},
+  S.top.push({id:uid(),exam:V.lx||S.p.exam,name:n,year:y,dur:g('#e_d'),res:g('#e_r'),rev:g('#e_v'),mo:Math.min(60,Math.max(0,+g('#e_mo')||0)),hr:Math.min(16,Math.max(0,+g('#e_hr')||0)),src:s,checked:false});closeSheet();save();render()},
  tc:d=>{const e=S.top.find(x=>x.id===d.id);e.checked=!e.checked;save();render()},
  tr:d=>{S.top=S.top.filter(x=>x.id!==d.id);save();render()},
  reset:()=>sheet(`<h2>Start over?</h2><p>This erases your profile, roadmap, tasks and study sessions.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="resetok">Erase everything</button></div>`),
