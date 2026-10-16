@@ -20,9 +20,20 @@
 <nav id="nv" hidden aria-label="Main"></nav>
 <div id="sh" role="dialog" aria-modal="true"><div id="shb"></div></div>
 <div id="ts" role="status" aria-live="polite"></div>
+
+<!-- App data -->
 <script src="exams.js"></script>
 <script src="strategies.js"></script>
 <script src="reminders.js"></script>
+
+<!-- Firebase (compat build). Safe to leave here even if not configured — the app falls back to local-only mode. -->
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+
+<!-- App -->
 <script src="app.js"></script>
 </body>
 </html>

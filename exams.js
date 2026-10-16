@@ -53,6 +53,75 @@ upsc:{n:'UPSC CSE',mock:240,t:{
 'Environment':['Ecology and biodiversity','Climate change and conventions','Environmental laws and conservation'],
 'Science & Tech':['Space, defence and nuclear','Biotechnology and health','IT, AI and emerging technology'],
 'Current Affairs':['Government schemes and policies','International relations','Reports, indices and summits'],
-'CSAT':['Comprehension','Logical reasoning','Basic numeracy and data interpretation']}}
+'CSAT':['Comprehension','Logical reasoning','Basic numeracy and data interpretation']}},
+/* ------------------------------------------------------------------ */
+/* Rajasthan 2nd Grade Teacher (English) — द्वितीय श्रेणी अध्यापक अंग्रेज़ी  */
+/* Paper-1 सामान्य ज्ञान / शिक्षा मनोविज्ञान, Paper-2 अंग्रेज़ी विषय।          */
+rajenglish:{n:'Rajasthan 2nd Grade English (द्वितीय श्रेणी अंग्रेज़ी)',mock:120,t:{
+'English Grammar (व्याकरण)':[
+ 'Tenses (काल) — Present, Past, Future के सभी रूप',
+ 'Articles (आर्टिकल्स) — a, an, the के प्रयोग',
+ 'Prepositions (संबंधसूचक शब्द)',
+ 'Voice (वाच्य) — Active और Passive',
+ 'Narration (नरेशन) — Direct और Indirect Speech',
+ 'Modals (मॉडल्स) — can, may, must, should',
+ 'Subject–Verb Agreement (कर्ता–क्रिया अनुरूपता)',
+ 'Conditional Sentences (शर्तवाचक वाक्य)',
+ 'Clauses और Sentence Structure',
+ 'Common Errors (सामान्य अशुद्धियाँ)'],
+'Vocabulary (शब्द भंडार)':[
+ 'Synonyms (समानार्थी शब्द)',
+ 'Antonyms (विलोम शब्द)',
+ 'One Word Substitution (एक शब्द प्रतिस्थापन)',
+ 'Idioms and Phrases (मुहावरे एवं लोकोक्तियाँ)',
+ 'Spelling और Pronunciation (वर्तनी)',
+ 'Word Formation — Prefix, Suffix',
+ 'Homonyms और Homophones'],
+'Phonetics (ध्वनि विज्ञान)':[
+ 'Vowels और Consonants (स्वर एवं व्यंजन)',
+ 'Diphthongs और Minimal Pairs',
+ 'Stress (बल) और Intonation (स्वर-उतार-चढ़ाव)',
+ 'Phonetic Transcription (ध्वन्यात्मक लिप्यंतरण)',
+ 'RP और Indian English के अंतर'],
+'Literature (साहित्य)':[
+ 'Poetry (काव्य) — Forms और Devices',
+ 'Prose (गद्य) — Essay, Short Story',
+ 'Drama (नाटक) — Elements और Types',
+ 'Fiction (कथा साहित्य) — Novel',
+ 'Literary Terms और Figures of Speech (अलंकार)',
+ 'Major Indian Writers in English',
+ 'Major British Writers — Romantic, Victorian, Modern'],
+'Comprehension (गद्यांश बोध)':[
+ 'Unseen Passage (अपठित गद्यांश)',
+ 'Cloze Test',
+ 'Para Jumbles',
+ 'Note Making और Summary Writing'],
+'Language Teaching (भाषा शिक्षण)':[
+ 'Methods of Teaching English (शिक्षण विधियाँ)',
+ 'Approaches — Communicative, Direct, Structural',
+ 'Teaching Aids (शिक्षण सामग्री)',
+ 'LSRW Skills (सुनना, बोलना, पढ़ना, लिखना)',
+ 'Evaluation और Testing (मूल्यांकन)',
+ 'Remedial Teaching (उपचारात्मक शिक्षण)',
+ 'Lesson Planning (पाठ योजना)'],
+'Translation (अनुवाद)':[
+ 'Hindi to English (हिंदी से अंग्रेज़ी)',
+ 'English to Hindi (अंग्रेज़ी से हिंदी)',
+ 'Translation Theory और Problems',
+ 'Idiomatic Translation'],
+'Educational Psychology (शिक्षा मनोविज्ञान)':[
+ 'Learning Theories (अधिगम सिद्धांत)',
+ 'Motivation (अभिप्रेरणा)',
+ 'Intelligence और Aptitude (बुद्धि एवं अभिक्षमता)',
+ 'Personality (व्यक्तित्व)',
+ 'Adolescence (किशोरावस्था)',
+ 'Individual Differences (व्यक्तिगत विभिन्नताएँ)'],
+'Rajasthan General Knowledge (राजस्थान सामान्य ज्ञान)':[
+ 'राजस्थान का इतिहास एवं संस्कृति',
+ 'राजस्थान का भूगोल',
+ 'राजस्थान की कला एवं स्थापत्य',
+ 'राजस्थान की राजनीति एवं प्रशासन',
+ 'राजस्थान की अर्थव्यवस्था',
+ 'राजस्थान की शिक्षा व्यवस्था']}},
 };
 Object.values(EX).forEach(e=>e.sub=Object.keys(e.t));

@@ -1,6 +1,5 @@
-
 'use strict';
-const VER='v3, 16 Oct 2026';
+const VER='v4, 17 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -13,11 +12,12 @@ const fD=k=>pd(k).toLocaleDateString(undefined,{weekday:'short',day:'numeric',mo
 const hm=m=>{m=Math.round(m);return m>=60?Math.floor(m/60)+'h'+(m%60?' '+m%60+'m':''):m+'m'};
 const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
 const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[]},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false}});
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false;
-let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:''};
+let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',auth:null};
 const byId=id=>S.tasks.find(t=>t.id===id);
 const doneMin=t=>t.status==='done'?t.mins:t.status==='partial'?Math.round(t.mins/2):0;
 const remain=t=>t.status==='partial'?Math.max(5,t.mins-Math.round(t.mins/2)):t.mins;
@@ -26,44 +26,133 @@ const miss=()=>S.tasks.filter(t=>!t.resolved&&t.date<today()&&t.status!=='done')
 const cap=()=>(+S.p.hours)*60;
 const load=(k,x)=>sum(S.tasks.filter(t=>t.date===k),t=>t.mins)+((x&&x[k])||0);
 const repl=t=>t.gen&&t.status==='todo'&&!t.history&&t.date>=today();
-const wkDays=o=>{const d=pd(today());d.setDate(d.getDate()-(d.getDay()+6)%7+o*7);const s=dk(d);return[...Array(7)].map((_,i)=>addD(s,i))};
+const wkDays=o=>{const d=pd(today());d.setDate(d.getDate()-(d.getDay()+6)%6+o*7);const s=dk(d);return[...Array(7)].map((_,i)=>addD(s,i))};
 const chip=(a,k,v,on,l)=>`<button type="button" class="chip" data-a="${a}" data-k="${k}" data-v="${esc(v)}" aria-pressed="${!!on}">${esc(l||v)}</button>`;
 const inp=(id,l,a)=>`<label for="${id}">${l}</label><input id="${id}" ${a}>`;
 
-/* ---------- storage: private per-user doc in the artifact db, else this browser ---------- */
+/* ---------- storage ---------- */
 function setSt(t){V.st=t;const e=$('#st');if(e)e.textContent=t}
-function ls(d){try{localStorage.setItem(LK,JSON.stringify(d));setSt('Saved on this device')}catch(e){setSt('Could not save: browser storage is unavailable.')}}
-function save(){clearTimeout(sT);sT=setTimeout(()=>{flush();pushMeta()},300)}
+function ls(d){try{localStorage.setItem(LK,JSON.stringify(d));setSt(mode==='cloud'?'Saved on this device (account sync pending)':'Saved on this device')}catch(e){setSt('Could not save: browser storage is unavailable.')}}
+function save(){clearTimeout(sT);sT=setTimeout(()=>{flush();pushMeta();pushUserMeta()},300)}
 function flush(){q=q.then(async()=>{
  S.sessions=S.sessions.slice(-500);const data=JSON.parse(JSON.stringify(S));
- if(mode==='cloud'&&ref){try{await ref.set(data);setSt('Saved to your account')}
-  catch(e){if(e&&e.code==='invalid_argument'){mode='local';ls(data);setSt('Saved on this device only (account storage is not allowed for you here)')}else setSt('Could not reach account storage. The next change will retry.')}}
- else ls(data)})}
+ if(mode==='cloud'&&window.Auth&&Auth.user){
+  try{await Auth.saveState(data);setSt('Saved to your account')}
+  catch(e){ls(data);setSt('Could not reach your account. Saved on this device. The next change will retry.')}
+ } else ls(data)})}
 async function boot(){
  render();
- try{if(window.claude){const[u,d]=await Promise.all([claude.use('user'),claude.use('db')]);
-  if(u&&d){const id=await u.id();ref=d.collection('data/users/'+id).doc('state');mode='cloud';const s=await ref.get();if(s.exists){S=JSON.parse(JSON.stringify(s.data()));fromCloud=true}}}}
- catch(e){ref=null;mode='local'}
+ if(window.Auth&&Auth.configured()&&Auth.init()){
+  const u=await Auth.restore().catch(()=>null);
+  if(u){mode='cloud';try{const st=await Auth.loadState();if(st){S=JSON.parse(JSON.stringify(st));fromCloud=true}}catch(e){setSt('Could not load your saved plan.')}}
+  else V.auth='login';
+ }
  if(!S){try{S=JSON.parse(localStorage.getItem(LK)||'null')}catch(e){}}
- S=Object.assign(fresh(),S||{});S.p=Object.assign(fresh().p,S.p);
+ S=Object.assign(fresh(),S||{});S.p=Object.assign(fresh().p,S.p);S.top=S.top||[];
  S.seen=new Date().toISOString();ready=true;if(S.timer)startTick();setInterval(chkRem,6e4);pushMeta();
  if(mode==='cloud'&&!fromCloud&&S.p.onboarded)save();
  render()}
 
-/* ---------- plan generation (plain rules, no API) ---------- */
-function gen(p){
- const ex=EX[p.exam],t0=today(),N=Math.min(28,diff(t0,addD(p.examDate,-1))+1),c=(+p.hours)*60,pm=c*.8;
- const nb=Math.max(1,Math.round(pm/60)),bl=Math.max(20,Math.round(pm/nb/5)*5),weak=p.weak||[],dn=p.done||[];
- let core=ex.sub.filter(s=>!dn.includes(s));if(!core.length)core=ex.sub.slice();
- const qu=[...core,...core.filter(s=>weak.includes(s))],cnt={},last={},out=[];let qi=0,cover=[];
- const mk=(date,s,t,m,pr,type)=>out.push({id:uid(),subject:s,topic:t,mins:m,pri:pr,date,type,status:'todo',gen:true});
- for(let i=0;i<N;i++){const d=addD(t0,i),k=i%7;if(k===0)cover=[];
-  if(p.off!==''&&String(pd(d).getDay())===p.off)continue;
-  if(k===5){[...new Set(cover)].slice(-nb).forEach(s=>mk(d,s,'Revise: '+(last[s]||'high-yield notes and recall'),bl,'Medium','revision'));
-   if(dn.length)mk(d,dn[Math.floor(i/7)%dn.length],'Light revision of a completed subject',bl,'Low','revision')}
-  else if(k===6){mk(d,'Mock test','Full-length mock for '+ex.n+' (adjust length to your paper)',ex.mock,'High','mock');mk(d,'Mock test','Analyse mistakes and note weak topics',60,'High','mock')}
-  else for(let b=0;b<nb;b++){const s=qu[qi++%qu.length],tl=(ex.t||{})[s];cnt[s]=(cnt[s]||0)+1;const tp=tl&&tl.length?tl[(cnt[s]-1)%tl.length]:'Core concepts and MCQs, part '+cnt[s];last[s]=tp;cover.push(s);mk(d,s,tp,bl,weak.includes(s)?'High':'Medium','study')}}
- return{start:t0,tasks:out,at:new Date().toISOString()}}
+/* ================================================================== */
+/* ============  TOPPER LEARNING LAYER (multi-source only)  ========== */
+/* ================================================================== */
+/* Aggregates statistics over ALL topper entries for an exam.
+   Never trusts a single entry: confidence scales with sample size. */
+function topperStats(exam,extra){
+ const E=((typeof STRATEGIES!=='undefined'?STRATEGIES:[]).concat(extra||[])).filter(e=>e&&e.exam===exam);
+ const n=E.length;
+ const mid=a=>{const x=a.slice().sort((p,q)=>p-q),m=x.length;return m?(m%2?x[(m-1)/2]:(x[m/2-1]+x[m/2])/2):0};
+ const hrs=E.map(e=>+e.hr).filter(v=>v>0);
+ const mos=E.map(e=>+e.mo).filter(v=>v>0);
+ const medH=mid(hrs),medM=mid(mos);
+ const resFreq={};
+ E.forEach(e=>{
+  const r=String(e.res||'').toLowerCase();
+  RES.forEach(x=>{const key=x.toLowerCase().split(' ')[0];if(r.includes(key))resFreq[x]=(resFreq[x]||0)+1});
+ });
+ const resources=Object.entries(resFreq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
+ const conf=n>=8?'high':n>=4?'medium':n>=1?'low':'none';
+ const sessionLen=n===0?60:(medH>=8?90:medH>=6?75:medH>=4?60:45);
+ const buffer=conf==='high'?0.75:conf==='medium'?0.80:0.85;
+ // Revision rhythm from the wording of the rev field (best-effort)
+ let revEveryDays=7;
+ E.forEach(e=>{
+  const r=String(e.rev||'').toLowerCase();
+  if(/daily|every day|रोज़|रोज/.test(r))revEveryDays=Math.min(revEveryDays,1);
+  else if(/alternate|दूसरे दिन/.test(r))revEveryDays=Math.min(revEveryDays,2);
+  else if(/twice a week|biweekly/.test(r))revEveryDays=Math.min(revEveryDays,3);
+  else if(/fortnight|दो सप्ताह/.test(r))revEveryDays=Math.min(revEveryDays,14);
+ });
+ return {n,conf,medHours:medH,medMonths:medM,resources,sessionLen,buffer,revEveryDays};
+}
+
+/* ---------- plan generation (rules + topper statistics) ---------- */
+function gen(p,extras){
+ const ex=EX[p.exam];
+ if(!ex)return{start:today(),tasks:[],at:new Date().toISOString(),learned:null,error:'Unknown exam.'};
+ const t0=today(),examEnd=addD(p.examDate,-1);
+ const totalDays=Math.max(1,Math.min(240,diff(t0,examEnd)+1));
+ const L=topperStats(p.exam,extras||[]);
+
+ // ---- hard safety caps so no day is ever impossible ----
+ const dailyCap=Math.max(30,Math.round((+p.hours||1)*60));       // absolute max min/day
+ const planCap =Math.max(20,Math.round(dailyCap*L.buffer));      // we plan <= this
+ const sessionLen=clamp(L.sessionLen,30,90);
+ const perDay=Math.max(1,Math.round(planCap/sessionLen));
+ const blockLen=Math.max(20,Math.floor(planCap/perDay/5)*5);
+
+ const weak=new Set(p.weak||[]),doneS=new Set(p.done||[]);
+ let subs=ex.sub.filter(s=>!doneS.has(s));if(!subs.length)subs=ex.sub.slice();
+ const topics={};subs.forEach(s=>{const tl=(ex.t&&ex.t[s])||[];topics[s]=tl.length?tl.slice():['Core concepts and practice questions']});
+
+ // Subject order: weak subjects twice so they get more sessions
+ const order=[];
+ subs.filter(s=>weak.has(s)).forEach(s=>order.push(s,s));
+ subs.filter(s=>!weak.has(s)).forEach(s=>order.push(s));
+ if(!order.length)order.push(...subs);
+
+ const out=[],cursor={},recent=[];let oi=0;
+ const push=(date,subject,topic,mins,pri,type)=>out.push({id:uid(),subject,topic,mins,pri,date,type,status:'todo',gen:true});
+
+ for(let i=0;i<totalDays;i++){
+  const date=addD(t0,i),dow=pd(date).getDay();
+  if(p.off!==''&&String(dow)===p.off)continue;
+  // Sunday => mock day (only if the plan is at least a few days long)
+  if(dow===0&&i>=3){
+   push(date,'Mock test','Full-length mock for '+ex.n,Math.min(240,ex.mock||180),'High','mock');
+   push(date,'Mock test','Analyse mistakes and update weak topics',45,'High','mock');
+   continue;
+  }
+  // Saturday => spaced revision of the last few days
+  if(dow===6&&i>=2){
+   const picks=recent.slice(-Math.max(1,perDay));
+   if(picks.length)picks.forEach(r=>push(date,r.subject,'Revise: '+r.topic,blockLen,'Medium','revision'));
+   else for(let b=0;b<Math.min(2,perDay);b++){
+    const s=order[(oi++)%order.length];
+    push(date,s,'Revise: high-yield notes and active recall',blockLen,'Medium','revision');
+   }
+   continue;
+  }
+  // Normal study day
+  const used=new Set();
+  for(let b=0;b<perDay;b++){
+   let s=null;
+   for(let k=0;k<order.length;k++){
+    const cand=order[(oi+k)%order.length];
+    if(!used.has(cand)){s=cand;oi=(oi+k+1)%order.length;break;}
+   }
+   if(!s)s=order[(oi++)%order.length];
+   used.add(s);
+   const tl=topics[s];
+   const idx=(cursor[s]||0)%tl.length;
+   const topic=tl[idx];cursor[s]=idx+1;
+   push(date,s,topic,blockLen,weak.has(s)?'High':'Medium','study');
+   recent.push({subject:s,topic});
+   if(recent.length>40)recent.shift();
+  }
+ }
+ return{start:t0,tasks:out,at:new Date().toISOString(),learned:L};
+}
 
 /* ---------- onboarding ---------- */
 function chk(s){const p=S.p;
@@ -77,7 +166,7 @@ function chk(s){const p=S.p;
 function wiz(){const p=S.p,s=V.step;
  if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AimSarthi</h1><p class="lead">Your study guide from today to exam day. Build a realistic roadmap, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p><p class="note">Built first for NEET PG aspirants who are also doing an internship. Available exams: ${Object.values(EX).map(e=>e.n).join(', ')}. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button></section>`;
  const T=['','Create your profile','Choose your exam','Exam date and target','Daily time and commitments','Where you stand','Study resources'][s];let b='';
- if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in with your Claude account. Your plan is saved privately to that account and AimSarthi never sees a password.':'There are no accounts in this version, so your plan is saved on this device only. Clearing browser data erases it. When you return, your saved plan loads automatically.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" value="${esc(p.name||'')}"`);
+ if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in. Your plan is saved privately to your account and AimSarthi never sees a password.':'There are no accounts in this version, so your plan is saved on this device only. Clearing browser data erases it. When you return, your saved plan loads automatically.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" value="${esc(p.name||'')}"`);
  if(s===2)b=`<div class="chips">${Object.keys(EX).map(k=>chip('pick','exam',k,p.exam===k,EX[k].n)).join('')}</div><p class="sm mu" style="margin-top:8px">NEET PG is the pilot focus. Other exams use the same planner with their own subject lists.</p>`;
  if(s===3)b=inp('w_d','Exam date',`type="date" data-f="examDate" min="${addD(today(),2)}" max="${addD(today(),1100)}" value="${esc(p.examDate||'')}"`)+inp('w_t','Target score or rank',`data-f="target" maxlength="80" placeholder="For example: rank under 2,000" value="${esc(p.target||'')}"`)+'<p class="sm mu" style="margin-top:8px">Your target is for motivation. It does not change what is possible.</p>';
  if(s===4)b=inp('w_h','Hours per day you can study (0.5 to 16)',`type="number" inputmode="decimal" step="0.5" min="0.5" max="16" data-f="hours" value="${esc(p.hours)}"`)+inp('w_w','Internship or work hours per day',`type="number" inputmode="decimal" step="0.5" min="0" max="16" data-f="workHrs" value="${esc(p.workHrs)}"`)+`<label for="w_o">Weekly day off</label><select id="w_o" data-f="off"><option value="">No fixed day off</option>${DOW.map((d,i)=>`<option value="${i}" ${p.off===String(i)?'selected':''}>${d}</option>`).join('')}</select>`+inp('w_c','Commitment notes (optional)',`data-f="workNote" maxlength="120" placeholder="For example: night duty on Fridays" value="${esc(p.workNote||'')}"`);
@@ -113,25 +202,42 @@ function home(){
  +`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
  +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
+
+/* -- NEW: how the plan was built, with topper stats -- */
+function learnCard(exam){
+ const L=topperStats(exam,S.top);
+ const label=L.n===0?'No topper entries yet':(L.n>=8?'High confidence (8+ entries)':L.n>=4?'Medium confidence (4–7 entries)':'Low confidence (1–3 entries)');
+ const bar=Math.min(100,(L.n/8)*100);
+ let det='';
+ if(L.n>0){
+  det=`<p class="sm" style="margin:6px 0 0">Aggregated across all ${L.n} entr${L.n>1?'ies':'y'}: ${L.medHours?('median '+L.medHours+' h/day reported; '):''}${L.medMonths?('median '+L.medMonths+' months reported; '):''}session length ${L.sessionLen} min; revision cadence every ~${L.revEveryDays} day${L.revEveryDays>1?'s':''}.</p>`;
+  if(L.resources.length)det+=`<p class="sm" style="margin:6px 0 0">Most-cited resources: ${L.resources.map(esc).join(', ')}.</p>`;
+ }
+ return`<section class="card"><h2>How this roadmap was built</h2><p class="sm mu">Rules + aggregate of every sourced topper entry for this exam. A single entry is never trusted on its own.</p><div class="bar" style="margin:6px 0"><i style="width:${bar}%"></i></div><p class="sm" style="margin:0"><b>${label}</b></p>${det}<p class="sm mu" style="margin:8px 0 0">Daily budget: ${hm(Math.round((+S.p.hours||0)*60))} available → the plan uses ~${Math.round(L.buffer*100)}% of it and leaves the rest as catch-up buffer. Sunday is a mock day, Saturday is spaced revision. Topic names are generic — swap in your syllabus.</p></section>`;
+}
+
 function roadmap(){
  const d=S.draft,L=d?d.tasks:S.tasks,st=d?d.start:(S.p.planStart||today());
- if(!L.length)return`<h1>Roadmap</h1><div class="card"><h2>No roadmap yet</h2><p class="mu">Build a suggested plan from your answers, review it, then accept it.</p><button class="btn w" data-a="regen">Build my roadmap</button></div>`;
+ if(!L.length)return`<h1>Roadmap</h1>${learnCard(S.p.exam)}<div class="card"><h2>No roadmap yet</h2><p class="mu">Build a suggested plan from your answers and your sourced topper entries, review it, then accept it.</p><button class="btn w" data-a="regen">Build my roadmap</button></div>`;
  const W={};L.forEach(t=>{const w=Math.max(0,Math.floor(diff(st,t.date)/7));(W[w]=W[w]||[]).push(t)});
  const ms=L.filter(t=>t.type!=='study'&&t.date>=today()).sort((a,b)=>a.date<b.date?-1:1).slice(0,5),rp=S.tasks.filter(repl).length;
- let h=`<h1>${d?'Review your roadmap':'Your roadmap'}</h1><p class="note"><b>Suggestions, not verified facts.</b> Built by simple rules from your answers and general study principles (spaced revision, active recall, weekly mocks), not from any topper's plan: about 80% of your ${S.p.hours} daily hours is planned, and the rest stays free as catch-up buffer. Topic names are generic, so swap in your own syllabus. No plan can guarantee a score or rank.</p>`;
- h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p><button class="btn w" data-a="accept">Accept roadmap</button><div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
+ let h=`<h1>${d?'Review your roadmap':'Your roadmap'}</h1><p class="note"><b>Suggestions, not verified facts.</b> Built by simple rules plus aggregate statistics from every sourced topper entry for this exam (spaced revision, active recall, weekly mocks). If there are no entries yet, general study principles are used. No plan can guarantee a score or rank.</p>`;
+ h+=learnCard(S.p.exam);
+ h+=d?`<div class="card"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p><button class="btn w" data-a="accept">Accept roadmap</button><div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
  :`<div class="row" style="margin:12px 0"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button></div>`;
  h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
  Object.keys(W).forEach(w=>{const X=W[w],ds=[...new Set(X.map(t=>t.date))].sort(),foc=[...new Set(X.filter(t=>t.type==='study').map(t=>t.subject))].slice(0,4).join(', ')||'revision';
   h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[ds.length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
   +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
  return h}
+
 function recover(){
  const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1));
  if(!M.length)return`<h1>Recover</h1><div class="card"><h2>Nothing missed</h2><p class="mu">Unfinished tasks from past days appear here. Nothing is moved or deleted unless you accept it.</p></div>`;
  const tot=sum(M,t=>t.mins),c=cap(),free=sum([1,2,3,4,5,6,7].map(i=>addD(today(),i)),k=>Math.max(0,c-load(k)));
  return`<h1>Recover</h1><section class="card"><h2>Remaining workload</h2><div class="stats"><div><b>${hm(tot)}</b><span>Missed</span></div><div><b>${hm(free)}</b><span>Free, next 7 days</span></div><div><b>${hm(c)}</b><span>Daily limit</span></div></div><p class="sm">Putting all ${hm(tot)} on tomorrow would make it ${hm(load(addD(today(),1))+tot)}, above your ${hm(c)} limit. So we spread the work out instead. You approve every change.</p><button class="btn w" data-a="sug">Suggest a gentle plan</button></section>`
  +M.map(t=>`<article class="card tk ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<p class="sm mu" style="margin:0 0 8px">Planned ${fD(t.date)} · ${hm(t.mins)} · ${t.status==='partial'?'partly done':'not done'}</p><div class="row"><button class="btn s" data-a="rs" data-id="${t.id}">Reschedule</button><button class="btn o s" data-a="skip" data-id="${t.id}">Dismiss</button></div></article>`).join('')}
+
 function progress(){
  const D=wkDays(V.wk),T=S.tasks.filter(t=>D.includes(t.date)),pl=sum(T,t=>t.mins),cp=sum(T,doneMin),a=act(),el=D.filter(k=>k<=today()),ac=el.filter(k=>a.has(k)).length;
  const per=D.map(k=>{const x=T.filter(t=>t.date===k);return[sum(x,t=>t.mins),sum(x,doneMin)]}),mx=Math.max(60,...per.map(x=>x[0])),out=T.filter(t=>t.status!=='done'),SB={};
@@ -141,17 +247,81 @@ function progress(){
  +`<section class="card"><h2>Tasks and consistency</h2><p>${T.filter(t=>t.status==='done').length} of ${T.length} tasks completed. ${out.length} outstanding, ${out.filter(t=>t.date<today()).length} of them already past.</p><p>${el.length?ac+' of '+el.length+' days active this week.':'This week has not started yet.'}</p></section>`
  +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of ${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`
  +`<section class="card"><h2>Progress explanation</h2><p class="mu">Placeholder: a future AI summary will explain your week here. Everything above works without it.</p><button class="btn o w" disabled>Explain my week (coming soon)</button></section>`
- +remCard()+`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Stored privately under your Claude account.':'Stored in this browser only.'}</p><button class="btn o s" data-a="reset">Start over</button></section>`}
+ +remCard()+`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Synced to your account.':'Stored in this browser only.'}</p><button class="btn o s" data-a="reset">Start over</button></section>`}
+
+/* ---- Account card (top of Library) + report sheet ---- */
+function accountCard(){
+ if(!window.Auth||!Auth.configured()){
+  return`<section class="card"><h2>Account</h2><p class="sm mu">Sign-in is not set up in this build. Your plan stays on this device.</p><p class="sm mu">See <b>README.txt</b> for how to turn on Firebase.</p></section>`;
+ }
+ const u=Auth.user;
+ if(!u){
+  return`<section class="card"><h2>Account</h2><p class="sm mu">You are using AimSarthi without an account. Your plan is saved in this browser only and cannot be recovered.</p><div class="row" style="margin-top:8px"><button class="btn" style="flex:1" data-a="authgo" data-v="login">Sign in</button><button class="btn o" style="flex:1" data-a="authgo" data-v="signup">Create account</button></div></section>`;
+ }
+ return`<section class="card"><h2>Account</h2>
+ <p><b>${esc(u.username)}</b><br><span class="sm mu">${u.email?esc(u.email):'No recovery email set'}</span></p>
+ <p class="sm mu">${mode==='cloud'?'Your plan syncs to your account.':'Sign in to sync your plan.'}</p>
+ <div class="stack" style="margin-top:8px">
+  <button class="btn o" data-a="acct" data-v="email">${u.email?'Change recovery email':'Add recovery email'}</button>
+  <button class="btn o" data-a="acct" data-v="password">Change password</button>
+  <button class="btn o" data-a="acct" data-v="fav">Change favourite number</button>
+  <button class="btn o" data-a="authout">Sign out</button>
+ </div>
+ <h3 style="margin-top:16px">Help us improve</h3>
+ <p class="sm mu">Report a problem or suggest an idea. Your message goes straight to the developer.</p>
+ <button class="btn o" data-a="report">Report a problem or suggestion</button>
+ </section>`;
+}
+
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
- return`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
+ return accountCard()
+ +`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
  +`<section><div class="row sp" style="margin-bottom:8px"><h2 style="margin:0">Source-based entries</h2><button class="btn s" data-a="te">Add entry</button></div><p class="sm mu">Entries appear only when you add them with a source. AimSarthi ships none and never invents interviews, quotes, ranks or preparation histories.</p>`
  +(E.length?E.map(e=>`<article class="card"><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${(e.fixed?e.verified:e.checked)?'ok':''}">${e.fixed?(e.verified?'Verified source':'Source supplied, not verified'):(e.checked?'Source checked by you':'Source not yet checked')}</span><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl>${e.fixed?'':`<div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div>`}</article>`).join(''):`<div class="card mu">No entries for ${EX[x].n} yet. Add one with a link or full citation.</div>`)+'</section>'
  +agg(x)+`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`}
+
 const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
+
+/* ---- auth screens ---- */
+function authScreen(){
+ const signup=V.auth==='signup';
+ return`<section class="welcome" style="margin-top:8px">
+  <div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div>
+  <h1 class="logo">AimSarthi</h1>
+  <p class="lead">${signup?'Create your account.':'Welcome back.'}</p>
+  <p class="note">${signup?'Pick a username and password, then answer one security question. Your plan syncs to your account so you can return on any device.':'Sign in with your username, password, and your favourite number.'}</p>
+ </section>
+ <section class="card">
+  <h2>${signup?'Create account':'Sign in'}</h2>
+  <label for="a_u">Username</label>
+  <input id="a_u" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" placeholder="letters, numbers, . _ -">
+  <label for="a_p">Password</label>
+  <input id="a_p" type="password" autocomplete="${signup?'new-password':'current-password'}">
+  ${signup?'<label for="a_p2">Confirm password</label><input id="a_p2" type="password" autocomplete="new-password">':''}
+  <label for="a_f">Your favourite number ?</label>
+  <input id="a_f" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="e.g. 7">
+  <p class="sm mu" style="margin:4px 0 0">${signup?'Used as your security question. You will be asked for it every time you sign in.':'Your security question, saved at sign-up.'}</p>
+  ${signup?'<label for="a_e">Recovery email (optional)</label><input id="a_e" type="email" maxlength="120" autocomplete="email" placeholder="you@example.com"><p class="sm mu" style="margin:4px 0 0">Only used to reset your password if you forget it.</p>':''}
+  <p id="a_err" class="er" role="alert" style="margin-top:8px"></p>
+  <button class="btn w" data-a="authdo" data-v="${V.auth}" style="margin-top:8px">${signup?'Create account':'Sign in'}</button>
+  <div class="row" style="margin-top:10px">
+   <button class="btn o s" style="flex:1" data-a="authswap" data-v="${signup?'login':'signup'}">${signup?'I already have an account':'Create an account'}</button>
+  </div>
+  ${signup?'':'<button class="btn o s w" style="margin-top:8px" data-a="forgot">Forgot password?</button>'}
+  <button class="btn o s w" style="margin-top:8px" data-a="authskip">Continue without an account</button>
+  <p class="sm mu" style="margin-top:10px">Without an account your plan stays in this browser only and cannot be recovered.</p>
+ </section>`;
+}
+
 function render(){try{
  const a=$('#app'),nv=$('#nv');
  if(!ready){a.innerHTML='<p class="mu" style="padding:48px 0;text-align:center">Loading your plan...</p>';nv.hidden=true;return}
+ // Auth gate
+ if(V.auth&&!(window.Auth&&Auth.user)){
+  document.body.classList.remove('lv');nv.hidden=true;a.innerHTML=authScreen();
+  return;
+ }
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
  nv.innerHTML=[['home','Today'],['roadmap','Roadmap'],['recover','Recover'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='recover'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
@@ -181,18 +351,33 @@ function rsp(){const m=+$('#r_m').value,k=$('#r_d').value,e=$('#rp');if(!e)retur
  if(b>c){const alt=bestDays(m).filter(x=>x!==k).slice(0,2);h+=`That is ${hm(b-c)} over your limit. Options: `+(alt.map(x=>`<button class="btn o s" data-a="pickd" data-v="${x}">${fD(x)} (${hm(c-load(x))} free)</button>`).join(' ')||'no day in the next 2 weeks has room. ')+(c-a>=15?` <button class="btn o s" data-a="fit" data-v="${Math.floor((c-a)/5)*5}">Shorten to ${hm(Math.floor((c-a)/5)*5)}</button>`:'')}
  else h+='This fits your daily limit.';e.innerHTML=h}
 
+/* ---------- friendly Firebase errors ---------- */
+function friendly(e){
+ const c=e&&e.code;
+ if(c==='auth/email-already-in-use')return'That username is already taken.';
+ if(c==='auth/wrong-password'||c==='auth/invalid-credential'||c==='auth/invalid-login-credentials')return'Wrong password.';
+ if(c==='auth/user-not-found')return'No account with that username.';
+ if(c==='auth/too-many-requests')return'Too many attempts. Try again in a few minutes.';
+ if(c==='auth/weak-password')return'Password must be at least 6 characters.';
+ if(c==='auth/network-request-failed')return'No internet connection.';
+ if(c==='auth/requires-recent-login')return'Please sign in again and retry.';
+ if(c==='auth/invalid-email')return'That email address is not valid.';
+ if(c==='permission-denied')return'Firestore blocked this action. Check your security rules.';
+ return (e&&e.message)?e.message:'Something went wrong.';
+}
+
 /* ---------- actions ---------- */
 const A={
  tab:d=>{V.tab=d.v;scrollTo(0,0);render()},
  next:()=>{const e=chk(V.step);if(e){V.err=e;render();return}V.err='';
   if(V.step<6){V.step++;save();render();scrollTo(0,0)}
-  else{S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;S.p.onboarded=true;S.draft=gen(S.p);V.tab='roadmap';save();render();scrollTo(0,0)}},
+  else{S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;S.p.onboarded=true;S.draft=gen(S.p,S.top);V.tab='roadmap';save();render();scrollTo(0,0)}},
  back:()=>{V.err='';V.step=Math.max(0,V.step-1);render()},
  pick:d=>{if(d.k==='exam'&&S.p.exam!==d.v){S.p.done=[];S.p.weak=[]}S.p[d.k]=d.v;render()},
  tg:d=>{const a=S.p[d.k]=S.p[d.k]||[],i=a.indexOf(d.v);i<0?a.push(d.v):a.splice(i,1);
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
  redo:()=>{S.p.onboarded=false;V.step=2;save();render()},
- regen:()=>{S.draft=gen(S.p);V.tab='roadmap';save();render()},
+ regen:()=>{S.draft=gen(S.p,S.top);V.tab='roadmap';save();render()},
  accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.draft=null;V.tab='home';V.day=today();save();render();toast('Roadmap accepted')},
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
@@ -233,19 +418,92 @@ const A={
  sugok:()=>{const n=V.pl.length,s=V.sk.length;V.pl.forEach(x=>moveT(byId(x.id),x.d,x.m));V.sk.forEach(id=>{byId(id).resolved=true});V.pl=[];V.sk=[];closeSheet();save();render();toast(n+' moved, '+s+' dismissed')},
  wk:d=>{V.wk+=+d.v;render()},
  lx:d=>{V.lx=d.v;render()},
- te:()=>sheet(`<h2>Add a source-based entry</h2><p class="sm mu">Only record what the source states. Do not fill gaps from memory.</p>${inp('e_n','Candidate name','maxlength="60"')}${inp('e_y','Exam year',`type="number" inputmode="numeric" min="1990" max="${new Date().getFullYear()}"`)}${inp('e_d','Reported preparation duration','maxlength="60"')}${inp('e_r','Reported resources','maxlength="200"')}${inp('e_mo','Reported months of preparation (optional)','type="number" inputmode="numeric" min="0" max="60"')}${inp('e_hr','Reported study hours per day (optional)','type="number" inputmode="decimal" step="0.5" min="0" max="16"')}${inp('e_v','Revision approach','maxlength="200"')}${inp('e_s','Source (link or full citation)','maxlength="300"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="teok">Save entry</button></div>`),
+ te:()=>sheet(`<h2>Add a source-based entry</h2><p class="sm mu">Only record what the source states. Do not fill gaps from memory. Multiple entries for the same exam are aggregated into the roadmap's parameters.</p>${inp('e_n','Candidate name','maxlength="60"')}${inp('e_y','Exam year',`type="number" inputmode="numeric" min="1990" max="${new Date().getFullYear()}"`)}${inp('e_d','Reported preparation duration','maxlength="60"')}${inp('e_r','Reported resources','maxlength="200"')}${inp('e_mo','Reported months of preparation (optional)','type="number" inputmode="numeric" min="0" max="60"')}${inp('e_hr','Reported study hours per day (optional)','type="number" inputmode="decimal" step="0.5" min="0" max="16"')}${inp('e_v','Revision approach','maxlength="200"')}${inp('e_s','Source (link or full citation)','maxlength="300"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="teok">Save entry</button></div>`),
  teok:()=>{const g=i=>$(i).value.trim(),n=g('#e_n'),y=+g('#e_y'),s=g('#e_s');
   const e=!n?'Enter the candidate name.':!(Number.isInteger(y)&&y>=1990&&y<=new Date().getFullYear())?'Enter a valid exam year.':s.length<8?'Add a source link or full citation so others can verify it.':'';
   if(e){$('#se').textContent=e;return}
   S.top.push({id:uid(),exam:V.lx||S.p.exam,name:n,year:y,dur:g('#e_d'),res:g('#e_r'),rev:g('#e_v'),mo:Math.min(60,Math.max(0,+g('#e_mo')||0)),hr:Math.min(16,Math.max(0,+g('#e_hr')||0)),src:s,checked:false});closeSheet();save();render()},
  tc:d=>{const e=S.top.find(x=>x.id===d.id);e.checked=!e.checked;save();render()},
  tr:d=>{S.top=S.top.filter(x=>x.id!==d.id);save();render()},
- reset:()=>sheet(`<h2>Start over?</h2><p>This erases your profile, roadmap, tasks and study sessions.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="resetok">Erase everything</button></div>`),
- resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()}};
+ reset:()=>sheet(`<h2>Start over?</h2><p>This erases your profile, roadmap, tasks and study sessions${mode==='cloud'?' — including the copy saved to your account':''}.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="resetok">Erase everything</button></div>`),
+ resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()},
+
+ /* ---- auth actions ---- */
+ authgo:d=>{V.auth=d.v;render();scrollTo(0,0)},
+ authswap:d=>{V.auth=d.v;render();scrollTo(0,0)},
+ authskip:()=>{V.auth=null;render()},
+ authout:async()=>{await Auth.logout();mode='local';V.auth='login';fromCloud=false;render();toast('Signed out. Your plan stays on this device.')},
+ authdo:async d=>{
+  const err=$('#a_err');err.textContent='';
+  const u=$('#a_u').value.trim(),p=$('#a_p').value,f=$('#a_f').value.trim();
+  const btn=d.v;
+  try{
+   if(btn==='signup'){
+    const p2=$('#a_p2').value,e=$('#a_e').value.trim();
+    if(p!==p2)throw new Error('Passwords do not match.');
+    await Auth.signup({username:u,password:p,favNumber:f,email:e});
+   } else {
+    await Auth.login({username:u,password:p,favNumber:f});
+   }
+   mode='cloud';
+   try{const st=await Auth.loadState();if(st){S=Object.assign(fresh(),st);S.p=Object.assign(fresh().p,S.p);S.top=S.top||[]}}catch(e){}
+   V.auth=null;save();render();toast('Signed in as '+Auth.user.username);
+  }catch(e){err.textContent=friendly(e);}
+ },
+ forgot:()=>{
+  sheet(`<h2>Forgot password</h2><p class="sm mu">Enter your username. If a recovery email is on file, we send a reset link there.</p>${inp('f_u','Username','autocapitalize="none" maxlength="20"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="forgotok">Send reset link</button></div>`);
+ },
+ forgotok:async()=>{
+  try{const em=await Auth.forgot($('#f_u').value.trim());closeSheet();toast('Reset link sent to '+em);}
+  catch(e){$('#se').textContent=friendly(e);}
+ },
+ acct:d=>{
+  const u=Auth.user;if(!u)return;
+  if(d.v==='email'){
+   sheet(`<h2>Recovery email</h2><p class="sm mu">If you forget your password, we send a reset link here.</p>${inp('a_e2','Email address',`type="email" maxlength="120" value="${esc(u.email||'')}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="acctok" data-v="email">Save</button></div>`);
+  }
+  if(d.v==='password'){
+   sheet(`<h2>Change password</h2>${inp('a_op','Current password','type="password" autocomplete="current-password"')}${inp('a_np','New password','type="password" autocomplete="new-password"')}${inp('a_np2','Confirm new password','type="password" autocomplete="new-password"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="acctok" data-v="password">Change</button></div>`);
+  }
+  if(d.v==='fav'){
+   sheet(`<h2>Change favourite number</h2><p class="sm mu">You will use this the next time you sign in.</p>${inp('a_pw','Your password','type="password" autocomplete="current-password"')}${inp('a_nf','New favourite number','inputmode="numeric" maxlength="12"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="acctok" data-v="fav">Save</button></div>`);
+  }
+ },
+ acctok:async d=>{
+  const err=$('#se');
+  try{
+   if(d.v==='email')await Auth.setRecoveryEmail($('#a_e2').value.trim());
+   if(d.v==='password'){
+    const op=$('#a_op').value,np=$('#a_np').value,np2=$('#a_np2').value;
+    if(np!==np2)throw new Error('New passwords do not match.');
+    await Auth.changePassword(op,np);
+   }
+   if(d.v==='fav')await Auth.changeFav($('#a_pw').value,$('#a_nf').value.trim());
+   closeSheet();save();render();toast('Saved');
+  }catch(e){err.textContent=friendly(e);}
+ },
+ report:()=>{
+  sheet(`<h2>Report a problem or suggest an idea</h2>
+   <label for="rp_k">Type</label>
+   <select id="rp_k"><option>Problem</option><option>Suggestion</option><option>Content correction</option><option>Other</option></select>
+   <label for="rp_m">Your message</label>
+   <textarea id="rp_m" rows="5" maxlength="1200" placeholder="What happened? What did you expect?"></textarea>
+   ${Auth.user?'':'<p class="sm mu" style="margin-top:6px">You are not signed in. The report is still sent, but we cannot reply.</p>'}
+   <p id="se" class="er" role="alert"></p>
+   <div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="reportok">Send</button></div>`);
+ },
+ reportok:async()=>{
+  const m=$('#rp_m').value.trim();
+  if(m.length<5){$('#se').textContent='Please write at least a few words.';return}
+  try{await Auth.report({kind:$('#rp_k').value,message:m,version:VER});closeSheet();toast('Thank you. Your report was sent.');}
+  catch(e){$('#se').textContent=friendly(e);}
+ }
+};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset);else if(e.target.id==='sh')closeSheet()});
 document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S)S.p[f]=t.value;if(g==='rs')rsp();if(g==='tt')V.tt=t.value});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
-/* ---------- reminders: usual study hour comes from timed-session history ---------- */
+
+/* ---------- reminders: usual study hour from timed-session history ---------- */
 const usualHour=()=>{const hs=S.sessions.map(x=>new Date(x.start).getHours());return hs.length>=3?Math.min(22,Math.max(5,Math.round(med(hs)))):19};
 const h12=h=>(h%12||12)+(h<12?' am':' pm');
 async function pushMeta(){if(!S||!window.caches)return null;
@@ -253,11 +511,35 @@ async function pushMeta(){if(!S||!window.caches)return null;
  const m={on:!!R.on,hour:usualHour(),seen:S.seen||new Date().toISOString(),studied:dn?pd(dn).toDateString():'',pending:S.tasks.filter(t=>t.date<=today()&&t.status!=='done'&&!t.resolved).length,next:nx?nx.subject+': '+nx.topic:'',lastNotif:R.lastNotif||''};
  try{const c=await caches.open('aimsarthi-meta'),o=await c.match('meta'),old=o?await o.json():{};if(old.lastNotif&&old.lastNotif>m.lastNotif)m.lastNotif=old.lastNotif;await c.put('meta',new Response(JSON.stringify(m)))}catch(e){}
  return m}
+
+/* NEW: push a small summary of this user's progress to their account, so a future
+   developer app can read aggregate usage from Firestore (users/{uid}/meta/summary). */
+async function pushUserMeta(){
+ if(mode!=='cloud'||!window.Auth||!Auth.user)return;
+ try{
+  const a=act();
+  let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
+  await Auth.saveMeta({
+   username:Auth.user.username,
+   lastSeen:new Date().toISOString(),
+   exam:S.p.exam||'', examDate:S.p.examDate||'',
+   onboarded:!!S.p.onboarded,
+   daysUsed:a.size, streak:st,
+   tasksDone:S.tasks.filter(t=>t.status==='done').length,
+   tasksPartial:S.tasks.filter(t=>t.status==='partial').length,
+   tasksTotal:S.tasks.length,
+   plannedMins:S.tasks.reduce((x,t)=>x+t.mins,0),
+   studiedMins:S.sessions.reduce((x,s)=>x+s.mins,0),
+   topperEntries:S.top.length,
+   version:VER
+  });
+ }catch(e){}
+}
+
 async function notify(d){try{const r=await navigator.serviceWorker.ready;await r.showNotification(d.title,{body:d.body,tag:d.tag,icon:'icon-192.png',badge:'icon-192.png'});if(d.tag!=='test'){S.rem.lastNotif=new Date().toISOString();save()}return true}catch(e){return false}}
 async function chkRem(){if(!S||!S.rem||!S.rem.on||!window.Notification||Notification.permission!=='granted'||document.visibilityState==='visible')return;const d=reminderDue(await pushMeta(),Date.now());if(d)notify(d)}
 function remCard(){const R=S.rem||{},on=R.on&&window.Notification&&Notification.permission==='granted';
  return`<section class="card"><h2>Study reminders</h2><p class="sm mu">${on?'On. You get a nudge around '+h12(usualHour())+' on days you have not studied. The time is learned from your timed sessions (7 pm until you have a few). After 2 days without opening the app, you get a "your plan is waiting" nudge.':'Get a nudge at your usual study time, and another if you have not opened the app for 2 days.'}</p><div class="row"><button class="btn ${on?'o ':''}s" data-a="${on?'remoff':'remon'}">${on?'Turn off':'Turn on reminders'}</button>${on?'<button class="btn o s" data-a="remtest">Send a test</button>':''}</div><p class="sm mu" style="margin:8px 0 0">Background reminders work on Chrome for Android with the app installed, and the browser picks the exact time, so they can arrive late. ${on&&R.bg===false?'Background reminders are unavailable here, so you are only reminded while the app is open in the background.':''}</p></section>`}
-boot();
-if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
+boot();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
