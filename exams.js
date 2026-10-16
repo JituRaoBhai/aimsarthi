@@ -1,0 +1,58 @@
+/* EXAMS: to add a course, add one entry below. t = { 'Subject': ['Topic', ...] }.
+   An empty topic list gives generic task names. mock = suggested full-mock length in minutes.
+   Topic lists are suggestions from standard textbook headings: check them against each exam's official syllabus. */
+const EX={
+neetpg:{n:'NEET PG',mock:210,t:{
+'Anatomy':['Upper and lower limb','Thorax and abdomen','Head, neck and neuroanatomy','Embryology','Histology and genetics'],
+'Physiology':['General, nerve and muscle','Cardiovascular and respiratory','Renal and GI','Endocrine and reproduction','Neurophysiology and special senses'],
+'Biochemistry':['Carbohydrate and lipid metabolism','Amino acids and proteins','Vitamins and minerals','Molecular biology and genetics','Enzymes and clinical biochemistry'],
+'Pathology':['Cell injury, inflammation and repair','Haematology','Neoplasia','Systemic: CVS, respiratory, GI','Systemic: renal, CNS, bone, endocrine','Immunopathology'],
+'Pharmacology':['General pharmacology','Autonomic and CNS drugs','Cardiovascular and renal drugs','Endocrine and GI drugs','Antimicrobials and chemotherapy','Toxicology and drug interactions'],
+'Microbiology':['General bacteriology and immunology','Gram-positive and Gram-negative bacteria','Virology','Mycology and parasitology','Sterilisation and hospital infection'],
+'Forensic Medicine':['Identification and autopsy','Injuries and asphyxia','Toxicology','Medical law and ethics','Sexual offences and forensic psychiatry'],
+'Community Medicine (PSM)':['Epidemiology and biostatistics','Screening and communicable diseases','Non-communicable diseases','National health programmes','Nutrition and environment','Demography and family planning'],
+'Medicine':['Cardiology','Respiratory medicine','Gastroenterology and hepatology','Nephrology and electrolytes','Endocrinology','Neurology','Haematology and oncology','Infectious diseases and rheumatology'],
+'Surgery':['Trauma, burns and critical care','GI and hepatobiliary surgery','Breast, thyroid and endocrine surgery','Urology','Vascular, cardiothoracic and neurosurgery','Paediatric surgery and hernia','Basic surgical principles'],
+'Obstetrics & Gynaecology':['Normal pregnancy and labour','High-risk pregnancy','Obstetric complications and operations','Gynaecological disorders','Gynaecological oncology','Contraception and infertility'],
+'Paediatrics':['Growth, development and nutrition','Neonatology','Immunisation','Paediatric infections and respiratory','Paediatric systemic diseases','Genetics and emergencies'],
+'ENT':['Ear','Nose and paranasal sinuses','Pharynx and larynx','Head and neck tumours'],
+'Ophthalmology':['Cornea, conjunctiva and lids','Lens, glaucoma and uvea','Retina and neuro-ophthalmology','Optics and squint'],
+'Orthopaedics':['Fractures and dislocations','Bone and joint infections','Bone tumours','Paediatric orthopaedics','Nerve injuries and spine'],
+'Dermatology':['Infections and infestations','Papulosquamous and vesiculobullous disorders','Pigmentary disorders and leprosy','Sexually transmitted infections'],
+'Psychiatry':['Psychotic and mood disorders','Anxiety and personality disorders','Substance use','Child psychiatry and psychopharmacology'],
+'Radiology':['Radiation physics and safety','Chest and abdominal imaging','Neuro and musculoskeletal imaging','Nuclear medicine and interventional radiology'],
+'Anaesthesia':['General anaesthesia and airway','Local and regional anaesthesia','Anaesthetic drugs','Monitoring, ICU and CPR']}},
+neetss:{n:'NEET SS (Surgical)',mock:180,t:{
+'Perioperative and critical care':['Fluids, electrolytes and acid-base','Shock and resuscitation','Surgical nutrition','Sepsis, SIRS and organ failure','Transfusion, coagulation and thromboprophylaxis','Antibiotics and surgical site infection'],
+'Trauma, burns and wounds':['Polytrauma and ATLS principles','Head, chest and abdominal trauma','Burns resuscitation and care','Wound healing, grafts and scars','Diabetic foot and pressure ulcers'],
+'Surgical gastroenterology':['Oesophagus: achalasia, GERD, carcinoma','Stomach and duodenum, bariatric surgery','Small bowel, appendix and obstruction','Colorectal: IBD, polyps, carcinoma','Anorectal disorders and fistulas','Hernias and abdominal wall'],
+'HPB and transplant surgery':['Liver: abscess, cysts, tumours','Portal hypertension and liver failure','Biliary stones, strictures and cholangiocarcinoma','Pancreatitis and pseudocyst','Pancreatic and periampullary tumours','Transplantation basics'],
+'Surgical oncology':['Cancer biology, staging and screening','Head and neck cancers','Breast cancer','Sarcoma, skin cancer and melanoma','Chemo-radiotherapy and targeted therapy basics','Oncologic emergencies and palliative care'],
+'Endocrine surgery':['Thyroid nodules and carcinoma','Parathyroid and calcium disorders','Adrenal tumours and phaeochromocytoma','MEN syndromes and neuroendocrine tumours'],
+'Urology':['Urolithiasis','BPH and prostate carcinoma','Bladder and renal tumours','Urinary infection and obstruction','Strictures, hypospadias and reflux','Renal transplantation and trauma'],
+'Cardiothoracic and vascular surgery':['Valvular heart disease','Coronary artery disease and CABG','Congenital heart disease','Aortic disease and dissection','Peripheral arterial and venous disease','Lung cancer and thoracic surgery','Cardiopulmonary bypass'],
+'Neurosurgery':['Head injury and raised ICP','Brain tumours','Spine: degenerative and trauma','Aneurysm, SAH and AVM','Hydrocephalus and paediatric neurosurgery','Functional and peripheral nerve surgery'],
+'Paediatric surgery':['Oesophageal atresia and GI anomalies','Abdominal wall defects and diaphragmatic hernia','Hirschsprung disease and anorectal malformations','Biliary atresia and choledochal cyst','Paediatric tumours: Wilms, neuroblastoma','Paediatric urology'],
+'Plastic and reconstructive surgery':['Flaps and grafts','Hand injuries and tendon repair','Cleft lip and palate, craniofacial','Burn reconstruction','Microsurgery and free tissue transfer'],
+'Applied basic sciences and imaging':['Surgical anatomy: neck, abdomen, pelvis','Physiology of GI, endocrine and cardiac systems','Pathology of tumours and inflammation','Imaging choices: CT, MRI, ultrasound','Research methods and biostatistics']}},
+neetug:{n:'NEET UG',mock:200,t:{
+'Physics':['Mechanics and gravitation','Heat and thermodynamics','Waves and oscillations','Electrostatics and current electricity','Magnetism and electromagnetic induction','Optics','Modern physics and semiconductors'],
+'Chemistry':['Mole concept, equilibrium and kinetics','Thermodynamics and electrochemistry','Atomic structure and chemical bonding','Periodic table and p, d, f blocks','Organic: general principles and hydrocarbons','Organic: functional groups and biomolecules'],
+'Botany':['Cell structure and division','Plant morphology and anatomy','Plant physiology','Reproduction in plants','Genetics and molecular inheritance','Ecology and environment'],
+'Zoology':['Animal kingdom and structural organisation','Digestion, respiration and circulation','Excretion, locomotion and coordination','Human reproduction','Evolution and human health','Biotechnology']}},
+sscgl:{n:'SSC CGL',mock:60,t:{
+'Quantitative Aptitude':['Percentage, profit and loss','Ratio, time and work','Algebra and number system','Geometry and mensuration','Trigonometry','Data interpretation'],
+'Reasoning':['Analogies and classification','Series and coding-decoding','Blood relations and directions','Syllogism and Venn diagrams','Puzzles and seating arrangement','Non-verbal reasoning'],
+'English':['Grammar and error spotting','Vocabulary, synonyms and idioms','Reading comprehension','Cloze test and para jumbles'],
+'General Awareness':['History and culture','Geography and environment','Polity and economy','General science','Current affairs']}},
+upsc:{n:'UPSC CSE',mock:240,t:{
+'Polity':['Constitution and fundamental rights','Parliament and executive','Judiciary and federalism','Local government and governance','Constitutional bodies and amendments'],
+'History':['Ancient and medieval India','Modern India and freedom struggle','Art and culture','World history'],
+'Geography':['Physical geography','Indian geography','World and human geography','Climate and oceans'],
+'Economy':['Basic concepts and national income','Banking, money and inflation','Budget, taxation and fiscal policy','Agriculture and industry','External sector'],
+'Environment':['Ecology and biodiversity','Climate change and conventions','Environmental laws and conservation'],
+'Science & Tech':['Space, defence and nuclear','Biotechnology and health','IT, AI and emerging technology'],
+'Current Affairs':['Government schemes and policies','International relations','Reports, indices and summits'],
+'CSAT':['Comprehension','Logical reasoning','Basic numeracy and data interpretation']}}
+};
+Object.values(EX).forEach(e=>e.sub=Object.keys(e.t));

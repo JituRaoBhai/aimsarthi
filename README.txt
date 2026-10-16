@@ -1,17 +1,20 @@
 AimSarthi - free hosting on GitHub Pages (works from a phone)
 
-1. Extract this zip (Files by Google: tap the zip, then Extract).
-2. In Chrome open github.com and sign in, or create a free account.
-3. Create a new repository named aimsarthi and choose Public. (Free GitHub accounts can only publish Pages from public repositories.)
-4. Tap Add file, then Upload files. Select all the extracted files (README.txt is optional). Tap Commit changes.
-5. Open Settings, then Pages. Under Build and deployment choose Deploy from a branch, set Branch to main and Folder to / (root), then tap Save.
-6. Wait a few minutes. Your address will be https://YOUR-USERNAME.github.io/aimsarthi/
-7. Open it in Chrome on Android, tap the three-dot menu, then Install app (or Add to Home screen).
-8. Send the address to friends. They need no account.
+SET UP
+1. Extract this zip (Files by Google: tap it, then Extract).
+2. In Chrome open github.com and sign in. Create a Public repository named aimsarthi (free accounts need Public for Pages).
+3. Add file > Upload files. Select ALL extracted files and commit. (To update later, upload the changed files again.)
+4. Settings > Pages > Deploy from a branch > main > / (root) > Save. Wait a few minutes.
+5. Open https://YOUR-USERNAME.github.io/aimsarthi/ in Chrome, menu > Install app. Share the link with friends.
 
-Good to know
-- Each person's plan is saved only in the browser on their own phone. It does not sync between devices and is erased if browser data is cleared.
-- Your plan inside Claude does not carry over to this hosted copy.
-- If a menu is missing on your phone, turn on Chrome's Desktop site option.
-- To update later, upload a new index.html to the same repository and commit.
-- The code is public. It contains no keys or secrets.
+FILES (where to change things later)
+- exams.js       Add a course or topics: add an entry; t = { 'Subject': ['Topic', ...] }.
+- strategies.js  Add sourced topper strategies. Never add what you cannot cite. verified:true only after you checked the source.
+- reminders.js   Reminder rules (shared by the app and the service worker).
+- app.js         App logic and screens.   styles.css  Look and feel.
+- sw.js          Offline support and background reminders. manifest.json  Install details.
+After editing, upload the changed files and reopen the app twice to see the update.
+
+NOTES
+- Each person's plan is saved only in the browser on their own phone.
+- Reminders: allow notifications in Study reminders (Progress tab). Background reminders need Chrome on Android with the app installed; the browser picks the exact time.
