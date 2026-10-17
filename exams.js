@@ -28,188 +28,479 @@
    Effective topic priority = subjectPri × topicPri / 100.
 */
 const EX = {
-  neetpg: {
-    n: 'NEET PG',
-    mock: 210,
-    defMins: { b: 75, i: 55, a: 35 },
-    crunchMins: 45,
-    found: ['Anatomy','Physiology','Biochemistry'],
-    tier: {
-      'Anatomy':1,'Physiology':1,'Biochemistry':1,
-      'Pathology':2,'Pharmacology':2,'Microbiology':2,
-      'Forensic Medicine':2,'Community Medicine (PSM)':2,
-      'Medicine':3,'Surgery':3,'Obstetrics & Gynaecology':3,'Paediatrics':3,
-      'ENT':3,'Ophthalmology':3,'Orthopaedics':3,'Dermatology':3,
-      'Psychiatry':3,'Radiology':3,'Anaesthesia':3
-    },
-    crunch: {
-      30: {
-        'Medicine':22,'Pathology':16,'Surgery':14,'Pharmacology':12,
-        'Microbiology':8,'Obstetrics & Gynaecology':8,'Paediatrics':6,
-        'Community Medicine (PSM)':5,'Anatomy':2,'Physiology':2,'Biochemistry':2,
-        'Forensic Medicine':1,'Psychiatry':1,'Orthopaedics':1
-      },
-      60: {
-        'Medicine':18,'Pathology':14,'Surgery':12,'Pharmacology':10,
-        'Microbiology':8,'Obstetrics & Gynaecology':8,'Paediatrics':7,
-        'Community Medicine (PSM)':6,'Anatomy':4,'Physiology':4,'Biochemistry':3,
-        'Forensic Medicine':2,'ENT':2,'Ophthalmology':2,'Orthopaedics':3,
-        'Dermatology':2,'Psychiatry':2,'Radiology':1,'Anaesthesia':2
-      }
-    },
-    t: {
-      'Anatomy': {pri:65, topics:[
-        ['Upper and lower limb',70],
-        ['Thorax and abdomen',80],
-        ['Head, neck and neuroanatomy',85, 100, 75, 50],
-        ['Embryology',60],
-        ['Histology and genetics',55]
-      ]},
-      'Physiology': {pri:65, topics:[
-        ['General, nerve and muscle',60],
-        ['Cardiovascular and respiratory',80, 100, 75, 50],
-        ['Renal and GI',75],
-        ['Endocrine and reproduction',70],
-        ['Neurophysiology and special senses',65]
-      ]},
-      'Biochemistry': {pri:60, topics:[
-        ['Carbohydrate and lipid metabolism',75],
-        ['Amino acids and proteins',60],
-        ['Vitamins and minerals',55],
-        ['Molecular biology and genetics',70],
-        ['Enzymes and clinical biochemistry',60]
-      ]},
-      'Pathology': {pri:95, topics:[
-        ['Cell injury, inflammation and repair',85],
-        ['Haematology',90, 100, 75, 50],
-        ['Neoplasia',90],
-        ['Systemic: CVS, respiratory, GI',95, 120, 90, 60],
-        ['Systemic: renal, CNS, bone, endocrine',90],
-        ['Immunopathology',70]
-      ]},
-      'Pharmacology': {pri:90, topics:[
-        ['General pharmacology',75],
-        ['Autonomic and CNS drugs',80],
-        ['Cardiovascular and renal drugs',85],
-        ['Endocrine and GI drugs',70],
-        ['Antimicrobials and chemotherapy',85],
-        ['Toxicology and drug interactions',70]
-      ]},
-      'Microbiology': {pri:80, topics:[
-        ['General bacteriology and immunology',75],
-        ['Gram-positive and Gram-negative bacteria',80],
-        ['Virology',75],
-        ['Mycology and parasitology',65],
-        ['Sterilisation and hospital infection',60]
-      ]},
-      'Forensic Medicine': {pri:55, topics:[
-        ['Identification and autopsy',55],
-        ['Injuries and asphyxia',55],
-        ['Toxicology',60],
-        ['Medical law and ethics',55],
-        ['Sexual offences and forensic psychiatry',50]
-      ]},
-      'Community Medicine (PSM)': {pri:70, topics:[
-        ['Epidemiology and biostatistics',80],
-        ['Screening and communicable diseases',70],
-        ['Non-communicable diseases',65],
-        ['National health programmes',70],
-        ['Nutrition and environment',60],
-        ['Demography and family planning',60]
-      ]},
-      'Medicine': {pri:100, topics:[
-        ['Cardiology',100, 180, 120, 60],
-        ['Respiratory medicine',90, 120, 80, 45],
-        ['Gastroenterology and hepatology',85],
-        ['Nephrology and electrolytes',85],
-        ['Endocrinology',80],
-        ['Neurology',90, 120, 85, 50],
-        ['Haematology and oncology',80],
-        ['Infectious diseases and rheumatology',80]
-      ]},
-      'Surgery': {pri:95, topics:[
-        ['Trauma, burns and critical care',90],
-        ['GI and hepatobiliary surgery',90, 120, 85, 50],
-        ['Breast, thyroid and endocrine surgery',85],
-        ['Urology',75],
-        ['Vascular, cardiothoracic and neurosurgery',70],
-        ['Paediatric surgery and hernia',70],
-        ['Basic surgical principles',75]
-      ]},
-      'Obstetrics & Gynaecology': {pri:85, topics:[
-        ['Normal pregnancy and labour',85],
-        ['High-risk pregnancy',85, 100, 75, 50],
-        ['Obstetric complications and operations',80],
-        ['Gynaecological disorders',75],
-        ['Gynaecological oncology',75],
-        ['Contraception and infertility',70]
-      ]},
-      'Paediatrics': {pri:80, topics:[
-        ['Growth, development and nutrition',75],
-        ['Neonatology',80],
-        ['Immunisation',70],
-        ['Paediatric infections and respiratory',75],
-        ['Paediatric systemic diseases',75],
-        ['Genetics and emergencies',70]
-      ]},
-      'ENT': {pri:55, topics:[
-        ['Ear',65],['Nose and paranasal sinuses',60],
-        ['Pharynx and larynx',55],['Head and neck tumours',50]
-      ]},
-      'Ophthalmology': {pri:55, topics:[
-        ['Cornea, conjunctiva and lids',60],
-        ['Lens, glaucoma and uvea',65],
-        ['Retina and neuro-ophthalmology',65],
-        ['Optics and squint',55]
-      ]},
-      'Orthopaedics': {pri:60, topics:[
-        ['Fractures and dislocations',75],
-        ['Bone and joint infections',60],
-        ['Bone tumours',55],
-        ['Paediatric orthopaedics',55],
-        ['Nerve injuries and spine',60]
-      ]},
-      'Dermatology': {pri:50, topics:[
-        ['Infections and infestations',55],
-        ['Papulosquamous and vesiculobullous disorders',55],
-        ['Pigmentary disorders and leprosy',50],
-        ['Sexually transmitted infections',45]
-      ]},
-      'Psychiatry': {pri:55, topics:[
-        ['Psychotic and mood disorders',65],
-        ['Anxiety and personality disorders',55],
-        ['Substance use',50],
-        ['Child psychiatry and psychopharmacology',50]
-      ]},
-      'Radiology': {pri:50, topics:[
-        ['Radiation physics and safety',40],
-        ['Chest and abdominal imaging',55],
-        ['Neuro and musculoskeletal imaging',50],
-        ['Nuclear medicine and interventional radiology',45]
-      ]},
-      'Anaesthesia': {pri:55, topics:[
-        ['General anaesthesia and airway',65],
-        ['Local and regional anaesthesia',55],
-        ['Anaesthetic drugs',55],
-        ['Monitoring, ICU and CPR',60]
-      ]}
-    }
+  /*
+ * NEET (PG) — National Eligibility cum Entrance Test (Postgraduate)
+ * Conducting body: NBEMS | Syllabus authority: NMC — Graduate Medical Education Regulations (all 19 MBBS subjects)
+ * Paper pattern:
+ *   - 200 compulsory MCQs in 210 minutes (800 marks; +4 correct, -1 incorrect, 0 unattempted)
+ *   - Divided into 5 mandatory time-bound sections (Sections A–E: 40 questions and 42 minutes per section)
+ *   - Predominantly integrated clinical vignettes and multimodal image-based questions (IBQs)
+ * Syllabus decomposition:
+ *   - All 19 official MBBS subjects mapped across 3 pedagogical tiers (136 topics total)
+ *   - Updated for current Indian medico-legal frameworks (BNS/BNSS/BSA, MHCA 2017) and national health programmes
+ */
+neetpg: {
+  n: 'NEET (PG)',
+  mock: 210,
+  defMins: { b: 75, i: 55, a: 35 },
+  crunchMins: 45,
+  found: [
+    'Anatomy',
+    'Physiology',
+    'Biochemistry',
+  ],
+  tier: {
+    'Anatomy': 1,
+    'Physiology': 1,
+    'Biochemistry': 1,
+    'General Medicine': 2,
+    'General Surgery': 2,
+    'Obstetrics & Gynaecology': 2,
+    'Pathology': 2,
+    'Pharmacology': 2,
+    'Community Medicine': 2,
+    'Microbiology': 2,
+    'Paediatrics': 2,
+    'Ophthalmology': 3,
+    'ENT': 3,
+    'Forensic Medicine': 3,
+    'Orthopaedics': 3,
+    'Radiodiagnosis': 3,
+    'Dermatology': 3,
+    'Psychiatry': 3,
+    'Anaesthesiology': 3,
   },
+  crunch: {
+    // Concentrates 30-day prep on the 8 core para-clinical and major clinical subjects (~75% of paper weight), while 60-day prep touches all 19 subjects with reduced Tier-1 shares
+    30: {
+      'General Medicine': 20,
+      'General Surgery': 16,
+      'Obstetrics & Gynaecology': 16,
+      'Pathology': 13,
+      'Pharmacology': 11,
+      'Community Medicine': 9,
+      'Microbiology': 8,
+      'Paediatrics': 7,
+    },
+    60: {
+      'General Medicine': 14,
+      'General Surgery': 12,
+      'Obstetrics & Gynaecology': 12,
+      'Pathology': 9,
+      'Pharmacology': 8,
+      'Community Medicine': 7,
+      'Microbiology': 6,
+      'Paediatrics': 5,
+      'Anatomy': 4,
+      'Physiology': 4,
+      'Biochemistry': 4,
+      'Ophthalmology': 3,
+      'ENT': 3,
+      'Forensic Medicine': 2,
+      'Orthopaedics': 2,
+      'Radiodiagnosis': 2,
+      'Dermatology': 1,
+      'Psychiatry': 1,
+      'Anaesthesiology': 1,
+    },
+  },
+  t: {
+    'Anatomy': {
+      pri: 82,
+      topics: [
+        ['General Anatomy and General Embryology — Gametogenesis, Germ Layers, Pharyngeal Arches, Placenta and Teratology', 86],
+        ['General and Systemic Histology — Epithelium, Connective Tissue, Cartilage, Bone, Lymphoid and Organ Histology', 74],
+        ['Upper Limb — Brachial Plexus, Shoulder, Arm, Forearm, Hand Spaces and Peripheral Nerve Injuries', 88],
+        ['Thorax — Thoracic Wall, Mediastinum, Heart, Coronary Circulation, Lungs, Pleura and Diaphragm', 84],
+        ['Abdomen, Pelvis and Perineum — Peritoneum, Gut Blood Supply, Hepatobiliary System, Pelvic Floor and Perineal Pouches', 94, 120, 85, 50],
+        ['Lower Limb — Femoral Triangle, Gluteal Region, Thigh/Leg Compartments, Sciatic/Peroneal Nerves and Arches of Foot', 82],
+        ['Head and Neck — Cranial Nerves, Triangles of Neck, Thyroid, Larynx, Orbit, Parotid and Deep Cervical Fascia', 92],
+        ['Neuroanatomy — Brainstem, Cranial Nerve Nuclei, Cerebellum, Basal Ganglia, Internal Capsule, Ventricles and Tracts', 96],
+      ],
+    },
+    'Physiology': {
+      pri: 80,
+      topics: [
+        ['General and Cellular Physiology — Cell Membrane Transport, Intercellular Junctions, Resting and Action Potentials', 85],
+        ['Nerve and Muscle Physiology — Neuromuscular Junction, Excitation-Contraction Coupling and Skeletal/Smooth Muscle Mechanics', 84],
+        ['Cardiovascular Physiology — Cardiac Cycle, Conducting System, Haemodynamics, Cardiac Output and BP Regulation', 94],
+        ['Respiratory Physiology — Mechanics of Breathing, Compliance, Surfactant, V/Q Ratio, Gas Transport and Regulation', 92],
+        ['Renal and Acid-Base Physiology — Clearance, GFR, Tubular Transport, Countercurrent Multiplier and Acid-Base Balance', 90],
+        ['Gastrointestinal Physiology — GI Motility, Slow Waves, GI Hormones, Hepatobiliary Secretion and Digestion/Absorption', 78],
+        ['Endocrine and Reproductive Physiology — Hypothalamic-Pituitary Axis, Thyroid, Adrenal, Pancreas, Calcium and Reproductive Cycles', 88],
+        ['Central Nervous System and Special Senses — Synaptic Transmission, Somatosensory/Motor Tracts, Cerebellum, Sleep and Vision/Audition', 86],
+      ],
+    },
+    'Biochemistry': {
+      pri: 75,
+      topics: [
+        ['Enzymology and Bioenergetics — Enzyme Kinetics, Inhibition, Allosteric Regulation, Electron Transport Chain and Oxidative Phosphorylation', 90],
+        ['Carbohydrate Chemistry and Metabolism — Glycolysis, TCA Cycle, Gluconeogenesis, HMP Shunt, Glycogen Metabolism and GSDs', 94],
+        ['Lipid Chemistry and Metabolism — Fatty Acid Synthesis/Oxidation, Ketogenesis, Cholesterol, Lipoproteins and Dyslipidaemias', 88],
+        ['Amino Acid and Protein Metabolism — Urea Cycle, Inborn Errors of Amino Acid Metabolism, One-Carbon Metabolism and Heme Porphyrias', 92],
+        ['Nucleotide Metabolism and Molecular Biology — Purine/Pyrimidine Disorders, DNA Replication, Repair, Transcription, Translation and PCR', 96],
+        ['Vitamins, Minerals and Clinical Nutrition — Fat- and Water-Soluble Vitamins, Trace Elements and Deficiency Syndromes', 90],
+        ['Extracellular Matrix and Cancer Biochemistry — Collagen/Elastin Disorders, Free Radicals, Xenobiotics and Tumour Markers', 72],
+      ],
+    },
+    'Pathology': {
+      pri: 91,
+      topics: [
+        ['Cell Injury, Cellular Adaptations and Intracellular Accumulations — Reversible/Irreversible Injury, Necrosis, Apoptosis and Calcification', 94],
+        ['Inflammation, Tissue Repair and Haemodynamic Disorders — Chemical Mediators, Granulomas, Wound Healing, Thrombosis, Embolism and Shock', 92],
+        ['Genetics and Immunopathology — Mendelian/Cytogenetic Disorders, Hypersensitivity Reactions, Autoimmunity, Transplant Rejection and Amyloidosis', 95],
+        ['Neoplasia — Hallmarks of Cancer, Oncogenes, Tumour Suppressor Genes, Carcinogenesis, Paraneoplastic Syndromes and Lab Diagnosis', 98],
+        ['Haematopathology — Microcytic/Macrocytic/Haemolytic Anaemias, Leukaemias, Lymphomas, Myeloma, Coagulation and Transfusion Medicine', 96, 150, 105, 55],
+        ['Cardiovascular and Respiratory Pathology — Atherosclerosis, Vasculitis, Infective Endocarditis, Rheumatic Heart Disease, Pneumoconiosis and Lung Tumours', 86],
+        ['Gastrointestinal, Hepatobiliary and Renal Pathology — Peptic Ulcer, IBD, GI Polyps, Cirrhosis, Glomerulonephritis and Renal Tumours', 90],
+        ['Endocrine, Breast, Reproductive and Musculoskeletal Pathology — Thyroid/Breast Carcinoma, Germ Cell Tumours and Bone/CNS Tumours', 88],
+      ],
+    },
+    'Pharmacology': {
+      pri: 89,
+      topics: [
+        ['General Pharmacology — Pharmacokinetics, Pharmacodynamics, Dose-Response Curves, Cyp450 Interactions, Clinical Trials and TDM', 95],
+        ['Autonomic Nervous System — Cholinergic Agonists/Antagonists, Adrenergic Agonists, Alpha/Beta Blockers and Glaucoma Pharmacology', 92],
+        ['Cardiovascular and Renal Pharmacology — Antihypertensives, Antianginals, Heart Failure Drugs, Antiarrhythmics, Dyslipidaemics and Diuretics', 94],
+        ['Central Nervous System Pharmacology — Sedative-Hypnotics, Antiepileptics, Antiparkinsonian, Antipsychotics, Antidepressants and Opioids', 90],
+        ['Autacoids, Respiratory and GI Pharmacology — Prostaglandins, NSAIDs, Gout, DMARDs, Bronchodilators, Peptic Ulcer and Antiemetics', 84],
+        ['Endocrine Pharmacology — Insulins, Oral Antidiabetics, Corticosteroids, Thyroid/Antithyroid, Sex Hormones, Contraceptives and Osteoporosis Drugs', 88],
+        ['Antimicrobial Therapy — Beta-Lactams, Aminoglycosides, Macrolides, Antitubercular, Antileprotic, Antiviral, Antifungal and Antiprotozoal Drugs', 96, 135, 95, 55],
+        ['Haematological Pharmacology — Anticoagulants, Antiplatelets, Fibrinolytics, Antifibrinolytics and Haematinics', 86],
+        ['Anticancer Drugs, Immunosuppressants and Toxicology — Cytotoxic Chemotherapy, Targeted Biologics, Monoclonal Antibodies and Chelating Agents', 88],
+      ],
+    },
+    'Microbiology': {
+      pri: 84,
+      topics: [
+        ['General Microbiology and Sterilisation — Bacterial Morphology, Staining Techniques, Culture Media, Disinfection, Sterilisation and Bacterial Genetics', 90],
+        ['Immunology — Innate/Adaptive Immunity, Antigens, Antibodies, Complement System, MHC, Cytokines, Agglutination/ELISA and Immunodeficiencies', 94],
+        ['Systemic Bacteriology — Staphylococci, Streptococci, Corynebacterium, Clostridium, Enterobacteriaceae, Vibrio, Pseudomonas, Mycobacteria and Spirochaetes', 96, 130, 90, 50],
+        ['Virology — General Properties, Herpesviruses, Hepatitis Viruses, HIV, Arboviruses, Rabies, Influenza and Viral Vaccines', 92],
+        ['Mycology — Superficial, Cutaneous, Subcutaneous, Systemic and Opportunistic Mycoses and Laboratory Fungal Diagnostics', 84],
+        ['Parasitology — Intestinal/Free-Living Amoebae, Flagellates, Malaria, Babesia, Toxoplasma, Leishmania, Cestodes, Trematodes and Nematodes', 86],
+        ['Clinical and Applied Microbiology — Syndrome-Based Bloodstream/CNS/UTI/GI Infections, Nosocomial Surveillance and Antimicrobial Stewardship', 80],
+      ],
+    },
+    'Community Medicine': {
+      pri: 86,
+      topics: [
+        ['Concept of Health, Disease and Prevention — Natural History of Disease, Levels of Prevention, Iceberg Phenomenon and Morbidity/Mortality Indicators', 86],
+        ['Epidemiology and Screening — Observational and Experimental Study Designs, Odds Ratio, Relative Risk, Bias, Confounding and Screening Validity', 98],
+        ['Biostatistics — Measures of Central Tendency and Dispersion, Normal Distribution, Sampling Methods, Hypothesis Testing, P-Value and Correlation', 94],
+        ['Communicable and Non-Communicable Diseases — Epidemiology and National Health Programmes for TB (NTEP), Vector-Borne Diseases, HIV (NACP) and NCDs', 92],
+        ['Reproductive, Maternal and Child Health — RMNCH+A Strategy, Maternal/Infant Mortality, Contraceptive Methods and National Immunisation Schedule', 96],
+        ['Demography, Nutrition and Environment — Demographic Cycle, Fertility Indicators, Macronutrients/Micronutrients, Food Adulteration, Water Quality and Air Pollution', 85],
+        ['Health Planning, Management and Healthcare Delivery — Primary Health Care, Three-Tier Rural System, Ayushman Bharat, Health Committees and Planning Cycle', 84],
+        ['Occupational Health, International Health and Biomedical Waste Management — Pneumoconiosis, ESI/Factory Acts, Disaster Triage, WHO and BMW Rules', 82],
+      ],
+    },
+    'General Medicine': {
+      pri: 98,
+      topics: [
+        ['Cardiovascular System — ECG Interpretation, Heart Failure, Valvular Heart Disease, Acute Coronary Syndromes, Arrhythmias and Cardiomyopathies', 98, 180, 120, 60],
+        ['Respiratory Medicine — Spirometry, Bronchial Asthma, COPD, Pneumonia, Pleural Effusion, Interstitial Lung Disease, Sarcoidosis and Pulmonary Embolism', 94, 135, 95, 55],
+        ['Nephrology, Fluid-Electrolyte and Acid-Base Disorders — Sodium/Potassium/Calcium Imbalances, ABG Interpretation, AKI, CKD, RRT and Glomerulonephritis', 96, 135, 95, 55],
+        ['Central Nervous System — Ischaemic/Haemorrhagic Stroke, Epilepsy, Movement Disorders, Multiple Sclerosis, Neuromuscular Junction Disorders and CNS Infections', 95, 150, 105, 55],
+        ['Endocrinology and Metabolic Disorders — Diabetes Mellitus, DKA/HHS, Thyroid Disorders, Cushing/Addison Disease, Phaeochromocytoma and Pituitary/Parathyroid Disorders', 94, 135, 95, 55],
+        ['Gastroenterology and Hepatology — Upper/Lower GI Bleed, Malabsorption, Inflammatory Bowel Disease, Viral/Autoimmune Hepatitis, Cirrhosis and Portal Hypertension', 90],
+        ['Clinical Haematology and Medical Oncology — Clinical Approach to Anaemias, Bleeding/Thrombotic Disorders, Leukaemias, Lymphomas and Oncologic Emergencies', 88],
+        ['Rheumatology and Connective Tissue Disorders — Rheumatoid Arthritis, SLE, Seronegative Spondyloarthropathies, Systemic Sclerosis, Crystal Arthropathies and Vasculitis', 92],
+        ['Infectious Diseases and Tropical Medicine — Approach to PUO, Sepsis, Malaria, Dengue, Scrub Typhus, Leptospirosis, Enteric Fever and HIV Opportunistic Infections', 86],
+        ['Emergency and Critical Care Medicine — Shock Classification, Mechanical Ventilation Waveforms, Acute Poisoning/Toxidromes and Heat/Cold Emergencies', 82],
+      ],
+    },
+    'General Surgery': {
+      pri: 95,
+      topics: [
+        ['General Surgical Principles — Metabolic Response to Injury, Wound Healing, ASEPSIS/SSI, Perioperative Fluids, Shock, Burns, Sutures and Energy Devices', 92],
+        ['Trauma and Critical Care — ATLS Primary and Secondary Survey, Glasgow Coma Scale, Thoracic Trauma, Abdominal Trauma (eFAST, Splenic/Liver Injury) and Triage', 96],
+        ['Endocrine and Breast Surgery — Benign Breast Disorders, Carcinoma Breast Staging/Management, Solitary Thyroid Nodule, Thyroid Carcinoma and Parathyroid/Adrenal Tumours', 96],
+        ['Upper Gastrointestinal Surgery — Oesophageal Motility Disorders, GERD, Carcinoma Oesophagus, Peptic Ulcer Complications, Gastric Carcinoma and Bariatric Surgery', 88],
+        ['Hepatobiliary and Pancreatic Surgery — Gallstones, Acute Cholecystitis, Bile Duct Injuries, Obstructive Jaundice, Hydatid Cyst, Acute Pancreatitis and Pancreatic Neoplasms', 96, 150, 105, 55],
+        ['Small and Large Intestine, Appendix, Rectum and Anal Canal — Intestinal Obstruction, Mesenteric Ischaemia, Appendicitis, GI Stomas, Colorectal Cancer and Anorectal Disorders', 94, 135, 95, 55],
+        ['Hernias, Abdominal Wall and Peritoneum — Inguinal, Femoral, Umbilical and Incisional Hernias, Laparoscopic Anatomical Landmarks and Retroperitoneal Fibrosis/Sarcomas', 88],
+        ['Urology — Renal Calculi, Hydronephrosis, Genitourinary TB, Benign Prostatic Hyperplasia, Renal/Bladder/Prostate/Testicular Cancers and Urethral Trauma', 90],
+        ['Vascular, Cardiothoracic, Plastic and Paediatric Surgery — Peripheral Arterial Disease, Varicose Veins, DVT, Skin Grafts/Flaps, Cleft Lip/Palate and Paediatric Surgical Emergencies', 82],
+      ],
+    },
+    'Obstetrics & Gynaecology': {
+      pri: 94,
+      topics: [
+        ['Reproductive Basics and Antenatal Care — Gametogenesis, Placentation, Maternal Physiological Adaptations, Antenatal Screening, Teratogens and Fetal Surveillance', 88],
+        ['Early Pregnancy Complications — Spontaneous/Recurrent Miscarriage, MTP Act, Ectopic Pregnancy and Gestational Trophoblastic Disease', 94],
+        ['Medical and Obstetrical Complications in Pregnancy — Preeclampsia/Eclampsia, Gestational Diabetes, Anaemia, Heart Disease, Rh Isoimmunisation and Multifetal Pregnancy', 96],
+        ['Antepartum Haemorrhage and Amniotic Fluid Disorders — Placenta Praevia, Abruptio Placentae, Vasa Praevia, Fetal Growth Restriction and Oligo/Polyhydramnios', 92],
+        ['Intrapartum and Postpartum Obstetrics — Maternal Pelvis, Mechanism of Normal Labour, Partograph, Malpresentations, Instrumental/Caesarean Delivery and Postpartum Haemorrhage', 96, 135, 95, 55],
+        ['General Gynaecology and Pelvic Infections — Normal Menstrual Cycle, Abnormal Uterine Bleeding (PALM-COEIN), Vaginal Discharge, Pelvic Inflammatory Disease and Female Genital TB', 88],
+        ['Reproductive Endocrinology, Infertility and Contraception — Disorders of Sexual Differentiation, Puberty, PCOS, Primary/Secondary Amenorrhoea, Infertility Workup/ART and Contraception', 96],
+        ['Benign Gynaecological Conditions and Urogynaecology — Uterine Fibroids, Endometriosis, Adenomyosis, Benign Ovarian Cysts, Pelvic Organ Prolapse and Genitourinary Fistula', 90],
+        ['Gynaecological Oncology — Cervical Cancer Screening, CIN, Carcinoma Cervix, Endometrial Carcinoma, Ovarian Malignancies and Vulvar Cancer', 94],
+      ],
+    },
+    'Paediatrics': {
+      pri: 77,
+      topics: [
+        ['Normal Growth, Development and Behavioural Paediatrics — Anthropometry, WHO Growth Charts, Short Stature, Developmental Milestones and Autism/ADHD', 94],
+        ['Paediatric Nutrition and Micronutrient Deficiencies — Breastfeeding, Infant Milk Substitutes, Severe Acute Malnutrition Management, Vitamin Deficiencies and Rickets', 90],
+        ['Neonatology — Neonatal Resuscitation (NRP Algorithm), Thermoregulation, Respiratory Distress Syndrome, Neonatal Jaundice, Sepsis, Hypoglycaemia and Neonatal Seizures', 96],
+        ['Paediatric Infectious Diseases and Immunisation — Exanthematous Fevers, Diphtheria, Pertussis, Childhood Tuberculosis, HIV in Children and National/IAP Immunisation', 86],
+        ['Paediatric Cardiology and Pulmonology — Fetal Circulation, Acyanotic/Cyanotic Congenital Heart Diseases, Acute Rheumatic Fever, Kawasaki Disease, Croup and Bronchiolitis', 92],
+        ['Paediatric Nephrology, GI and Haematology — Nephrotic Syndrome, Acute Post-Streptococcal Glomerulonephritis, HUS, Acute Diarrhoea (IMNCI Plans A/B/C), Celiac Disease and Thalassemia', 88],
+        ['Paediatric Neurology, Genetics and Inborn Errors — Febrile Seizures, Childhood Epilepsy Syndromes, Hydrocephalus, Down/Turner/Klinefelter Syndromes and Storage Disorders', 82],
+      ],
+    },
+    'Ophthalmology': {
+      pri: 70,
+      topics: [
+        ['Clinical Optics and Refraction — Emmetropia, Myopia, Hypermetropia, Astigmatism, Aphakia, Presbyopia, Retinoscopy and Refractive Surgeries', 85],
+        ['Conjunctiva, Cornea and Sclera — Allergic/Infective Conjunctivitis, Trachoma, Vitamin A Deficiency, Bacterial/Viral/Fungal/Acanthamoeba Keratitis and Keratoconus', 92],
+        ['Uvea and Lens — Classification of Uveitis, Systemic Associations, Endophthalmitis, Congenital/Developmental/Senile Cataract, Phacoemulsification and IOL Power/Complications', 94],
+        ['Glaucoma — Aqueous Humour Outflow, Tonometry/Gonioscopy, Congenital Glaucoma, Primary Open-Angle and Angle-Closure Glaucoma and Secondary Glaucomas', 92],
+        ['Retina and Vitreous — Diabetic Retinopathy, Hypertensive Retinopathy, Retinal Detachment, CRAO/CRVO, Retinopathy of Prematurity, Retinoblastoma and ARMD', 90],
+        ['Neuro-Ophthalmology and Strabismus — Visual Pathway Lesions, Pupillary Reflex Abnormalities (RAPD, Argyll Robertson, Adie), Optic Neuritis, Papilloedema and Paralytic/Concomitant Squint', 95],
+        ['Orbit, Ocular Adnexa, Trauma and Community Ophthalmology — Ptosis, Entropion/Ectropion, Dacryocystitis, Thyroid Eye Disease, Blunt/Chemical Ocular Injuries and NPCBVI', 78],
+      ],
+    },
+    'ENT': {
+      pri: 68,
+      topics: [
+        ['Ear: Anatomy, Physiology and Audiology — External/Middle/Inner Ear Anatomy, Physiology of Hearing/Vestibular System, Tuning Fork Tests, Pure Tone/Impedance Audiometry and BERA/OAE', 90],
+        ['Diseases of the Ear and Facial Nerve — Otitis Externa, ASOM, Serous Otitis Media, CSOM (Tubotympanic/Atticoantral and Complications), Otosclerosis, Meniere Disease, Acoustic Neuroma and Facial Nerve Palsy', 96],
+        ['Nose and Paranasal Sinuses — Nasal Septum Disorders, Epistaxis, Allergic/Vasomotor/Fungal Rhinitis, Acute/Chronic Rhinosinusitis, Antrochoanal/Ethmoidal Polyps and Juvenile Nasopharyngeal Angiofibroma', 88],
+        ['Pharynx and Oral Cavity — Waldeyer Ring, Adenoid Hypertrophy, Acute/Chronic Tonsillitis, Post-Tonsillectomy Bleed, Peritonsillar/Parapharyngeal/Retropharyngeal Abscesses and Nasopharyngeal Carcinoma', 86],
+        ['Larynx and Tracheobronchial Tree — Laryngeal Cartilages/Membranes, Congenital Stridor, Acute Epiglottitis, Croup, Vocal Cord Paralysis, Recurrent Respiratory Papillomatosis, Carcinoma Larynx and Tracheostomy', 94],
+        ['Salivary Glands, Oesophagus and Recent Advances — Sialadenitis, Salivary Gland Neoplasms, Dysphagia, Plummer-Vinson Syndrome, Foreign Bodies in Air/Food Passage and Cochlear Implants', 78],
+      ],
+    },
+    'Forensic Medicine': {
+      pri: 65,
+      topics: [
+        ['Legal Procedures, Medical Law and Ethics — Inquest Types, Courts of Law, Dying Declaration, Medical Evidence, BNS/BNSS/BSA Sections, Professional Negligence and NMC Ethics Regulations', 84],
+        ['Personal Identification and Thanatology — Race/Sex/Age Estimation, Odontology, Dactylography, Autopsy Techniques, Immediate/Early/Late Postmortem Changes and Time Since Death', 92],
+        ['Mechanical Injuries, Regional Trauma and Ballistics — Abrasions, Contusions, Lacerations, Incised/Stab Wounds, Firearm Wound Ballistics, Skull Fractures and Intracranial Haemorrhages', 94],
+        ['Asphyxial Deaths and Thermal/Electrical Injuries — Hanging, Ligature/Manual Strangulation, Smothering, Choking, Café Coronary, Drowning, Burns, Scalds, Pugilistic Attitude and Lightning', 90],
+        ['Forensic Psychiatry, Sexual Jurisprudence and Infant Deaths — Delusions/Hallucinations, McNaughten Rule, Sexual Offences, Seminal Stains, Criminal Abortion and Hydrostatic Test in Infanticide', 80],
+        ['General and Systemic Toxicology — Gastric Lavage, Corrosives, Organophosphates/Carbamates, Heavy Metals (Arsenic, Lead, Mercury, Thallium), Deliriant/Cardiac Plant Poisons, Alcohol and Snakebite', 96],
+      ],
+    },
+    'Orthopaedics': {
+      pri: 58,
+      topics: [
+        ['General Orthopaedics and Fracture Healing — Bone Structure, Fracture Healing Stages, Gustilo-Anderson Open Fractures, Compartment Syndrome, Fat Embolism, Myositis Ossificans and Non-Union', 92],
+        ['Upper Limb Traumatology — Clavicle, Anterior/Posterior Shoulder Dislocation, Supracondylar Humerus, Elbow Dislocation, Monteggia/Galeazzi, Colles/Smith/Barton and Scaphoid Fractures', 94],
+        ['Lower Limb, Pelvis and Spine Traumatology — Pelvic Fractures, Hip Dislocations, Neck of Femur, Intertrochanteric, Shaft Femur, Knee Ligament/Meniscal Injuries, Tibial Plateau/Pilon and Spine Trauma', 90],
+        ['Peripheral Nerve Injuries and Brachial Plexus — Seddon/Sunderland Classification, Erb/Klumpke Palsy, Radial, Median, Ulnar, Sciatic and Common Peroneal Nerve Injuries and Splints', 95],
+        ['Bone and Joint Infections, Arthritis and Metabolic Bone Diseases — Acute/Chronic Osteomyelitis, Brodie Abscess, Septic Arthritis, Pott Spine, Osteoarthritis, Rickets, Osteomalacia, Scurvy and Paget Disease', 88],
+        ['Bone Tumours and Paediatric Orthopaedics — Osteoid Osteoma, Osteochondroma, Giant Cell Tumour, Osteosarcoma, Ewing Sarcoma, Chondrosarcoma, DDH, CTEV, Perthes Disease and SCFE', 92],
+      ],
+    },
+    'Radiodiagnosis': {
+      pri: 56,
+      topics: [
+        ['Radiation Physics, Contrast Media and Radiation Safety — X-Ray Tube, CT Hounsfield Units, MRI Sequences, Doppler USG, Contrast Nephropathy/Reactions, AERB Guidelines and TLD/Dosimetry', 84],
+        ['Chest and Cardiovascular Imaging — Silhouette Sign, Air Bronchogram, Pneumothorax, Pleural Effusion, Cavitary/Interstitial Lung Lesions, Mediastinal Masses and Classic Cardiac Contours', 95],
+        ['Neuroimaging and Head/Neck Radiology — Non-Contrast CT in EDH/SDH/SAH/Stroke, MRI Diffusion-Weighted Imaging, Brain Tumours, Ring-Enhancing Lesions and Classic Skull Radiographs', 94],
+        ['Gastrointestinal and Hepatobiliary Imaging — Barium Swallow/Meal/Follow-Through/Enema Appearances, Pneumoperitoneum Signs, Small/Large Bowel Obstruction, Volvulus and Hepatobiliary USG/CT', 92],
+        ['Genitourinary, Obstetrics and Musculoskeletal Imaging — IVU Signs, Renal Calculi/Masses, Hysterosalpingography, Early Pregnancy/Anomaly USG and Classic Metabolic/Neoplastic Bone X-Rays', 88],
+        ['Radiotherapy and Nuclear Medicine — Particulate/Electromagnetic Radiations, Linear Energy Transfer, Radiosensitivity, Brachytherapy/Teletherapy and PET-CT/Radionuclide Scans (Tc-99m, I-131, MIBG)', 82],
+      ],
+    },
+    'Dermatology': {
+      pri: 52,
+      topics: [
+        ['Basics of Dermatology and Cutaneous Infections — Epidermal Layers, Primary/Secondary Lesions, Bedside Tests (Tzanck, KOH, Wood Lamp), Impetigo, Dermatophytosis, Viral Warts/Molluscum and Scabies', 92],
+        ['Mycobacterial Cutaneous Diseases — Leprosy (Ridley-Jopling Classification, Cardinal Signs, Type 1 and Type 2 Lepra Reactions, WHO MDT) and Cutaneous Tuberculosis (Lupus Vulgaris, Scrofuloderma)', 95],
+        ['Papulosquamous, Eczematous and Pigmentary Disorders — Psoriasis, Lichen Planus, Pityriasis Rosea, Erythroderma, Allergic/Irritant Contact Dermatitis, Atopic Dermatitis, Vitiligo and Melasma', 90],
+        ['Vesiculobullous, Appendageal and Connective Tissue Skin Disorders — Pemphigus Vulgaris/Foliaceus, Bullous Pemphigoid, Dermatitis Herpetiformis, Acne Vulgaris, Rosacea, Alopecia Areata and Cutaneous Lupus/Dermatomyositis', 94],
+        ['Sexually Transmitted Infections, Genodermatoses and Drug Reactions — Syndromic STI Management, Chancre, Chancroid, LGV, Donovanosis, Neurofibromatosis, Tuberous Sclerosis and SJS/TEN/DRESS', 90],
+      ],
+    },
+    'Psychiatry': {
+      pri: 48,
+      topics: [
+        ['Descriptive Psychopathology and Schizophrenia Spectrum — Disorders of Perception, Thought, Motor Behaviour (Catatonia) and Affect, Schizophrenia Diagnostic Criteria, Delusional Disorder and Clozapine/Antipsychotics', 94],
+        ['Mood, Anxiety and Stress-Related Disorders — Major Depressive Episode, Bipolar I/II Disorder, Suicide Risk, Lithium Monitoring, Panic Disorder, Phobias, OCD, PTSD and ECT/CBT', 95],
+        ['Substance Use Disorders — Alcohol Withdrawal, Wernicke-Korsakoff Syndrome, Delirium Tremens, Opioid/Cannabis/Cocaine Intoxication and Withdrawal and Anticraving Pharmacotherapy', 92],
+        ['Somatoform, Dissociative, Eating, Sleep and Personality Disorders — Somatic Symptom/Conversion Disorder, Anorexia and Bulimia Nervosa, Sleep Architecture/Parasomnias, Sexual Dysfunctions and Cluster A/B/C Personalities', 82, 50, 35, 20],
+        ['Child Psychiatry, Neurocognitive Disorders and Forensic Psychiatry — Autism Spectrum Disorder, ADHD, Rett Syndrome, Delirium vs Dementia, Alzheimer Disease and Mental Healthcare Act 2017', 86],
+      ],
+    },
+    'Anaesthesiology': {
+      pri: 45,
+      topics: [
+        ['Preoperative Evaluation, Airway Management and Breathing Circuits — ASA Physical Status, Mallampati/Cormack-Lehane Grading, Endotracheal Tubes, LMA, Capnography Waveforms and Mapleson Systems', 95],
+        ['Anaesthesia Machine, Medical Gas Cylinders and Intraoperative Monitoring — Pin Index Safety System, Cylinder Colour Coding, Flowmeters, Vaporisers, CO2 Absorbers, Pulse Oximetry and Train-of-Four Monitoring', 92],
+        ['Inhalational and Intravenous Anaesthetics — Minimum Alveolar Concentration, Blood-Gas Partition Coefficient, Nitrous Oxide, Sevoflurane, Desflurane, Isoflurane, Propofol, Ketamine, Etomidate and Thiopentone', 96],
+        ['Neuromuscular Blockers and Regional Anaesthesia — Succinylcholine, Malignant Hyperthermia, Non-Depolarising Blockers, Sugammadex/Neostigmine, Local Anaesthetic Systemic Toxicity and Spinal vs Epidural Block', 94],
+        ['Cardiopulmonary Resuscitation, Oxygen Therapy and Perioperative Fluids — Adult/Paediatric BLS and ACLS Algorithms, Defibrillation, Oxygen Delivery Devices, Crystalloids/Colloids and Brain Death Criteria', 90, 50, 35, 20],
+      ],
+    },
+  },
+},
 
-  neetss:{n:'NEET SS (Surgical)',mock:180,t:{
-    'Perioperative and critical care':['Fluids, electrolytes and acid-base','Shock and resuscitation','Surgical nutrition','Sepsis, SIRS and organ failure','Transfusion, coagulation and thromboprophylaxis','Antibiotics and surgical site infection'],
-    'Trauma, burns and wounds':['Polytrauma and ATLS principles','Head, chest and abdominal trauma','Burns resuscitation and care','Wound healing, grafts and scars','Diabetic foot and pressure ulcers'],
-    'Surgical gastroenterology':['Oesophagus: achalasia, GERD, carcinoma','Stomach and duodenum, bariatric surgery','Small bowel, appendix and obstruction','Colorectal: IBD, polyps, carcinoma','Anorectal disorders and fistulas','Hernias and abdominal wall'],
-    'HPB and transplant surgery':['Liver: abscess, cysts, tumours','Portal hypertension and liver failure','Biliary stones, strictures and cholangiocarcinoma','Pancreatitis and pseudocyst','Pancreatic and periampullary tumours','Transplantation basics'],
-    'Surgical oncology':['Cancer biology, staging and screening','Head and neck cancers','Breast cancer','Sarcoma, skin cancer and melanoma','Chemo-radiotherapy and targeted therapy basics','Oncologic emergencies and palliative care'],
-    'Endocrine surgery':['Thyroid nodules and carcinoma','Parathyroid and calcium disorders','Adrenal tumours and phaeochromocytoma','MEN syndromes and neuroendocrine tumours'],
-    'Urology':['Urolithiasis','BPH and prostate carcinoma','Bladder and renal tumours','Urinary infection and obstruction','Strictures, hypospadias and reflux','Renal transplantation and trauma'],
-    'Cardiothoracic and vascular surgery':['Valvular heart disease','Coronary artery disease and CABG','Congenital heart disease','Aortic disease and dissection','Peripheral arterial and venous disease','Lung cancer and thoracic surgery','Cardiopulmonary bypass'],
-    'Neurosurgery':['Head injury and raised ICP','Brain tumours','Spine: degenerative and trauma','Aneurysm, SAH and AVM','Hydrocephalus and paediatric neurosurgery','Functional and peripheral nerve surgery'],
-    'Paediatric surgery':['Oesophageal atresia and GI anomalies','Abdominal wall defects and diaphragmatic hernia','Hirschsprung disease and anorectal malformations','Biliary atresia and choledochal cyst','Paediatric tumours: Wilms, neuroblastoma','Paediatric urology'],
-    'Plastic and reconstructive surgery':['Flaps and grafts','Hand injuries and tendon repair','Cleft lip and palate, craniofacial','Burn reconstruction','Microsurgery and free tissue transfer'],
-    'Applied basic sciences and imaging':['Surgical anatomy: neck, abdomen, pelvis','Physiology of GI, endocrine and cardiac systems','Pathology of tumours and inflammation','Imaging choices: CT, MRI, ultrasound','Research methods and biostatistics']}},
-
+  /*
+ * NEET SS (Surgical Group / MCh) — National Eligibility cum Entrance Test (Super Speciality)
+ * Conducting body: NBEMS | Syllabus authority: NMC / MCh Exit Level Curricula for the Surgical Group
+ * Paper pattern:
+ *   - 150 compulsory MCQs in 150 minutes (600 marks; +4 correct, -1 incorrect, 0 unattempted)
+ *   - Divided into 3 time-bound sections of 50 questions and 50 minutes each (Section transitions are locked)
+ *   - Combines broad-speciality feeder knowledge (MS General Surgery) with super-speciality surgical sciences
+ * Syllabus decomposition:
+ *   - Covers foundational surgical principles, trauma, operative oncology, vascular, transplant, and specialized MCh disciplines (Urology, Neurosurgery, CTVS, Surgical Gastroenterology, Plastic Surgery, Pediatric Surgery, Surgical Oncology)
+ */
+neetss: {
+  n: 'NEET SS (Surgical Group / MCh)',
+  mock: 150,
+  defMins: { b: 75, i: 55, a: 35 },
+  crunchMins: 60,
+  found: [
+    'Surgical Anatomy & Applied Physiology',
+    'General Surgery & Critical Care Foundation',
+    'Surgical Pathology & Oncologic Principles',
+  ],
+  tier: {
+    'Surgical Anatomy & Applied Physiology': 1,
+    'General Surgery & Critical Care Foundation': 1,
+    'Surgical Pathology & Oncologic Principles': 1,
+    'Trauma & Emergency Surgery': 2,
+    'Gastrointestinal & Hepato-Pancreato-Biliary Surgery': 2,
+    'Urology & Renal Transplantation': 2,
+    'Cardiothoracic & Vascular Surgery': 2,
+    'Neurosurgery Principles': 3,
+    'Plastic, Reconstructive & Hand Surgery': 3,
+    'Paediatric Surgery & Neonatal Anomalies': 3,
+    'Surgical Oncology & Endocrine Surgery': 3,
+  },
+  crunch: {
+    // Concentrates 30-day prep on high-yield core sub-specialties (GI/HPB, Urology, CTVS, Trauma) accounting for the bulk of MCh exam weight, while 60-day prep includes all foundational and specialized branches
+    30: {
+      'Gastrointestinal & Hepato-Pancreato-Biliary Surgery': 22,
+      'Urology & Renal Transplantation': 20,
+      'Cardiothoracic & Vascular Surgery': 18,
+      'Trauma & Emergency Surgery': 15,
+      'Surgical Pathology & Oncologic Principles': 14,
+      'General Surgery & Critical Care Foundation': 11,
+    },
+    60: {
+      'Gastrointestinal & Hepato-Pancreato-Biliary Surgery': 16,
+      'Urology & Renal Transplantation': 14,
+      'Cardiothoracic & Vascular Surgery': 14,
+      'Trauma & Emergency Surgery': 11,
+      'Surgical Pathology & Oncologic Principles': 10,
+      'General Surgery & Critical Care Foundation': 9,
+      'Surgical Anatomy & Applied Physiology': 7,
+      'Neurosurgery Principles': 6,
+      'Plastic, Reconstructive & Hand Surgery': 5,
+      'Paediatric Surgery & Neonatal Anomalies': 4,
+      'Surgical Oncology & Endocrine Surgery': 4,
+    },
+  },
+  t: {
+    'Surgical Anatomy & Applied Physiology': {
+      pri: 84,
+      topics: [
+        ['Applied Head, Neck and Mediastinal Embryology and Surgical Spaces', 85],
+        ['Abdominal Compartments, Retroperitoneal Fascial Planes and Pelvic Floor Anatomy', 92, 90, 60, 40],
+        ['Cardiorespiratory Physiology, Pulmonary Mechanics and Hemodynamic Monitoring', 88],
+        ['Hepatic Segments, Biliary Tree Variations and Portal Circulation Architecture', 94],
+        ['Renal Microvasculature, Ureteral Blood Supply and Pelvic Autonomic Innervation', 86],
+      ],
+    },
+    'General Surgery & Critical Care Foundation': {
+      pri: 88,
+      topics: [
+        ['Metabolic Response to Severe Trauma, Sepsis and Nutritional Support in Surgical Patients', 90],
+        ['Advanced Hemodynamic Instability, Vasopressors, Inotropes and Multiorgan Dysfunction Syndrome', 95],
+        ['Mechanical Ventilation Modes, ARDS Management and Perioperative Respiratory Care', 92],
+        ['Coagulopathies, Massive Transfusion Protocols and Hemostatic Agents in Major Surgery', 88],
+      ],
+    },
+    'Surgical Pathology & Oncologic Principles': {
+      pri: 90,
+      topics: [
+        ['Principles of Surgical Oncology, Molecular Carcinogenesis, Staging Systems and Immunotherapy', 95],
+        ['Pathology of Soft Tissue Sarcomas, Neuroendocrine Tumours and Metastatic Disease', 89],
+        ['Surgical Margin Evaluation, Frozen Section Interpretation and Biopsy Pitfalls', 92],
+        ['Genetic Cancer Syndromes (BRCA, Lynch, MEN) and Prophylactic Surgeries', 86],
+      ],
+    },
+    'Trauma & Emergency Surgery': {
+      pri: 92,
+      topics: [
+        ['Advanced Trauma Life Support (ATLS) Protocols, Triage and Emergency Resuscitation', 96],
+        ['Abdominal Trauma, Damage Control Laparotomy and Splenic/Liver Salvage Techniques', 98, 120, 80, 50],
+        ['Thoracic Trauma, Emergency Department Thoracotomy and Flail Chest Management', 92],
+        ['Complex Pelvic Ring Disruptions, Packing and Angioembolisation Indications', 88],
+      ],
+    },
+    'Gastrointestinal & Hepato-Pancreato-Biliary Surgery': {
+      pri: 96,
+      topics: [
+        ['Oesophageal Motility Disorders, Caustic Injuries and Oesophageal Cancer Resection', 90],
+        ['Portal Hypertension, Variceal Bleeding, Shunt Surgery and Liver Resection Techniques', 95],
+        ['Pancreaticoduodenectomy (Whipple Procedure) and Management of Acute Necrotising Pancreatitis', 98, 135, 90, 55],
+        ['Colorectal Carcinoma, Total Mesorectal Excision (TME) and Sphincter-Preserving Surgeries', 94],
+        ['Liver Transplantation — Donor Selection, Graft Procurement and Biliary Reconstruction', 96],
+      ],
+    },
+    'Urology & Renal Transplantation': {
+      pri: 95,
+      topics: [
+        ['Urolithiasis — Flexible Ureteroscopy, PCNL, RIRS and Metabolic Stone Workup', 92],
+        ['Urothelial Malignancies — Radical Cystectomy, Urinary Diversions and Radical Nephrectomy', 95],
+        ['BPH, Laser Prostatectomy (HoLEP/ThuLEP) and Urethral Stricture Reconstruction', 88],
+        ['Renal Transplantation — Living and Cadaveric Donor Nephrectomy, Vascular Anastomosis and Complications', 98, 135, 90, 55],
+        ['Paediatric Urology — Posterior Urethral Valves, Vesicoureteral Reflux and Hypospadias Repair', 86],
+      ],
+    },
+    'Cardiothoracic & Vascular Surgery': {
+      pri: 94,
+      topics: [
+        ['Coronary Artery Bypass Grafting (CABG) on-pump vs off-pump and Valve Replacement Surgeries', 96, 135, 90, 55],
+        ['Thoracic Aortic Aneurysms, Dissections and Endovascular Stent-Grafting (TEVAR/EVAR)', 94],
+        ['Congenital Heart Disease — Tetralogy of Fallot, ASD/VSD Closure and PDA Ligation', 90],
+        ['Peripheral Vascular Disease, Bypass Grafting and Management of Acute Limb Ischaemia', 88],
+        ['Mediastinal Masses, VATS Lobectomy and Management of Empyema Thoracis', 85],
+      ],
+    },
+    'Neurosurgery Principles': {
+      pri: 78,
+      topics: [
+        ['Traumatic Brain Injury, ICP Monitoring, Decompressive Craniectomy and Subdural Hematoma Evacuation', 92],
+        ['Intracranial Tumours — Gliomas, Meningiomas, Pituitary Adenomas and Acoustic Schwannomas', 90],
+        ['Cerebrovascular Neurosurgery — Aneurysm Clipping, AVM Embolisation and Carotid Endarterectomy', 85],
+        ['Spinal Pathology — Cervical/Lumbar Disc Herniation, Spinal Cord Tumours and Spinal Trauma', 88],
+      ],
+    },
+    'Plastic, Reconstructive & Hand Surgery': {
+      pri: 75,
+      topics: [
+        ['Principles of Microvascular Surgery, Flap Design, Free Tissue Transfer and Anastomosis', 94, 120, 80, 50],
+        ['Burn Management, Fluid Resuscitation, Early Excision and Post-Burn Contracture Release', 88],
+        ['Cleft Lip and Palate Repair and Craniofacial Anomalies', 82],
+        ['Hand Surgery — Tendon Injuries, Nerve Repairs, Flexor/Extensor Zones and Replantation Basics', 85],
+      ],
+    },
+    'Paediatric Surgery & Neonatal Anomalies': {
+      pri: 72,
+      topics: [
+        ['Neonatal Surgical Emergencies — Tracheo-Oesophageal Fistula, Intestinal Atresia and Gastroschisis', 92],
+        ['Congenital Diaphragmatic Hernia, Hirschsprung Disease and Anorectal Malformations', 90],
+        ['Hypertrophic Pyloric Stenosis and Intussusception Reduction Strategies', 85],
+      ],
+    },
+    'Surgical Oncology & Endocrine Surgery': {
+      pri: 82,
+      topics: [
+        ['Head and Neck Oncology — Composite Resections, Neck Dissections and Free Flap Reconstruction', 92],
+        ['Breast Oncology — Oncoplastic Breast-Conserving Surgery, Sentinel Lymph Node Biopsy and Reconstruction', 94],
+        ['Thyroid Malignancies, Hyperparathyroidism and Adrenalectomy (Laparoscopic/Retroperitoneoscopic)', 90],
+        ['Sarcomas and Melanoma — Wide Local Excision, Sentinel Node Biopsy and Limb-Salvage Protocols', 86],
+      ],
+    },
+  },
+},
   /*
  * NEET (UG) — National Eligibility cum Entrance Test (Undergraduate)
  * Conducting body: NTA | Syllabus authority: NMC (50 units: 20 Physics, 20 Chemistry, 10 Biology)
@@ -361,13 +652,109 @@ neetug: {
     },
   },
 },
+   // SSC CGL (Staff Selection Commission – Combined Graduate Level)
+// Tier-I is qualifying (100 Q / 200 marks / 60 min; 0.50 negative).
+// Tier-II Paper-I is merit-deciding (Session-I: Maths 30Q, Reasoning 30Q,
+// English 45Q, GA 25Q; Session-II: Computer + DEST qualifying).
+// This entry covers the four core subjects that appear in BOTH tiers.
+// Paper-II (Statistics, JSO only) is intentionally excluded because the
+// learner is building for the general Paper-I track. No hard dependency
+// graph exists across subjects, so all are tier-2 and found is empty.
+// crunchMins = 30 because SSC CGL is a speed-and-recall exam; 45-minute
+// blocks would over-invest in a single topic during a 30/60-day sprint.
+'ssccgl': {
+  n: 'SSC CGL (Tier I + Tier II Paper I)',
+  mock: 60, // Tier-I full mock; Tier-II Paper-I is longer (135 min Session-I + 15 min DEST)
+  defMins: { b: 45, i: 35, a: 25 },
+  crunchMins: 30,
+  found: [], // No subject is a hard prerequisite for another
+  tier: {
+    'General Intelligence & Reasoning': 2,
+    'General Awareness': 2,
+    'Quantitative Aptitude': 2,
+    'English Comprehension': 2,
+  },
+  // Crunch weights are relative. 30-day keeps the two highest-scoring,
+  // most-practiceable sections (English + Quant) at a larger share;
+  // 60-day touches every subject because all four carry equal Tier-I marks.
+  crunch: {
+    30: {
+      'English Comprehension': 30,
+      'Quantitative Aptitude': 30,
+      'General Intelligence & Reasoning': 20,
+      'General Awareness': 20,
+    },
+    60: {
+      'English Comprehension': 25,
+      'Quantitative Aptitude': 25,
+      'General Intelligence & Reasoning': 25,
+      'General Awareness': 25,
+    },
+  },
+  t: {
+    'General Intelligence & Reasoning': {
+      pri: 85,
+      topics: [
+        ['Analogy (Verbal & Non-Verbal)', 90],
+        ['Classification / Odd One Out', 85],
+        ['Number & Alphabet Series', 85],
+        ['Coding-Decoding', 90],
+        ['Blood Relations', 80],
+        ['Direction & Distance', 75],
+        ['Syllogism & Venn Diagrams', 80],
+        ['Seating Arrangement & Puzzles', 75],
+        ['Mirror & Water Images', 70],
+        ['Paper Folding, Cutting & Embedded Figures', 65],
+      ],
+    },
+    'General Awareness': {
+      pri: 85,
+      topics: [
+        ['Ancient & Medieval Indian History', 70],
+        ['Modern Indian History (Freedom Struggle)', 80],
+        ['Indian Polity & Constitution', 85],
+        ['Geography (India & World)', 75],
+        ['Indian Economy & Budget', 75],
+        ['General Science (Physics, Chemistry, Biology)', 80],
+        ['Static GK (Awards, Books, Important Days)', 70],
+        ['Current Affairs (last 6–8 months)', 90],
+      ],
+    },
+    'Quantitative Aptitude': {
+      pri: 85,
+      topics: [
+        ['Number System, LCM & HCF', 80],
+        ['Percentage, Ratio & Average', 85],
+        ['Profit, Loss & Discount', 85],
+        ['Simple & Compound Interest', 80],
+        ['Time, Speed, Distance & Trains', 80],
+        ['Time & Work, Pipes & Cisterns', 85],
+        ['Algebra (Identities, Linear & Quadratic Equations)', 80],
+        ['Geometry (Triangles, Circles, Quadrilaterals)', 75],
+        ['Mensuration (2D & 3D)', 75],
+        ['Trigonometry & Heights/Distances', 70],
+        ['Data Interpretation (Tables, Bar, Pie, Line)', 90, 60, 45, 30], // heavier than defMins
+      ],
+    },
+    'English Comprehension': {
+      pri: 85,
+      topics: [
+        ['Grammar: Noun, Pronoun, Verb, Tense, Article', 80],
+        ['Error Detection / Spotting', 85],
+        ['Sentence Improvement', 80],
+        ['Fill in the Blanks', 75],
+        ['Synonyms & Antonyms', 85],
+        ['Idioms & Phrases', 80],
+        ['One Word Substitution', 80],
+        ['Spelling Correction / Homonyms', 70],
+        ['Active-Passive & Direct-Indirect Speech', 70],
+        ['Para Jumbles / Sentence Rearrangement', 75],
+        ['Reading Comprehension', 90, 60, 45, 30], // RC is a monster topic
+      ],
+    },
+  },
+},
    
-  sscgl:{n:'SSC CGL',mock:60,t:{
-    'Quantitative Aptitude':['Percentage, profit and loss','Ratio, time and work','Algebra and number system','Geometry and mensuration','Trigonometry','Data interpretation'],
-    'Reasoning':['Analogies and classification','Series and coding-decoding','Blood relations and directions','Syllogism and Venn diagrams','Puzzles and seating arrangement','Non-verbal reasoning'],
-    'English':['Grammar and error spotting','Vocabulary, synonyms and idioms','Reading comprehension','Cloze test and para jumbles'],
-    'General Awareness':['History and culture','Geography and environment','Polity and economy','General science','Current affairs']}},
-
   upsc:{n:'UPSC CSE',mock:240,t:{
     'Polity':['Constitution and fundamental rights','Parliament and executive','Judiciary and federalism','Local government and governance','Constitutional bodies and amendments'],
     'History':['Ancient and medieval India','Modern India and freedom struggle','Art and culture','World history'],
@@ -378,71 +765,90 @@ neetug: {
     'Current Affairs':['Government schemes and policies','International relations','Reports, indices and summits'],
     'CSAT':['Comprehension','Logical reasoning','Basic numeracy and data interpretation']}},
 
-  rajenglish:{n:'Rajasthan 2nd Grade English (द्वितीय श्रेणी अंग्रेज़ी)',mock:120,t:{
-    'English Grammar (व्याकरण)':[
-      'Tenses (काल) — Present, Past, Future के सभी रूप',
-      'Articles (आर्टिकल्स) — a, an, the के प्रयोग',
-      'Prepositions (संबंधसूचक शब्द)',
-      'Voice (वाच्य) — Active और Passive',
-      'Narration (नरेशन) — Direct और Indirect Speech',
-      'Modals (मॉडल्स) — can, may, must, should',
-      'Subject–Verb Agreement (कर्ता–क्रिया अनुरूपता)',
-      'Conditional Sentences (शर्तवाचक वाक्य)',
-      'Clauses और Sentence Structure',
-      'Common Errors (सामान्य अशुद्धियाँ)'],
-    'Vocabulary (शब्द भंडार)':[
-      'Synonyms (समानार्थी शब्द)',
-      'Antonyms (विलोम शब्द)',
-      'One Word Substitution (एक शब्द प्रतिस्थापन)',
-      'Idioms and Phrases (मुहावरे एवं लोकोक्तियाँ)',
-      'Spelling और Pronunciation (वर्तनी)',
-      'Word Formation — Prefix, Suffix',
-      'Homonyms और Homophones'],
-    'Phonetics (ध्वनि विज्ञान)':[
-      'Vowels और Consonants (स्वर एवं व्यंजन)',
-      'Diphthongs और Minimal Pairs',
-      'Stress (बल) और Intonation (स्वर-उतार-चढ़ाव)',
-      'Phonetic Transcription (ध्वन्यात्मक लिप्यंतरण)',
-      'RP और Indian English के अंतर'],
-    'Literature (साहित्य)':[
-      'Poetry (काव्य) — Forms और Devices',
-      'Prose (गद्य) — Essay, Short Story',
-      'Drama (नाटक) — Elements और Types',
-      'Fiction (कथा साहित्य) — Novel',
-      'Literary Terms और Figures of Speech (अलंकार)',
-      'Major Indian Writers in English',
-      'Major British Writers — Romantic, Victorian, Modern'],
-    'Comprehension (गद्यांश बोध)':[
-      'Unseen Passage (अपठित गद्यांश)',
-      'Cloze Test',
-      'Para Jumbles',
-      'Note Making और Summary Writing'],
-    'Language Teaching (भाषा शिक्षण)':[
-      'Methods of Teaching English (शिक्षण विधियाँ)',
-      'Approaches — Communicative, Direct, Structural',
-      'Teaching Aids (शिक्षण सामग्री)',
-      'LSRW Skills (सुनना, बोलना, पढ़ना, लिखना)',
-      'Evaluation और Testing (मूल्यांकन)',
-      'Remedial Teaching (उपचारात्मक शिक्षण)',
-      'Lesson Planning (पाठ योजना)'],
-    'Translation (अनुवाद)':[
-      'Hindi to English (हिंदी से अंग्रेज़ी)',
-      'English to Hindi (अंग्रेज़ी से हिंदी)',
-      'Translation Theory और Problems',
-      'Idiomatic Translation'],
-    'Educational Psychology (शिक्षा मनोविज्ञान)':[
-      'Learning Theories (अधिगम सिद्धांत)',
-      'Motivation (अभिप्रेरणा)',
-      'Intelligence और Aptitude (बुद्धि एवं अभिक्षमता)',
-      'Personality (व्यक्तित्व)',
-      'Adolescence (किशोरावस्था)',
-      'Individual Differences (व्यक्तिगत विभिन्नताएँ)'],
-    'Rajasthan General Knowledge (राजस्थान सामान्य ज्ञान)':[
-      'राजस्थान का इतिहास एवं संस्कृति',
-      'राजस्थान का भूगोल',
-      'राजस्थान की कला एवं स्थापत्य',
-      'राजस्थान की राजनीति एवं प्रशासन',
-      'राजस्थान की अर्थव्यवस्था',
-      'राजस्थान की शिक्षा व्यवस्था']}}
-};
+  // Rajasthan 2nd Grade English (Sr. Teacher, Secondary Education Dept., RPSC)
+// Paper-II only (subject paper); Paper-I (GK/Rajasthan/Ed-Psych) is out of scope.
+// 150 MCQs / 300 marks / 2.5 hours; ⅓ negative marking.
+// Official split: Part-I (Secondary & Sr. Secondary Grammar) = 90 Q / 180 marks;
+// Part-II (Graduation Grammar, Usage & Literature) = 40 Q / 80 marks;
+// Part-III (Teaching Methods) = 20 Q / 40 marks.
+// Grammar-Translation through Communicative Language Teaching are all in Part-III.
+// No hard prerequisite between parts, so found: [] and everything is tier 2.
+// crunchMins = 45: this is a language-theory paper, not a 30-second-recall SSC paper.
+'rajenglish': {
+  n: 'Rajasthan 2nd Grade English (Sr. Teacher Paper-II)',
+  mock: 150, // 2 hours 30 minutes for 150 questions
+  defMins: { b: 50, i: 40, a: 30 }, // teaching-exam band from the rule sheet
+  crunchMins: 45,
+  found: [], // No subject is a hard prerequisite for another
+  tier: {
+    'Grammar and Usage (Secondary & Sr. Secondary)': 2,
+    'Grammar, Usage & Literature (Graduation)': 2,
+    'Teaching Methods': 2,
+  },
+  // Crunch weights are relative. 30-day prioritises Part-I (60% of marks),
+  // keeps Literature at 30%, and trims Teaching Methods to 10% because 20 Q
+  // cannot justify a full third of a 30-day sprint. 60-day widens Literature
+  // and Teaching Methods without letting Part-I fall below 50%.
+  crunch: {
+    30: {
+      'Grammar and Usage (Secondary & Sr. Secondary)': 60,
+      'Grammar, Usage & Literature (Graduation)': 30,
+      'Teaching Methods': 10,
+    },
+    60: {
+      'Grammar and Usage (Secondary & Sr. Secondary)': 50,
+      'Grammar, Usage & Literature (Graduation)': 30,
+      'Teaching Methods': 20,
+    },
+  },
+  t: {
+    'Grammar and Usage (Secondary & Sr. Secondary)': {
+      pri: 90, // 90 Q / 180 marks — the largest block by far
+      topics: [
+        ['Parts of Speech (Nouns, Verbs, Adjectives, Adverbs)', 85],
+        ['Articles and Determiners', 80],
+        ['Tenses', 90],
+        ['Prepositions', 80],
+        ['Modal Auxiliaries', 70],
+        ['Degrees of Comparison (Comparative, Superlative)', 65],
+        ['Subject-Verb Agreement', 85],
+        ['Subordination and Co-ordination — Compound & Complex Sentences', 70],
+        ['Conditional Sentences', 65],
+        ['Transformation of Sentences (Affirmative/Negative/Interrogative; Active/Passive; Direct/Indirect)', 85],
+        ['Idioms, Phrasal Verbs & Proverbs', 75],
+        ['Vocabulary: Synonyms, Antonyms, Spelling & Confused Words', 80],
+        ['Phonetic Transcription and Word Stress', 60],
+      ],
+    },
+    'Grammar, Usage & Literature (Graduation)': {
+      pri: 70, // 40 Q / 80 marks
+      topics: [
+        ['Basic Sentence Patterns', 70],
+        ['Phrase Analysis (M H M)', 60],
+        ['Clause Analysis (SPOCA)', 60],
+        ['Reading Comprehension and Vocabulary', 85],
+        ['Poetry Appreciation', 75],
+        ['Literary Forms / Devices / Techniques (Ode, Elegy, Sonnet, Epic, Dramatic Monologue, Ballad; Alliteration, Hyperbole, Simile/Metaphor, Personification, Satire/Irony, Onomatopoeia)', 80],
+        ['Major Literary Periods (Renaissance, Metaphysical, Jacobean, Neo-Classical, Romantic, Victorian, Modern, Post-Modern)', 70],
+        ['Literary Movements (Romanticism, Gothic, Pre-Raphaelite, Realism, Existentialism, Stream of Consciousness, Symbolism, Modernism, Post-Modernism)', 70],
+        ['Twentieth Century Indian Writers / Poets in English (Tagore, Mulk Raj Anand, R.K. Narayan, Sarojini Naidu, Toru Dutt, Nissim Ezekiel, Ruskin Bond, Arun Kolatkar, Anita Desai, Shashi Deshpande, Kamala Das, Jayant Mahapatra, Amitav Ghosh, Manju Kapoor, Arundhati Roy)', 65],
+      ],
+    },
+    'Teaching Methods': {
+      pri: 60, // 20 Q / 40 marks
+      topics: [
+        ['Grammar-Translation Method', 60],
+        ['Direct Method', 60],
+        ['Structural Method', 55],
+        ['Audio-Lingual Method', 55],
+        ['Communicative Language Teaching', 70],
+        ['Teaching Prose', 65],
+        ['Teaching Poetry', 65],
+        ['Teaching Grammar and Composition', 60],
+        ['Basic Principles of Second Language Teaching (Selection, Gradation, Presentation, Testing)', 65],
+      ],
+    },
+  },
+                   }
+   };
 Object.values(EX).forEach(e=>e.sub=Object.keys(e.t));
