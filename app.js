@@ -1,5 +1,5 @@
 'use strict';
-const VER='v5, 17 Oct 2026';
+const VER='v6, 18 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -13,14 +13,27 @@ const hm=m=>{m=Math.round(m);return m>=60?Math.floor(m/60)+'h'+(m%60?' '+m%60+'m
 const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* Round a plan duration to a human-friendly value >=30 min.
+   30 and below → 30.  30–60 → nearest 5.  60–120 → nearest 15.  Above → nearest 30. */
+function roundMins(m){
+ const v=Math.round(+m||0);
+ if(v<=30)return 30;
+ if(v<=60)return Math.round(v/5)*5;
+ if(v<=120)return Math.round(v/15)*15;
+ return Math.round(v/30)*30;
+}
+const MIN_TASK=30;
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
 const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[]},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false}});
-let S=null,ready=false,mode='local',q=Promise.resolve(),sT,iv,tT,fromCloud=false;
+let S=null,ready=false,mode='local',q=Promise.resolve(),sT,iv,tT,fromCloud=false,timerAlertHandle=null;
 let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',auth:null};
 const byId=id=>S.tasks.find(t=>t.id===id);
 const doneMin=t=>t.status==='done'?t.mins:t.status==='partial'?Math.round(t.mins/2):0;
-const remain=t=>t.status==='partial'?Math.max(5,t.mins-Math.round(t.mins/2)):t.mins;
+const remain=t=>{
+ const raw=t.status==='partial'?Math.max(15,t.mins-Math.round(t.mins/2)):t.mins;
+ return roundMins(raw);
+};
 const tasksOn=k=>S.tasks.filter(t=>t.date===k).sort((a,b)=>P[a.pri]-P[b.pri]||a.mins-b.mins);
 const miss=()=>S.tasks.filter(t=>!t.resolved&&t.date<today()&&t.status!=='done');
 const cap=()=>(+S.p.hours)*60;
@@ -49,15 +62,15 @@ async function boot(){
  }
  if(!S){try{S=JSON.parse(localStorage.getItem(LK)||'null')}catch(e){}}
  S=Object.assign(fresh(),S||{});S.p=Object.assign(fresh().p,S.p);S.top=S.top||[];
- S.seen=new Date().toISOString();ready=true;if(S.timer)startTick();setInterval(chkRem,6e4);pushMeta();
+ S.seen=new Date().toISOString();ready=true;
+ if(S.timer){startTick();scheduleTimerAlert()}
+ setInterval(chkRem,6e4);pushMeta();
  if(mode==='cloud'&&!fromCloud&&S.p.onboarded)save();
  render()}
 
 /* ================================================================== */
 /* ============  TOPPER LEARNING LAYER (multi-source only)  ========== */
 /* ================================================================== */
-/* Aggregates statistics over ALL topper entries for an exam.
-   Never trusts a single entry: confidence scales with sample size. */
 function topperStats(exam,extra){
  const E=((typeof STRATEGIES!=='undefined'?STRATEGIES:[]).concat(extra||[])).filter(e=>e&&e.exam===exam);
  const n=E.length;
@@ -85,7 +98,6 @@ function topperStats(exam,extra){
  return {n,conf,medHours:medH,medMonths:medM,resources,sessionLen,buffer,revEveryDays};
 }
 
-/* ---------- exam normaliser: handles both rich and legacy topic forms ---------- */
 function normalizeExam(ex){
  const subs=ex.sub;
  const found=(ex.found&&ex.found.length)?ex.found:[];
@@ -117,7 +129,6 @@ function normalizeExam(ex){
  };
 }
 
-/* ---------- if an exam has no explicit crunch weights, derive from priorities ---------- */
 function autoCrunch(N){
  const W={};
  const total=N.subs.reduce((acc,s)=>acc+(N.subjData[s].pri||60),0)||1;
@@ -135,17 +146,15 @@ function autoCrunch(N){
 
 /* ================================================================== */
 /* ====================  THE ROADMAP ENGINE  ======================== */
-/* ================================================================== */
-/* Rules, in order:
-   1. Pick the mode from days-left: <=35 → 30-day crunch, <=70 → 60-day crunch, else personalised.
-   2. Crunch modes: fixed crunch weights (or autoCrunch) and fixed crunchMins per topic.
-      The plan is identical for every learner — level is ignored.
-   3. Personalised mode: per-topic minutes come from defMins overridden by the learner's level.
-   4. Sort topics by (tier asc, effective priority desc). Foundational subjects (tier 1) first.
-   5. Every day capped at hours × buffer; buffer is 0.90 in crunch, 0.70–0.85 in personalised.
-      Sundays are mock days, Saturdays are spaced revision.
-   6. Large topics are split across sessions / days. Anything that does not fit is dropped and
-      reported, lowest priority first.
+/* Rules:
+   1. daysLeft <=35 → 30-day crunch; <=70 → 60-day crunch; else personalised.
+   2. Crunch: fixed weights, fixed crunchMins, identical for every learner.
+   3. Personalised: per-topic minutes from defMins / per-topic override.
+   4. Foundational subjects (tier 1) scheduled before tier 2 before tier 3.
+   5. Every day capped at hours × buffer; Sundays are mock days; Saturdays are
+      spaced revision. Every scheduled task is >=30 min and rounded by roundMins().
+   6. A topic never runs out of order within its subject. Leftovers that do not
+      fit end up as "dropped" and reported.
 */
 function gen(p,extras){
  const ex=EX[p.exam];
@@ -166,13 +175,12 @@ function gen(p,extras){
 
  const dailyCap=Math.max(30,Math.round((+p.hours||1)*60));
  const buffer=isCrunch?0.90:Math.max(0.70,Math.min(0.85,L.buffer||0.80));
- const planCap=Math.max(20,Math.round(dailyCap*buffer));
+ const planCap=Math.max(30,Math.round(dailyCap*buffer));
 
- const sessionLen=isCrunch
-  ? clamp(Math.round(planCap/3/5)*5,30,60)
-  : clamp(L.sessionLen||60,20,90);
+ // Session length: rounded, min 30, using the same roundMins helper.
+ const rawSession=isCrunch?planCap/3:(L.sessionLen||60);
+ const sessionLen=roundMins(clamp(Math.round(rawSession/5)*5,30,90));
 
- // --- flatten topics ---
  const flat=[];
  const topicsBySubj={};
  N.subs.forEach((s,sIdx)=>{
@@ -185,12 +193,13 @@ function gen(p,extras){
    const bM=o.b!=null?o.b:(o.mins||N.defMins.b);
    const iM=o.i!=null?o.i:(o.mins||N.defMins.i);
    const aM=o.a!=null?o.a:(o.mins||N.defMins.a);
-   const mins=isCrunch?N.crunchMins:(levelKey==='b'?bM:levelKey==='a'?aM:iM);
+   const rawMins=isCrunch?N.crunchMins:(levelKey==='b'?bM:levelKey==='a'?aM:iM);
+   const mins=roundMins(rawMins);
    const t={s,n:o.n,i,pri:tpPri,subjPri:sd.pri,eff,mins,tier:sd.tier,ord:sIdx*1000+i};
    arr.push(t);flat.push(t);
   });
   if(!arr.length){
-   const mins=isCrunch?N.crunchMins:N.defMins[levelKey];
+   const mins=roundMins(isCrunch?N.crunchMins:N.defMins[levelKey]);
    const t={s,n:'Core concepts and practice questions',i:0,pri:50,subjPri:sd.pri,
             eff:Math.round((sd.pri||60)*0.5),mins,tier:sd.tier,ord:sIdx*1000};
    arr.push(t);flat.push(t);
@@ -198,7 +207,6 @@ function gen(p,extras){
   topicsBySubj[s]=arr;
  });
 
- // --- available minutes (respecting day off) ---
  let availMins=0;
  for(let i=0;i<daysLeft;i++){
   const k=addD(t0,i);
@@ -207,7 +215,6 @@ function gen(p,extras){
   availMins+=planCap;
  }
 
- // --- wanted set ---
  let wanted=[];
  if(isCrunch){
   const key=daysLeft<=35?30:60;
@@ -245,13 +252,11 @@ function gen(p,extras){
   }
  }
 
- // --- schedule ---
  const out=[];
  const bySubj={};
  wanted.forEach(t=>{(bySubj[t.s]=bySubj[t.s]||[]).push(t)});
  const ptr={};
  Object.keys(bySubj).forEach(s=>{ptr[s]=0});
-
  const remainingMins={};
  wanted.forEach(t=>{remainingMins[t.s+'\u0001'+t.i]=t.mins});
 
@@ -279,29 +284,37 @@ function gen(p,extras){
   if(p.off!==''&&String(dow)===p.off)continue;
 
   if(dow===0&&i>=3){
-   const mockMins=Math.min(240,N.mock||180);
+   const mockMins=roundMins(Math.min(240,N.mock||180));
    push(date,'Mock test','Full-length mock for '+N.n,mockMins,'High','mock');
-   push(date,'Mock test','Analyse mistakes and note weak topics',Math.min(60,sessionLen),'High','mock');
+   push(date,'Mock test','Analyse mistakes and note weak topics',roundMins(Math.min(60,sessionLen)),'High','mock');
    continue;
   }
   if(dow===6&&i>=2){
    const picks=recent.slice(-Math.min(2,Math.max(1,Math.round(planCap/sessionLen))));
    if(picks.length){
-    picks.forEach(r=>push(date,r.s,'Revise: '+r.n,sessionLen,'Medium','revision'));
+    picks.forEach(r=>push(date,r.s,'Revise: '+r.n,roundMins(sessionLen),'Medium','revision'));
     continue;
    }
   }
 
   const doneToday=new Set();
   let used=0,guard=0;
-  while(used<planCap&&guard<12){
+  while(used<planCap&&guard<20){
    guard++;
    const t=nextTopic(doneToday);
    if(!t)break;
    const key=t.s+'\u0001'+t.i;
    const rem=remainingMins[key];
-   const m=Math.min(rem,planCap-used,sessionLen);
-   if(m<10)break;
+   const room=planCap-used;
+   if(room<MIN_TASK)break;
+   // Desired duration: min of remaining budget, session length, and available room.
+   let m=Math.min(rem,sessionLen,room);
+   m=roundMins(m);
+   // If rounding up exceeds the room, shrink to fit (still >=30).
+   if(m>room){
+    m=Math.floor(room/5)*5;
+    if(m<MIN_TASK)break;
+   }
    const pri=t.eff>=70?'High':t.eff>=40?'Medium':'Low';
    push(date,t.s,t.n,m,pri,'study');
    remainingMins[key]-=m;
@@ -313,7 +326,6 @@ function gen(p,extras){
   }
  }
 
- // --- what actually got scheduled vs. dropped ---
  const scheduledSet=new Set(out.filter(t=>t.type==='study').map(t=>t.s+'\u0001'+t.topic));
  const notScheduled=flat.filter(t=>!scheduledSet.has(t.s+'\u0001'+t.n));
  const droppedTopics=notScheduled
@@ -384,7 +396,6 @@ function home(){
  +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 
-/* -- plan summary card: mode, topper confidence, coverage, allocation, dropped topics -- */
 function planCard(){
  const d=S.draft;
  const meta=(d&&d.meta)||S.p.planMeta||null;
@@ -436,7 +447,7 @@ function planCard(){
   ${crunchNote}
   ${alloc}
   ${dropped}
-  <p class="sm mu" style="margin:8px 0 0">Daily budget: ${hm(Math.round((+S.p.hours||0)*60))} available → the plan uses ~${Math.round((L.buffer||0.8)*100)}% of it. Foundational subjects are scheduled first; low-priority topics drop out automatically when time is short.</p>
+  <p class="sm mu" style="margin:8px 0 0">All tasks are 30+ min and rounded to a study-friendly duration (30, 45, 60, 75…). Daily budget: ${hm(Math.round((+S.p.hours||0)*60))} available; the plan uses ~${Math.round((L.buffer||0.8)*100)}% of it.</p>
  </section>`;
 }
 
@@ -473,7 +484,6 @@ function progress(){
  +`<section class="card"><h2>Progress explanation</h2><p class="mu">Placeholder: a future AI summary will explain your week here. Everything above works without it.</p><button class="btn o w" disabled>Explain my week (coming soon)</button></section>`
  +remCard()+`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Synced to your account.':'Stored in this browser only.'}</p><button class="btn o s" data-a="reset">Start over</button></section>`}
 
-/* ---- Account card (top of Library) + report sheet ---- */
 function accountCard(){
  if(!window.Auth||!Auth.configured()){
   return`<section class="card"><h2>Account</h2><p class="sm mu">Sign-in is not set up in this build. Your plan stays on this device.</p><p class="sm mu">See <b>README.txt</b> for how to turn on Firebase.</p></section>`;
@@ -507,7 +517,6 @@ function library(){
 
 const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
 
-/* ---- auth screens ---- */
 function authScreen(){
  const signup=V.auth==='signup';
  return`<section class="welcome" style="margin-top:8px">
@@ -548,7 +557,8 @@ function render(){try{
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
  nv.innerHTML=[['home','Today'],['roadmap','Roadmap'],['recover','Recover'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='recover'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
- a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span><br>AimSarthi ${VER}</p>`+(run?`<div class="live" role="group" aria-label="Study timer"><div><div class="t" id="tm">00:00:00</div><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}</small></div><button class="btn s" data-a="timer">Stop</button></div>`:'');tick()
+ const liveHTML=run?`<div class="live${run.alerted?' done':''}" role="group" aria-label="Study timer"><div><div class="t" id="tm">00:00:00</div><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}${run.alerted?' · ⏰ time is up':''}</small></div><button class="btn s" data-a="timer">${run.alerted?'Stop & save':'Stop'}</button></div>`:'';
+ a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span><br>AimSarthi ${VER}</p>`+liveHTML;tick()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
 /* ---------- sheet, toast, timer ---------- */
@@ -558,6 +568,66 @@ function toast(m){const e=$('#ts');e.textContent=m;e.classList.add('on');clearTi
 function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 function tick(){const e=$('#tm');if(!e||!S)return;const s=S.timer?Math.max(0,Math.floor((Date.now()-new Date(S.timer.start))/1e3)):0;e.textContent=pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);const t=$('#tm2');if(t)t.textContent=hm(dayMins(V.day))}
 
+/* ---------- timer alert (task-based) ---------- */
+function clearTimerAlert(){if(timerAlertHandle){clearTimeout(timerAlertHandle);timerAlertHandle=null}}
+function beginTimer(taskId){
+ clearTimerAlert();
+ const task=taskId?byId(taskId):null;
+ S.timer={
+  start:new Date().toISOString(),
+  taskId:taskId||'',
+  targetMins:task?task.mins:0,
+  alertAt:task?new Date(Date.now()+task.mins*60000).toISOString():null,
+  alerted:false
+ };
+ startTick();
+ scheduleTimerAlert();
+}
+function stopTimer(){
+ clearTimerAlert();
+ S.timer=null;
+ clearInterval(iv);
+}
+function scheduleTimerAlert(){
+ clearTimerAlert();
+ if(!S||!S.timer||S.timer.alerted||!S.timer.alertAt)return;
+ const remaining=new Date(S.timer.alertAt).getTime()-Date.now();
+ if(remaining<=0){fireTimerAlert();return}
+ // Cap at 24h; the callback re-checks and re-arms if the target is later.
+ timerAlertHandle=setTimeout(fireTimerAlert,Math.min(remaining,24*60*60*1000));
+}
+async function fireTimerAlert(){
+ timerAlertHandle=null;
+ if(!S||!S.timer||S.timer.alerted)return;
+ const remaining=new Date(S.timer.alertAt).getTime()-Date.now();
+ if(remaining>1000){scheduleTimerAlert();return}
+ S.timer.alerted=true;
+ save();
+ const task=S.timer.taskId?byId(S.timer.taskId):null;
+ const label=task?`${task.subject}: ${task.topic}`:'Your study session';
+ const target=S.timer.targetMins||0;
+ const minsText=target?hm(target)+' ':'';
+ if(navigator.vibrate){try{navigator.vibrate([200,100,200,100,200])}catch(e){}}
+ toast(target?`⏰ Time's up — ${minsText}done on ${task?task.subject:'your session'}`:"⏰ Time's up!");
+ if(window.Notification&&Notification.permission==='granted'){
+  try{
+   if(navigator.serviceWorker&&navigator.serviceWorker.ready){
+    const reg=await navigator.serviceWorker.ready;
+    await reg.showNotification("Time's up",{
+     body:`${label}${target?'\n'+minsText+'done':''}. Take a short break or mark it done.`,
+     tag:'aimsarthi-timer-'+(S.timer.taskId||'general'),
+     icon:'icon-192.png',
+     badge:'icon-192.png',
+     requireInteraction:true
+    });
+   }else{
+    new Notification("Time's up",{body:`${label}${target?': '+minsText+'done':''}`,icon:'icon-192.png'});
+   }
+  }catch(e){}
+ }
+ render();
+}
+
 /* ---------- recovery helpers ---------- */
 function bestDays(m,x,t){const e=addD(S.p.examDate,-1),r=[],rc=Math.max(60,cap()*.3);
  for(let i=0;i<14;i++){const k=addD(today(),i);if(k>e)break;if(String(pd(k).getDay())===S.p.off)continue;
@@ -566,12 +636,14 @@ function bestDays(m,x,t){const e=addD(S.p.examDate,-1),r=[],rc=Math.max(60,cap()
   r.push([k,load(k,x)-(t&&D.some(z=>z.subject===t.subject)?30:0)-(t&&t.type==='revision'&&D.some(z=>z.type==='revision')?40:0)])}
  return r.sort((a,b)=>a[1]-b[1]||(a[0]<b[0]?-1:1)).map(z=>z[0])}
 function moveT(t,k,m){const h={from:t.date,to:k,at:new Date().toISOString()};
- if(t.status==='partial'){t.resolved=true;const n={...t,id:uid(),date:k,mins:m,status:'todo',resolved:false,history:[h],gen:false};delete n.doneDate;S.tasks.push(n)}
- else{t.history=(t.history||[]).concat(h);t.date=k;t.mins=m;t.status='todo'}}
-function rsp(){const m=+$('#r_m').value,k=$('#r_d').value,e=$('#rp');if(!e)return;
- if(!okD(k)||!(m>=5&&m<=600)){e.textContent='Enter a valid date and duration to preview the workload.';return}
+ const rm=roundMins(m);
+ if(t.status==='partial'){t.resolved=true;const n={...t,id:uid(),date:k,mins:rm,status:'todo',resolved:false,history:[h],gen:false};delete n.doneDate;S.tasks.push(n)}
+ else{t.history=(t.history||[]).concat(h);t.date=k;t.mins=rm;t.status='todo'}}
+function rsp(){const mRaw=+$('#r_m').value,k=$('#r_d').value,e=$('#rp');if(!e)return;
+ const m=roundMins(mRaw);
+ if(!okD(k)||mRaw<MIN_TASK||mRaw>600){e.textContent='Enter a valid date and a duration of at least 30 minutes.';return}
  const a=load(k),b=a+m,c=cap();let h=`<b>${fD(k)}</b>: ${hm(a)} planned now, <b>${hm(b)}</b> after this move (limit ${hm(c)}). `;
- if(b>c){const alt=bestDays(m).filter(x=>x!==k).slice(0,2);h+=`That is ${hm(b-c)} over your limit. Options: `+(alt.map(x=>`<button class="btn o s" data-a="pickd" data-v="${x}">${fD(x)} (${hm(c-load(x))} free)</button>`).join(' ')||'no day in the next 2 weeks has room. ')+(c-a>=15?` <button class="btn o s" data-a="fit" data-v="${Math.floor((c-a)/5)*5}">Shorten to ${hm(Math.floor((c-a)/5)*5)}</button>`:'')}
+ if(b>c){const alt=bestDays(m).filter(x=>x!==k).slice(0,2);h+=`That is ${hm(b-c)} over your limit. Options: `+(alt.map(x=>`<button class="btn o s" data-a="pickd" data-v="${x}">${fD(x)} (${hm(c-load(x))} free)</button>`).join(' ')||'no day in the next 2 weeks has room. ')+(c-a>=15?` <button class="btn o s" data-a="fit" data-v="${Math.floor((c-a)/15)*15}">Shorten to ${hm(Math.floor((c-a)/15)*15)}</button>`:'')}
  else h+='This fits your daily limit.';e.innerHTML=h}
 
 /* ---------- friendly Firebase errors ---------- */
@@ -613,31 +685,52 @@ const A={
   save();render();toast(S.rem.bg?'Reminders are on':'Reminders are on while the app is open')},
  remoff:()=>{S.rem.on=false;save();render()},
  remtest:async()=>{toast(await notify({title:'AimSarthi',body:'Reminders are working.',tag:'test'})?'Test sent':'Could not show a notification')},
- go:d=>{if(S.timer)A.timer();S.timer={start:new Date().toISOString(),taskId:d.id||''};startTick();closeSheet();save();render();toast('Timer started')},
- tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
+ go:d=>{
+   if(S.timer)A.timer();
+   beginTimer(d.id||'');
+   closeSheet();save();render();
+   const t=d.id?byId(d.id):null;
+   toast(t?`⏰ Timer started — ${hm(t.mins)} planned`:'⏰ Timer started');
+ },
+ tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this (${hm(t.mins)})</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
  st2:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;closeSheet();save();render()},
- add:()=>sheet(`<h2>Add task</h2>${inp('t_s','Subject',`list="sl" maxlength="60"`)}<datalist id="sl">${EX[S.p.exam].sub.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>${inp('t_t','Topic','maxlength="100"')}${inp('t_m','Estimated minutes (5 to 600)','type="number" inputmode="numeric" min="5" max="600" step="5" value="60"')}<label for="t_p">Priority</label><select id="t_p"><option>High</option><option selected>Medium</option><option>Low</option></select>${inp('t_d','Scheduled date',`type="date" min="${today()}" max="${S.p.examDate}" value="${V.day<today()?today():V.day}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="addok">Save task</button></div>`),
- addok:()=>{const s=$('#t_s').value.trim(),t=$('#t_t').value.trim(),m=+$('#t_m').value,d=$('#t_d').value;
-  const e=!s?'Enter a subject.':!t?'Enter a topic.':!(Number.isInteger(m)&&m>=5&&m<=600)?'Duration must be a whole number from 5 to 600 minutes.':(!okD(d)||d<today()||d>S.p.examDate)?'Pick a date from today up to your exam date.':'';
+ add:()=>sheet(`<h2>Add task</h2>${inp('t_s','Subject',`list="sl" maxlength="60"`)}<datalist id="sl">${EX[S.p.exam].sub.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>${inp('t_t','Topic','maxlength="100"')}${inp('t_m','Estimated minutes (30 to 600, rounded to 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" value="45"`)}<label for="t_p">Priority</label><select id="t_p"><option>High</option><option selected>Medium</option><option>Low</option></select>${inp('t_d','Scheduled date',`type="date" min="${today()}" max="${S.p.examDate}" value="${V.day<today()?today():V.day}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="addok">Save task</button></div>`),
+ addok:()=>{const s=$('#t_s').value.trim(),tp=$('#t_t').value.trim(),mRaw=+$('#t_m').value,d=$('#t_d').value;
+  const e=!s?'Enter a subject.':!tp?'Enter a topic.':!(Number.isInteger(mRaw)&&mRaw>=30&&mRaw<=600)?'Duration must be a whole number from 30 to 600 minutes.':(!okD(d)||d<today()||d>S.p.examDate)?'Pick a date from today up to your exam date.':'';
   if(e){$('#se').textContent=e;return}
-  S.tasks.push({id:uid(),subject:s,topic:t,mins:m,pri:$('#t_p').value,date:d,type:'study',status:'todo'});closeSheet();save();render();toast('Task added')},
+  const m=roundMins(mRaw);
+  S.tasks.push({id:uid(),subject:s,topic:tp,mins:m,pri:$('#t_p').value,date:d,type:'study',status:'todo'});closeSheet();save();render();toast('Task added ('+hm(m)+')')},
  del:d=>sheet(`<h2>Delete this task?</h2><p>${esc(byId(d.id).subject)}: ${esc(byId(d.id).topic)}. This cannot be undone.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep it</button><button class="btn" style="flex:1" data-a="delok" data-id="${d.id}">Delete</button></div>`),
  delok:d=>{S.tasks=S.tasks.filter(t=>t.id!==d.id);closeSheet();save();render();toast('Task deleted')},
- timer:()=>{if(S.timer){const s=new Date(S.timer.start),m=Math.min(720,Math.round((Date.now()-s)/6e4));
-   if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
-   S.timer=null;clearInterval(iv)}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
+ timer:()=>{if(S.timer){
+   const s=new Date(S.timer.start),m=Math.min(720,Math.round((Date.now()-s)/6e4));
+   if(m<1)toast('Under a minute, so it was not logged.');
+   else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
+   stopTimer();
+  }else beginTimer(V.tt);
+  save();render()},
  rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r,0,t)[0]||addD(today(),1);V.rs=t.id;
-  sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (5 to 600)',`type="number" inputmode="numeric" min="5" max="600" step="5" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
+  sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (30 to 600, rounded to 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
  pickd:d=>{$('#r_d').value=d.v;rsp()},fit:d=>{$('#r_m').value=d.v;rsp()},
- rsok:()=>{const t=byId(V.rs),m=+$('#r_m').value,k=$('#r_d').value;
-  if(!(Number.isInteger(m)&&m>=5&&m<=600)||!okD(k)||k<today()||k>=S.p.examDate){$('#se').textContent='Choose a date from today to the day before your exam, and 5 to 600 minutes.';return}
-  moveT(t,k,m);closeSheet();save();render();toast('Moved to '+fD(k))},
+ rsok:()=>{const t=byId(V.rs),mRaw=+$('#r_m').value,k=$('#r_d').value;
+  if(!(Number.isInteger(mRaw)&&mRaw>=30&&mRaw<=600)||!okD(k)||k<today()||k>=S.p.examDate){$('#se').textContent='Choose a date from today to the day before your exam, and 30 to 600 minutes.';return}
+  const m=roundMins(mRaw);
+  moveT(t,k,m);closeSheet();save();render();toast('Moved to '+fD(k)+' ('+hm(m)+')')},
  skip:d=>{byId(d.id).resolved=true;save();render();toast('Dismissed. The task stays on its original day.')},
  sug:()=>{const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1)),add={},pl=[],un=[],sk=[];
-  M.forEach(t=>{const r=remain(t);let m=r,d=bestDays(m,add,t)[0];if(!d&&r>30){m=Math.max(20,Math.round(r/2/5)*5);d=bestDays(m,add,t)[0]}
-   if(d){add[d]=(add[d]||0)+m;pl.push({id:t.id,d,m,r})}else if(t.pri==='Low'||t.type==='revision')sk.push(t);else un.push(t)});
+  M.forEach(t=>{
+   const r=remain(t);
+   let m=r,d=bestDays(m,add,t)[0];
+   if(!d&&r>=60){
+    m=roundMins(Math.max(30,r/2));
+    d=bestDays(m,add,t)[0];
+   }
+   if(d){add[d]=(add[d]||0)+m;pl.push({id:t.id,d,m,r})}
+   else if(t.pri==='Low'||t.type==='revision')sk.push(t);
+   else un.push(t)
+  });
   V.pl=pl;V.sk=sk.map(t=>t.id);
-  sheet(`<h2>Suggested recovery plan</h2><p class="sm mu">A suggestion only. Nothing moves until you accept. It spreads work across days, keeps mock days clear, groups related subjects, and trims low-priority items last.</p>`+(pl.length?pl.map(x=>{const t=byId(x.id);return`<p><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm">${fD(t.date)} to <b>${fD(x.d)}</b>, ${hm(x.m)}${x.m<x.r?' (shortened from '+hm(x.r)+')':''}</span></p>`}).join('')+`<p class="sm"><b>Workload after:</b> ${Object.keys(add).sort().map(k=>fD(k)+' '+hm(load(k)+add[k])+' of '+hm(cap())).join('; ')}</p>`:'<p>No task fits the next two weeks without going over your daily limit.</p>')+(sk.length?`<p class="sm"><b>Suggest dismissing (${sk.length}):</b> ${sk.map(t=>esc(t.subject)).join(', ')}. They stay in your history, and you can still reschedule them by hand.</p>`:'')+(un.length?`<p class="sm">${un.length} not placed. Reschedule them yourself.</p>`:'')+`<div class="row"><button class="btn o" style="flex:1" data-a="x">Reject</button>${pl.length||sk.length?'<button class="btn" style="flex:1" data-a="sugok">Accept plan</button>':''}</div>`)},
+  sheet(`<h2>Suggested recovery plan</h2><p class="sm mu">A suggestion only. Nothing moves until you accept. All moved blocks are at least 30 minutes and rounded to a study-friendly duration.</p>`+(pl.length?pl.map(x=>{const t=byId(x.id);return`<p><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm">${fD(t.date)} to <b>${fD(x.d)}</b>, ${hm(x.m)}${x.m<x.r?' (shortened from '+hm(x.r)+')':''}</span></p>`}).join('')+`<p class="sm"><b>Workload after:</b> ${Object.keys(add).sort().map(k=>fD(k)+' '+hm(load(k)+add[k])+' of '+hm(cap())).join('; ')}</p>`:'<p>No task fits the next two weeks without going over your daily limit.</p>')+(sk.length?`<p class="sm"><b>Suggest dismissing (${sk.length}):</b> ${sk.map(t=>esc(t.subject)).join(', ')}. They stay in your history, and you can still reschedule them by hand.</p>`:'')+(un.length?`<p class="sm">${un.length} not placed. Reschedule them yourself.</p>`:'')+`<div class="row"><button class="btn o" style="flex:1" data-a="x">Reject</button>${pl.length||sk.length?'<button class="btn" style="flex:1" data-a="sugok">Accept plan</button>':''}</div>`)},
  sugok:()=>{const n=V.pl.length,s=V.sk.length;V.pl.forEach(x=>moveT(byId(x.id),x.d,x.m));V.sk.forEach(id=>{byId(id).resolved=true});V.pl=[];V.sk=[];closeSheet();save();render();toast(n+' moved, '+s+' dismissed')},
  wk:d=>{V.wk+=+d.v;render()},
  lx:d=>{V.lx=d.v;render()},
@@ -649,7 +742,7 @@ const A={
  tc:d=>{const e=S.top.find(x=>x.id===d.id);e.checked=!e.checked;save();render()},
  tr:d=>{S.top=S.top.filter(x=>x.id!==d.id);save();render()},
  reset:()=>sheet(`<h2>Start over?</h2><p>This erases your profile, roadmap, tasks and study sessions${mode==='cloud'?' — including the copy saved to your account':''}.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="resetok">Erase everything</button></div>`),
- resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()},
+ resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);clearTimerAlert();closeSheet();save();render()},
 
  authgo:d=>{V.auth=d.v;render();scrollTo(0,0)},
  authswap:d=>{V.auth=d.v;render();scrollTo(0,0)},
@@ -757,7 +850,7 @@ async function pushUserMeta(){
 async function notify(d){try{const r=await navigator.serviceWorker.ready;await r.showNotification(d.title,{body:d.body,tag:d.tag,icon:'icon-192.png',badge:'icon-192.png'});if(d.tag!=='test'){S.rem.lastNotif=new Date().toISOString();save()}return true}catch(e){return false}}
 async function chkRem(){if(!S||!S.rem||!S.rem.on||!window.Notification||Notification.permission!=='granted'||document.visibilityState==='visible')return;const d=reminderDue(await pushMeta(),Date.now());if(d)notify(d)}
 function remCard(){const R=S.rem||{},on=R.on&&window.Notification&&Notification.permission==='granted';
- return`<section class="card"><h2>Study reminders</h2><p class="sm mu">${on?'On. You get a nudge around '+h12(usualHour())+' on days you have not studied. The time is learned from your timed sessions (7 pm until you have a few). After 2 days without opening the app, you get a "your plan is waiting" nudge.':'Get a nudge at your usual study time, and another if you have not opened the app for 2 days.'}</p><div class="row"><button class="btn ${on?'o ':''}s" data-a="${on?'remoff':'remon'}">${on?'Turn off':'Turn on reminders'}</button>${on?'<button class="btn o s" data-a="remtest">Send a test</button>':''}</div><p class="sm mu" style="margin:8px 0 0">Background reminders work on Chrome for Android with the app installed, and the browser picks the exact time, so they can arrive late. ${on&&R.bg===false?'Background reminders are unavailable here, so you are only reminded while the app is open in the background.':''}</p></section>`}
+ return`<section class="card"><h2>Study reminders</h2><p class="sm mu">${on?'On. You get a nudge around '+h12(usualHour())+' on days you have not studied. The time is learned from your timed sessions (7 pm until you have a few). After 2 days without opening the app, you get a "your plan is waiting" nudge.':'Get a nudge at your usual study time, and another if you have not opened the app for 2 days.'}</p><div class="row"><button class="btn ${on?'o ':''}s" data-a="${on?'remoff':'remon'}">${on?'Turn off':'Turn on reminders'}</button>${on?'<button class="btn o s" data-a="remtest">Send a test</button>':''}</div><p class="sm mu" style="margin:8px 0 0">Background reminders work on Chrome for Android with the app installed, and the browser picks the exact time, so they can arrive late. ${on&&R.bg===false?'Background reminders are unavailable here, so you are only reminded while the app is open in the background.':''}</p><p class="sm mu" style="margin:6px 0 0">Timer alerts also use these notifications.</p></section>`}
 
 boot();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
