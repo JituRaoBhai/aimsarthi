@@ -210,12 +210,158 @@ const EX = {
     'Plastic and reconstructive surgery':['Flaps and grafts','Hand injuries and tendon repair','Cleft lip and palate, craniofacial','Burn reconstruction','Microsurgery and free tissue transfer'],
     'Applied basic sciences and imaging':['Surgical anatomy: neck, abdomen, pelvis','Physiology of GI, endocrine and cardiac systems','Pathology of tumours and inflammation','Imaging choices: CT, MRI, ultrasound','Research methods and biostatistics']}},
 
-  neetug:{n:'NEET UG',mock:200,t:{
-    'Physics':['Mechanics and gravitation','Heat and thermodynamics','Waves and oscillations','Electrostatics and current electricity','Magnetism and electromagnetic induction','Optics','Modern physics and semiconductors'],
-    'Chemistry':['Mole concept, equilibrium and kinetics','Thermodynamics and electrochemistry','Atomic structure and chemical bonding','Periodic table and p, d, f blocks','Organic: general principles and hydrocarbons','Organic: functional groups and biomolecules'],
-    'Botany':['Cell structure and division','Plant morphology and anatomy','Plant physiology','Reproduction in plants','Genetics and molecular inheritance','Ecology and environment'],
-    'Zoology':['Animal kingdom and structural organisation','Digestion, respiration and circulation','Excretion, locomotion and coordination','Human reproduction','Evolution and human health','Biotechnology']}},
-
+  /*
+ * NEET (UG) — National Eligibility cum Entrance Test (Undergraduate)
+ * Conducting body: NTA | Syllabus authority: NMC (50 units: 20 Physics, 20 Chemistry, 10 Biology)
+ * Paper pattern (pre-COVID format restored from 2025 onward):
+ *   - 180 compulsory MCQs in 180 minutes (720 marks; +4 correct, -1 incorrect, 0 unattempted)
+ *   - Section B optional questions and the 200-minute window are discontinued
+ *   - Question split: Botany (45), Zoology (45), Chemistry (45), Physics (45)
+ * Syllabus decomposition:
+ *   - Divided into 8 subjects matching paper sections and NCERT/NMC sub-disciplines
+ *   - All 50 official NMC units are mapped in pedagogical order (56 topics total)
+ */
+neetug: {
+  n: 'NEET (UG)',
+  mock: 180,
+  defMins: { b: 60, i: 45, a: 30 },
+  crunchMins: 45,
+  found: [
+    'Botany',
+    'Physical Chemistry',
+    'Physics — Mechanics',
+  ],
+  tier: {
+    'Botany': 1,
+    'Physical Chemistry': 1,
+    'Physics — Mechanics': 1,
+    'Zoology': 2,
+    'Physics — Electrodynamics, Optics & Modern': 2,
+    'Organic Chemistry': 2,
+    'Inorganic Chemistry': 2,
+    'Physics — Thermal, Waves & Experimental': 3,
+  },
+  crunch: {
+    // Prioritises the 360-mark Biology core, high-ROI Class 12 Physics, and NCERT Chemistry while trimming earlier Tier-1 foundations and cutting time-heavy Mechanics/Waves in the 30-day plan
+    30: {
+      'Zoology': 28,
+      'Botany': 24,
+      'Physics — Electrodynamics, Optics & Modern': 18,
+      'Organic Chemistry': 12,
+      'Inorganic Chemistry': 10,
+      'Physical Chemistry': 8,
+    },
+    60: {
+      'Zoology': 24,
+      'Botany': 22,
+      'Physics — Electrodynamics, Optics & Modern': 15,
+      'Organic Chemistry': 11,
+      'Inorganic Chemistry': 9,
+      'Physical Chemistry': 8,
+      'Physics — Mechanics': 7,
+      'Physics — Thermal, Waves & Experimental': 4,
+    },
+  },
+  t: {
+    'Botany': {
+      pri: 96,
+      topics: [
+        ['Cell Structure and Function — Cell: The Unit of Life, Biomolecules and Cell Division', 95],
+        ['Diversity in Living World — What is Living, Biodiversity, Classification, Monera, Protista and Fungi', 84],
+        ['Diversity in Living World — Plant Kingdom (Algae, Bryophytes, Pteridophytes, Gymnosperms and Angiosperms)', 80],
+        ['Structural Organisation in Plants — Morphology, Anatomy and Families of Flowering Plants', 86],
+        ['Plant Physiology — Photosynthesis, Respiration and Plant Growth Regulators', 88, 90, 68, 45],
+        ['Sexual Reproduction in Flowering Plants', 85],
+        ['Genetics — Principles of Inheritance, Variation and Molecular Basis of Inheritance', 98, 95, 70, 45],
+        ['Biology and Human Welfare — Microbes in Human Welfare', 68],
+        ['Ecology and Environment — Organisms and Populations, Ecosystem, Biodiversity and Conservation', 92],
+      ],
+    },
+    'Zoology': {
+      pri: 95,
+      topics: [
+        ['Structural Organisation in Animals — Animal Tissues, Morphology and Anatomy of Frog and Cockroach', 82],
+        ['Diversity in Living World — Animal Kingdom (Non-Chordates and Chordates)', 88],
+        ['Human Physiology I — Breathing and Exchange of Gases, Body Fluids and Circulation, Excretory Products', 92, 90, 68, 45],
+        ['Human Physiology II — Locomotion and Movement, Neural Control and Coordination, Chemical Coordination', 90, 90, 68, 45],
+        ['Reproduction — Human Reproduction and Reproductive Health', 88],
+        ['Evolution — Origin of Life, Darwinism, Mechanism of Evolution and Hardy-Weinberg Principle', 76],
+        ['Biology and Human Welfare — Human Health and Diseases, Immunology, Cancer and Substance Abuse', 85],
+        ['Biotechnology and Its Applications — Principles, Recombinant DNA Technology and Applications', 96],
+      ],
+    },
+    'Physics — Electrodynamics, Optics & Modern': {
+      pri: 88,
+      topics: [
+        ["Electrostatics — Coulomb's Law, Electric Field, Gauss's Law, Electric Potential, Dipoles and Capacitors", 86],
+        ["Current Electricity — Ohm's Law, Drift Velocity, Resistor/Cell Combinations, Kirchhoff's Laws and Bridges", 94],
+        ["Magnetic Effects of Current and Magnetism — Biot-Savart Law, Ampere's Law, Galvanometer and Magnetic Materials", 86],
+        ["Electromagnetic Induction and Alternating Currents — Faraday's Law, Inductance, LCR Circuit and Transformers", 84],
+        ['Optics — Ray Optics, Optical Instruments, Wave Optics, Interference, Diffraction and Polarisation', 92, 95, 70, 45],
+        ['Dual Nature of Matter and Radiation, Atoms and Nuclei — Photoelectric Effect, Bohr Model and Radioactivity', 95],
+        ['Electronic Devices — Semiconductors, p-n Junction Diode, LED, Photodiode, Zener Diode and Logic Gates', 92],
+      ],
+    },
+    'Organic Chemistry': {
+      pri: 84,
+      topics: [
+        ['Some Basic Principles of Organic Chemistry — IUPAC, Isomerism, Electronic Effects and Reaction Intermediates', 96],
+        ['Purification and Characterisation of Organic Compounds — Qualitative and Quantitative Elemental Analysis', 68],
+        ['Hydrocarbons — Alkanes, Alkenes, Alkynes and Aromatic Hydrocarbons', 88],
+        ['Organic Compounds Containing Halogens — Haloalkanes, Haloarenes, SN1, SN2 and Elimination Reactions', 78],
+        ['Organic Compounds Containing Oxygen — Alcohols, Phenols, Ethers, Aldehydes, Ketones and Carboxylic Acids', 95, 95, 70, 45],
+        ['Organic Compounds Containing Nitrogen — Amines, Cyanides, Isocyanides and Diazonium Salts', 82],
+        ['Biomolecules — Carbohydrates, Proteins, Enzymes, Vitamins, Nucleic Acids and Hormones', 80],
+      ],
+    },
+    'Physical Chemistry': {
+      pri: 81,
+      topics: [
+        ['Some Basic Concepts in Chemistry — Mole Concept, Stoichiometry and Empirical/Molecular Formulae', 85],
+        ['Atomic Structure — Bohr Model, Dual Nature of Matter, Quantum Numbers and Electronic Configurations', 86],
+        ['Chemical Thermodynamics — Laws of Thermodynamics, Enthalpy, Entropy and Gibbs Free Energy', 88],
+        ['Equilibrium — Chemical and Ionic Equilibrium, Ionisation, Buffer Solutions and Solubility Product', 90],
+        ['Redox Reactions and Electrochemistry — Nernst Equation, Conductance, Kohlrausch Law and Galvanic Cells', 88],
+        ["Solutions — Concentration Terms, Raoult's Law, Colligative Properties and Van't Hoff Factor", 82],
+        ['Chemical Kinetics — Rate Laws, Order and Molecularity, Integrated Rate Equations and Arrhenius Equation', 84],
+      ],
+    },
+    'Inorganic Chemistry': {
+      pri: 78,
+      topics: [
+        ['Classification of Elements and Periodicity in Properties — Periodic Trends in Atomic and Ionisation Properties', 80],
+        ['Chemical Bonding and Molecular Structure — VSEPR Theory, Hybridisation, Molecular Orbital Theory and H-Bonding', 96],
+        ['p-Block Elements — Group 13 to Group 18 General Trends, Anomalous Behaviour and Electronic Configurations', 82],
+        ['d- and f-Block Elements — Transition Metals, Lanthanoids, Actinoids, KMnO4 and K2Cr2O7', 85],
+        ['Co-ordination Compounds — IUPAC Nomenclature, Isomerism, Valence Bond Theory and Crystal Field Theory', 94],
+        ['Principles Related to Practical Chemistry — Qualitative Salt Analysis, Titrimetry and Functional Group Tests', 65],
+      ],
+    },
+    'Physics — Mechanics': {
+      pri: 72,
+      topics: [
+        ['Physics and Measurement — SI Units, Least Count, Significant Figures, Errors and Dimensional Analysis', 82],
+        ['Kinematics — Frame of Reference, Straight-Line Motion, Vectors, Projectile and Relative Motion', 78],
+        ["Laws of Motion — Newton's Laws, Impulse, Conservation of Linear Momentum, Friction and Circular Dynamics", 84],
+        ['Work, Energy and Power — Work-Energy Theorem, Conservative Forces, Potential Energy and Collisions', 82],
+        ['Rotational Motion — Centre of Mass, Torque, Angular Momentum, Moment of Inertia and Rolling Motion', 85, 95, 70, 45],
+        ['Gravitation — Universal Law of Gravitation, Acceleration Due to Gravity, Potential Energy and Satellites', 76],
+        ['Properties of Solids and Liquids — Stress-Strain, Viscosity, Surface Tension, Bernoulli Theorem and Heat Transfer', 78],
+      ],
+    },
+    'Physics — Thermal, Waves & Experimental': {
+      pri: 56,
+      topics: [
+        ['Thermodynamics — Thermal Equilibrium, First and Second Laws, Isothermal and Adiabatic Processes', 84],
+        ['Kinetic Theory of Gases — Ideal Gas Pressure, RMS Speed, Degrees of Freedom and Mean Free Path', 72],
+        ['Oscillations and Waves — Simple Harmonic Motion, Energy in SHM, Pendulum, Wave Motion and Beats', 70],
+        ['Electromagnetic Waves — Displacement Current, EM Wave Characteristics and Electromagnetic Spectrum', 58, 30, 20, 15],
+        ['Experimental Skills — Vernier Callipers, Screw Gauge, Meter Bridge, Resonance Tube and Diode Curves', 64],
+      ],
+    },
+  },
+},
+   
   sscgl:{n:'SSC CGL',mock:60,t:{
     'Quantitative Aptitude':['Percentage, profit and loss','Ratio, time and work','Algebra and number system','Geometry and mensuration','Trigonometry','Data interpretation'],
     'Reasoning':['Analogies and classification','Series and coding-decoding','Blood relations and directions','Syllogism and Venn diagrams','Puzzles and seating arrangement','Non-verbal reasoning'],
