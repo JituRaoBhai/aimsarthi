@@ -1,5 +1,5 @@
 'use strict';
-const VER='v6, 18 Oct 2026';
+const VER='v7, 18 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -13,8 +13,7 @@ const hm=m=>{m=Math.round(m);return m>=60?Math.floor(m/60)+'h'+(m%60?' '+m%60+'m
 const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-/* Round a plan duration to a human-friendly value >=30 min.
-   30 and below → 30.  30–60 → nearest 5.  60–120 → nearest 15.  Above → nearest 30. */
+
 function roundMins(m){
  const v=Math.round(+m||0);
  if(v<=30)return 30;
@@ -26,8 +25,8 @@ const MIN_TASK=30;
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
 const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[]},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false}});
-let S=null,ready=false,mode='local',q=Promise.resolve(),sT,iv,tT,fromCloud=false,timerAlertHandle=null;
-let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',auth:null};
+let S=null,ready=false,mode='local',q=Promise.resolve(),sT,iv,tT,fromCloud=false,timerAlertHandle=null,planInterval=null;
+let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',auth:null,isPlanning:false,planStep:0};
 const byId=id=>S.tasks.find(t=>t.id===id);
 const doneMin=t=>t.status==='done'?t.mins:t.status==='partial'?Math.round(t.mins/2):0;
 const remain=t=>{
@@ -146,16 +145,7 @@ function autoCrunch(N){
 
 /* ================================================================== */
 /* ====================  THE ROADMAP ENGINE  ======================== */
-/* Rules:
-   1. daysLeft <=35 → 30-day crunch; <=70 → 60-day crunch; else personalised.
-   2. Crunch: fixed weights, fixed crunchMins, identical for every learner.
-   3. Personalised: per-topic minutes from defMins / per-topic override.
-   4. Foundational subjects (tier 1) scheduled before tier 2 before tier 3.
-   5. Every day capped at hours × buffer; Sundays are mock days; Saturdays are
-      spaced revision. Every scheduled task is >=30 min and rounded by roundMins().
-   6. A topic never runs out of order within its subject. Leftovers that do not
-      fit end up as "dropped" and reported.
-*/
+/* ================================================================== */
 function gen(p,extras){
  const ex=EX[p.exam];
  if(!ex)return{start:today(),tasks:[],at:new Date().toISOString(),error:'Unknown exam.'};
@@ -177,7 +167,6 @@ function gen(p,extras){
  const buffer=isCrunch?0.90:Math.max(0.70,Math.min(0.85,L.buffer||0.80));
  const planCap=Math.max(30,Math.round(dailyCap*buffer));
 
- // Session length: rounded, min 30, using the same roundMins helper.
  const rawSession=isCrunch?planCap/3:(L.sessionLen||60);
  const sessionLen=roundMins(clamp(Math.round(rawSession/5)*5,30,90));
 
@@ -307,10 +296,8 @@ function gen(p,extras){
    const rem=remainingMins[key];
    const room=planCap-used;
    if(room<MIN_TASK)break;
-   // Desired duration: min of remaining budget, session length, and available room.
    let m=Math.min(rem,sessionLen,room);
    m=roundMins(m);
-   // If rounding up exceeds the room, shrink to fit (still >=30).
    if(m>room){
     m=Math.floor(room/5)*5;
     if(m<MIN_TASK)break;
@@ -447,7 +434,7 @@ function planCard(){
   ${crunchNote}
   ${alloc}
   ${dropped}
-  <p class="sm mu" style="margin:8px 0 0">All tasks are 30+ min and rounded to a study-friendly duration (30, 45, 60, 75…). Daily budget: ${hm(Math.round((+S.p.hours||0)*60))} available; the plan uses ~${Math.round((L.buffer||0.8)*100)}% of it.</p>
+  <p class="sm mu" style="margin:8px 0 0">All tasks are 30+ min and rounded to a study-friendly duration. Daily budget: ${hm(Math.round((+S.p.hours||0)*60))} available; the plan uses ~${Math.round((L.buffer||0.8)*100)}% of it.</p>
  </section>`;
 }
 
@@ -547,12 +534,30 @@ function authScreen(){
  </section>`;
 }
 
+function planVisualizer(){
+ const steps=["Reading your syllabus...", "Calculating daily limits...", "Prioritizing high-yield topics...", "Applying topper data...", "Building your future..."];
+ const current = steps[Math.min(V.planStep, steps.length-1)];
+ const pct = Math.round(((V.planStep+1)/steps.length)*100);
+ return `<section class="card" style="text-align:center;padding:32px 20px">
+  <div class="spinner"></div>
+  <h2 style="margin:16px 0 4px">Creating your best plan</h2>
+  <p class="mu sm" style="min-height:24px">${current}</p>
+  <div class="bar" style="margin-top:16px"><i style="width:${pct}%;transition:width 0.4s ease"></i></div>
+ </section>`;
+}
+
 function render(){try{
  const a=$('#app'),nv=$('#nv');
- if(!ready){a.innerHTML='<p class="mu" style="padding:48px 0;text-align:center">Loading your plan...</p>';nv.hidden=true;return}
+ if(!ready){
+   a.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh"><div class="spinner"></div><p class="mu" style="margin-top:16px">Loading your plan...</p></div>';
+   nv.hidden=true;return;
+ }
  if(V.auth&&!(window.Auth&&Auth.user)){
   document.body.classList.remove('lv');nv.hidden=true;a.innerHTML=authScreen();
   return;
+ }
+ if(V.isPlanning){
+  nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=planVisualizer();return;
  }
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
@@ -566,7 +571,24 @@ function sheet(h){$('#shb').innerHTML=h;$('#sh').classList.add('on');const i=$('
 function closeSheet(){$('#sh').classList.remove('on')}
 function toast(m){const e=$('#ts');e.textContent=m;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),2600)}
 function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
-function tick(){const e=$('#tm');if(!e||!S)return;const s=S.timer?Math.max(0,Math.floor((Date.now()-new Date(S.timer.start))/1e3)):0;e.textContent=pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);const t=$('#tm2');if(t)t.textContent=hm(dayMins(V.day))}
+function tick(){
+ const e=$('#tm');if(!e||!S)return;
+ if(!S.timer){e.textContent='00:00:00';return}
+ const elapsedSec=Math.max(0,Math.floor((Date.now()-new Date(S.timer.start))/1e3));
+ if(S.timer.targetMins){
+  const targetSec=S.timer.targetMins*60;
+  const remSec=targetSec-elapsedSec;
+  if(remSec>=0){
+   e.textContent=pad(Math.floor(remSec/3600))+':'+pad(Math.floor(remSec/60)%60)+':'+pad(remSec%60);
+  }else{
+   const over=Math.abs(remSec);
+   e.textContent='+'+pad(Math.floor(over/3600))+':'+pad(Math.floor(over/60)%60)+':'+pad(over%60);
+  }
+ }else{
+  e.textContent=pad(Math.floor(elapsedSec/3600))+':'+pad(Math.floor(elapsedSec/60)%60)+':'+pad(elapsedSec%60);
+ }
+ const t=$('#tm2');if(t)t.textContent=hm(dayMins(V.day))
+}
 
 /* ---------- timer alert (task-based) ---------- */
 function clearTimerAlert(){if(timerAlertHandle){clearTimeout(timerAlertHandle);timerAlertHandle=null}}
@@ -593,7 +615,6 @@ function scheduleTimerAlert(){
  if(!S||!S.timer||S.timer.alerted||!S.timer.alertAt)return;
  const remaining=new Date(S.timer.alertAt).getTime()-Date.now();
  if(remaining<=0){fireTimerAlert();return}
- // Cap at 24h; the callback re-checks and re-arms if the target is later.
  timerAlertHandle=setTimeout(fireTimerAlert,Math.min(remaining,24*60*60*1000));
 }
 async function fireTimerAlert(){
@@ -666,13 +687,29 @@ const A={
  tab:d=>{V.tab=d.v;scrollTo(0,0);render()},
  next:()=>{const e=chk(V.step);if(e){V.err=e;render();return}V.err='';
   if(V.step<6){V.step++;save();render();scrollTo(0,0)}
-  else{S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;S.p.onboarded=true;S.draft=gen(S.p,S.top);V.tab='roadmap';save();render();scrollTo(0,0)}},
+  else{S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;S.p.onboarded=true;A.runGen()}},
  back:()=>{V.err='';V.step=Math.max(0,V.step-1);render()},
  pick:d=>{if(d.k==='exam'&&S.p.exam!==d.v){S.p.done=[];S.p.weak=[]}S.p[d.k]=d.v;render()},
  tg:d=>{const a=S.p[d.k]=S.p[d.k]||[],i=a.indexOf(d.v);i<0?a.push(d.v):a.splice(i,1);
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
  redo:()=>{S.p.onboarded=false;V.step=2;save();render()},
- regen:()=>{S.draft=gen(S.p,S.top);V.tab='roadmap';save();render()},
+ regen:()=>{A.runGen()},
+ runGen:()=>{
+  V.isPlanning=true;V.planStep=0;render();
+  clearInterval(planInterval);
+  planInterval=setInterval(()=>{
+    V.planStep++;
+    if(V.planStep>=5){
+      clearInterval(planInterval);
+      S.draft=gen(S.p,S.top);
+      V.tab='roadmap';
+      V.isPlanning=false;
+      save();render();scrollTo(0,0);
+    } else {
+      render();
+    }
+  }, 450);
+ },
  accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMeta=d.meta;S.draft=null;V.tab='home';V.day=today();save();render();toast('Roadmap accepted')},
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
