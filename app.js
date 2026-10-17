@@ -1,5 +1,5 @@
 'use strict';
-const VER='v4, 17 Oct 2026';
+const VER='v5, 17 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -16,7 +16,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
 const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[]},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false}});
-let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false;
+let S=null,ready=false,mode='local',q=Promise.resolve(),sT,iv,tT,fromCloud=false;
 let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',auth:null};
 const byId=id=>S.tasks.find(t=>t.id===id);
 const doneMin=t=>t.status==='done'?t.mins:t.status==='partial'?Math.round(t.mins/2):0;
@@ -74,7 +74,6 @@ function topperStats(exam,extra){
  const conf=n>=8?'high':n>=4?'medium':n>=1?'low':'none';
  const sessionLen=n===0?60:(medH>=8?90:medH>=6?75:medH>=4?60:45);
  const buffer=conf==='high'?0.75:conf==='medium'?0.80:0.85;
- // Revision rhythm from the wording of the rev field (best-effort)
  let revEveryDays=7;
  E.forEach(e=>{
   const r=String(e.rev||'').toLowerCase();
@@ -86,72 +85,254 @@ function topperStats(exam,extra){
  return {n,conf,medHours:medH,medMonths:medM,resources,sessionLen,buffer,revEveryDays};
 }
 
-/* ---------- plan generation (rules + topper statistics) ---------- */
+/* ---------- exam normaliser: handles both rich and legacy topic forms ---------- */
+function normalizeExam(ex){
+ const subs=ex.sub;
+ const found=(ex.found&&ex.found.length)?ex.found:[];
+ const tierMap=ex.tier||{};
+ const defMins=ex.defMins||{b:60,i:45,a:30};
+ const subjData={};
+ subs.forEach((s,sIdx)=>{
+  const raw=ex.t[s];
+  let pri=60,list=[];
+  if(Array.isArray(raw)){
+   list=raw.map(n=>typeof n==='string'?{n}:n);
+  }else if(raw&&Array.isArray(raw.topics)){
+   pri=raw.pri!=null?raw.pri:60;
+   list=raw.topics.map(x=>{
+    if(typeof x==='string')return{n:x};
+    if(Array.isArray(x))return{n:x[0],p:x[1],b:x[2],i:x[3],a:x[4]};
+    return x;
+   });
+  }
+  if(!list.length)list=[{n:'Core concepts and practice questions'}];
+  const tier=tierMap[s]!=null?tierMap[s]:(found.includes(s)?1:2);
+  subjData[s]={pri,list,tier,sIdx};
+ });
+ return{
+  subs,found,tier:tierMap,defMins,subjData,
+  crunchMins:ex.crunchMins||45,
+  crunch:ex.crunch||null,
+  mock:ex.mock,n:ex.n
+ };
+}
+
+/* ---------- if an exam has no explicit crunch weights, derive from priorities ---------- */
+function autoCrunch(N){
+ const W={};
+ const total=N.subs.reduce((acc,s)=>acc+(N.subjData[s].pri||60),0)||1;
+ N.subs.forEach(s=>{
+  const p=N.subjData[s].pri||60;
+  W[s]=Math.round(p/total*100);
+ });
+ const cur=Object.values(W).reduce((a,b)=>a+b,0);
+ if(cur!==100){
+  const first=N.subs[0];
+  if(first)W[first]=Math.max(0,W[first]+(100-cur));
+ }
+ return W;
+}
+
+/* ================================================================== */
+/* ====================  THE ROADMAP ENGINE  ======================== */
+/* ================================================================== */
+/* Rules, in order:
+   1. Pick the mode from days-left: <=35 → 30-day crunch, <=70 → 60-day crunch, else personalised.
+   2. Crunch modes: fixed crunch weights (or autoCrunch) and fixed crunchMins per topic.
+      The plan is identical for every learner — level is ignored.
+   3. Personalised mode: per-topic minutes come from defMins overridden by the learner's level.
+   4. Sort topics by (tier asc, effective priority desc). Foundational subjects (tier 1) first.
+   5. Every day capped at hours × buffer; buffer is 0.90 in crunch, 0.70–0.85 in personalised.
+      Sundays are mock days, Saturdays are spaced revision.
+   6. Large topics are split across sessions / days. Anything that does not fit is dropped and
+      reported, lowest priority first.
+*/
 function gen(p,extras){
  const ex=EX[p.exam];
- if(!ex)return{start:today(),tasks:[],at:new Date().toISOString(),learned:null,error:'Unknown exam.'};
- const t0=today(),examEnd=addD(p.examDate,-1);
- const totalDays=Math.max(1,Math.min(240,diff(t0,examEnd)+1));
+ if(!ex)return{start:today(),tasks:[],at:new Date().toISOString(),error:'Unknown exam.'};
+
+ const t0=today();
+ const examEnd=addD(p.examDate,-1);
+ const daysLeft=diff(t0,examEnd)+1;
+ if(daysLeft<1)return{start:t0,tasks:[],error:'The exam date has passed.'};
+
+ const N=normalizeExam(ex);
  const L=topperStats(p.exam,extras||[]);
+ const doneS=new Set(p.done||[]);
+ const levelKey=p.level==='Beginner'?'b':p.level==='Advanced'?'a':'i';
 
- // ---- hard safety caps so no day is ever impossible ----
- const dailyCap=Math.max(30,Math.round((+p.hours||1)*60));       // absolute max min/day
- const planCap =Math.max(20,Math.round(dailyCap*L.buffer));      // we plan <= this
- const sessionLen=clamp(L.sessionLen,30,90);
- const perDay=Math.max(1,Math.round(planCap/sessionLen));
- const blockLen=Math.max(20,Math.floor(planCap/perDay/5)*5);
+ const mode=daysLeft<=35?'30-day crunch':daysLeft<=70?'60-day crunch':'personalized';
+ const isCrunch=mode!=='personalized';
 
- const weak=new Set(p.weak||[]),doneS=new Set(p.done||[]);
- let subs=ex.sub.filter(s=>!doneS.has(s));if(!subs.length)subs=ex.sub.slice();
- const topics={};subs.forEach(s=>{const tl=(ex.t&&ex.t[s])||[];topics[s]=tl.length?tl.slice():['Core concepts and practice questions']});
+ const dailyCap=Math.max(30,Math.round((+p.hours||1)*60));
+ const buffer=isCrunch?0.90:Math.max(0.70,Math.min(0.85,L.buffer||0.80));
+ const planCap=Math.max(20,Math.round(dailyCap*buffer));
 
- // Subject order: weak subjects twice so they get more sessions
- const order=[];
- subs.filter(s=>weak.has(s)).forEach(s=>order.push(s,s));
- subs.filter(s=>!weak.has(s)).forEach(s=>order.push(s));
- if(!order.length)order.push(...subs);
+ const sessionLen=isCrunch
+  ? clamp(Math.round(planCap/3/5)*5,30,60)
+  : clamp(L.sessionLen||60,20,90);
 
- const out=[],cursor={},recent=[];let oi=0;
- const push=(date,subject,topic,mins,pri,type)=>out.push({id:uid(),subject,topic,mins,pri,date,type,status:'todo',gen:true});
+ // --- flatten topics ---
+ const flat=[];
+ const topicsBySubj={};
+ N.subs.forEach((s,sIdx)=>{
+  if(doneS.has(s)){topicsBySubj[s]=[];return}
+  const sd=N.subjData[s];
+  const arr=[];
+  sd.list.forEach((o,i)=>{
+   const tpPri=o.p!=null?o.p:50;
+   const eff=Math.round((sd.pri||60)*tpPri/100);
+   const bM=o.b!=null?o.b:(o.mins||N.defMins.b);
+   const iM=o.i!=null?o.i:(o.mins||N.defMins.i);
+   const aM=o.a!=null?o.a:(o.mins||N.defMins.a);
+   const mins=isCrunch?N.crunchMins:(levelKey==='b'?bM:levelKey==='a'?aM:iM);
+   const t={s,n:o.n,i,pri:tpPri,subjPri:sd.pri,eff,mins,tier:sd.tier,ord:sIdx*1000+i};
+   arr.push(t);flat.push(t);
+  });
+  if(!arr.length){
+   const mins=isCrunch?N.crunchMins:N.defMins[levelKey];
+   const t={s,n:'Core concepts and practice questions',i:0,pri:50,subjPri:sd.pri,
+            eff:Math.round((sd.pri||60)*0.5),mins,tier:sd.tier,ord:sIdx*1000};
+   arr.push(t);flat.push(t);
+  }
+  topicsBySubj[s]=arr;
+ });
 
- for(let i=0;i<totalDays;i++){
-  const date=addD(t0,i),dow=pd(date).getDay();
+ // --- available minutes (respecting day off) ---
+ let availMins=0;
+ for(let i=0;i<daysLeft;i++){
+  const k=addD(t0,i);
+  const dow=pd(k).getDay();
   if(p.off!==''&&String(dow)===p.off)continue;
-  // Sunday => mock day (only if the plan is at least a few days long)
-  if(dow===0&&i>=3){
-   push(date,'Mock test','Full-length mock for '+ex.n,Math.min(240,ex.mock||180),'High','mock');
-   push(date,'Mock test','Analyse mistakes and update weak topics',45,'High','mock');
-   continue;
-  }
-  // Saturday => spaced revision of the last few days
-  if(dow===6&&i>=2){
-   const picks=recent.slice(-Math.max(1,perDay));
-   if(picks.length)picks.forEach(r=>push(date,r.subject,'Revise: '+r.topic,blockLen,'Medium','revision'));
-   else for(let b=0;b<Math.min(2,perDay);b++){
-    const s=order[(oi++)%order.length];
-    push(date,s,'Revise: high-yield notes and active recall',blockLen,'Medium','revision');
+  availMins+=planCap;
+ }
+
+ // --- wanted set ---
+ let wanted=[];
+ if(isCrunch){
+  const key=daysLeft<=35?30:60;
+  const W=(N.crunch&&N.crunch[key])||autoCrunch(N);
+  const totalW=Object.values(W).reduce((a,b)=>a+b,0)||100;
+  const perSubj={};
+  Object.keys(W).forEach(s=>{perSubj[s]=Math.round(availMins*W[s]/totalW)});
+
+  const subjOrder=N.subs.slice().sort((a,b)=>{
+   const ta=N.subjData[a].tier,tb=N.subjData[b].tier;
+   if(ta!==tb)return ta-tb;
+   return (perSubj[b]||0)-(perSubj[a]||0);
+  });
+  subjOrder.forEach(s=>{
+   const budget=perSubj[s]||0;
+   if(!budget)return;
+   let used=0;
+   const list=topicsBySubj[s]||[];
+   for(const t of list){
+    if(used+t.mins>budget&&used>0)break;
+    wanted.push(t);used+=t.mins;
    }
-   continue;
-  }
-  // Normal study day
-  const used=new Set();
-  for(let b=0;b<perDay;b++){
-   let s=null;
-   for(let k=0;k<order.length;k++){
-    const cand=order[(oi+k)%order.length];
-    if(!used.has(cand)){s=cand;oi=(oi+k+1)%order.length;break;}
-   }
-   if(!s)s=order[(oi++)%order.length];
-   used.add(s);
-   const tl=topics[s];
-   const idx=(cursor[s]||0)%tl.length;
-   const topic=tl[idx];cursor[s]=idx+1;
-   push(date,s,topic,blockLen,weak.has(s)?'High':'Medium','study');
-   recent.push({subject:s,topic});
-   if(recent.length>40)recent.shift();
+  });
+ }else{
+  const sorted=flat.slice().sort((a,b)=>{
+   if(a.tier!==b.tier)return a.tier-b.tier;
+   if(b.eff!==a.eff)return b.eff-a.eff;
+   return a.ord-b.ord;
+  });
+  let used=0;
+  const capMins=availMins*0.98;
+  for(const t of sorted){
+   if(used+t.mins>capMins)break;
+   wanted.push(t);used+=t.mins;
   }
  }
- return{start:t0,tasks:out,at:new Date().toISOString(),learned:L};
+
+ // --- schedule ---
+ const out=[];
+ const bySubj={};
+ wanted.forEach(t=>{(bySubj[t.s]=bySubj[t.s]||[]).push(t)});
+ const ptr={};
+ Object.keys(bySubj).forEach(s=>{ptr[s]=0});
+
+ const remainingMins={};
+ wanted.forEach(t=>{remainingMins[t.s+'\u0001'+t.i]=t.mins});
+
+ const recent=[];
+ const push=(date,subject,topic,mins,pri,type)=>
+  out.push({id:uid(),subject,topic,mins,pri,date,type,status:'todo',gen:true});
+
+ function nextTopic(doneToday){
+  let best=null;
+  for(const s in ptr){
+   const arr=bySubj[s];
+   const i=ptr[s];
+   if(i>=arr.length)continue;
+   const t=arr[i];
+   const key=t.s+'\u0001'+t.i;
+   if(doneToday.has(key))continue;
+   if(!best||t.eff>best.eff||(t.eff===best.eff&&t.tier<best.tier))best=t;
+  }
+  return best;
+ }
+
+ for(let i=0;i<Math.min(daysLeft,240);i++){
+  const date=addD(t0,i);
+  const dow=pd(date).getDay();
+  if(p.off!==''&&String(dow)===p.off)continue;
+
+  if(dow===0&&i>=3){
+   const mockMins=Math.min(240,N.mock||180);
+   push(date,'Mock test','Full-length mock for '+N.n,mockMins,'High','mock');
+   push(date,'Mock test','Analyse mistakes and note weak topics',Math.min(60,sessionLen),'High','mock');
+   continue;
+  }
+  if(dow===6&&i>=2){
+   const picks=recent.slice(-Math.min(2,Math.max(1,Math.round(planCap/sessionLen))));
+   if(picks.length){
+    picks.forEach(r=>push(date,r.s,'Revise: '+r.n,sessionLen,'Medium','revision'));
+    continue;
+   }
+  }
+
+  const doneToday=new Set();
+  let used=0,guard=0;
+  while(used<planCap&&guard<12){
+   guard++;
+   const t=nextTopic(doneToday);
+   if(!t)break;
+   const key=t.s+'\u0001'+t.i;
+   const rem=remainingMins[key];
+   const m=Math.min(rem,planCap-used,sessionLen);
+   if(m<10)break;
+   const pri=t.eff>=70?'High':t.eff>=40?'Medium':'Low';
+   push(date,t.s,t.n,m,pri,'study');
+   remainingMins[key]-=m;
+   doneToday.add(key);
+   if(remainingMins[key]<=0)ptr[t.s]++;
+   used+=m;
+   recent.push({s:t.s,n:t.n});
+   if(recent.length>60)recent.shift();
+  }
+ }
+
+ // --- what actually got scheduled vs. dropped ---
+ const scheduledSet=new Set(out.filter(t=>t.type==='study').map(t=>t.s+'\u0001'+t.topic));
+ const notScheduled=flat.filter(t=>!scheduledSet.has(t.s+'\u0001'+t.n));
+ const droppedTopics=notScheduled
+  .map(t=>({s:t.s,n:t.n,eff:t.eff}))
+  .sort((a,b)=>a.eff-b.eff);
+
+ return{
+  start:t0,
+  tasks:out,
+  at:new Date().toISOString(),
+  learned:L,
+  meta:{
+   daysLeft,
+   mode,
+   scheduled:out.filter(t=>t.type==='study').length,
+   dropped:droppedTopics.length,
+   droppedTopics:droppedTopics.slice(0,60)
+  }
+ };
 }
 
 /* ---------- onboarding ---------- */
@@ -203,26 +384,69 @@ function home(){
  +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 
-/* -- NEW: how the plan was built, with topper stats -- */
-function learnCard(exam){
- const L=topperStats(exam,S.top);
- const label=L.n===0?'No topper entries yet':(L.n>=8?'High confidence (8+ entries)':L.n>=4?'Medium confidence (4–7 entries)':'Low confidence (1–3 entries)');
- const bar=Math.min(100,(L.n/8)*100);
- let det='';
- if(L.n>0){
-  det=`<p class="sm" style="margin:6px 0 0">Aggregated across all ${L.n} entr${L.n>1?'ies':'y'}: ${L.medHours?('median '+L.medHours+' h/day reported; '):''}${L.medMonths?('median '+L.medMonths+' months reported; '):''}session length ${L.sessionLen} min; revision cadence every ~${L.revEveryDays} day${L.revEveryDays>1?'s':''}.</p>`;
-  if(L.resources.length)det+=`<p class="sm" style="margin:6px 0 0">Most-cited resources: ${L.resources.map(esc).join(', ')}.</p>`;
+/* -- plan summary card: mode, topper confidence, coverage, allocation, dropped topics -- */
+function planCard(){
+ const d=S.draft;
+ const meta=(d&&d.meta)||S.p.planMeta||null;
+ const L=topperStats(S.p.exam,S.top);
+ const daysLeft=Math.max(0,diff(today(),S.p.examDate)-1);
+ const confLabel=L.n===0?'No topper entries yet'
+  :L.n>=8?'High confidence (8+ entries)'
+  :L.n>=4?'Medium confidence (4–7 entries)'
+  :'Low confidence (1–3 entries)';
+ const modeLabel=meta&&meta.mode?meta.mode:'personalized';
+ const isCrunch=modeLabel!=='personalized';
+
+ let coverage='';
+ if(meta){
+  coverage=`<p class="sm" style="margin:6px 0 0"><b>${meta.scheduled}</b> study sessions across ${meta.daysLeft} days${meta.dropped?`; <b>${meta.dropped}</b> topic${meta.dropped>1?'s':''} could not be scheduled because time ran out`:''}.</p>`;
  }
- return`<section class="card"><h2>How this roadmap was built</h2><p class="sm mu">Rules + aggregate of every sourced topper entry for this exam. A single entry is never trusted on its own.</p><div class="bar" style="margin:6px 0"><i style="width:${bar}%"></i></div><p class="sm" style="margin:0"><b>${label}</b></p>${det}<p class="sm mu" style="margin:8px 0 0">Daily budget: ${hm(Math.round((+S.p.hours||0)*60))} available → the plan uses ~${Math.round(L.buffer*100)}% of it and leaves the rest as catch-up buffer. Sunday is a mock day, Saturday is spaced revision. Topic names are generic — swap in your syllabus.</p></section>`;
+
+ let alloc='';
+ const tasks=d?d.tasks:S.tasks;
+ if(tasks&&tasks.length){
+  const bySubj={};
+  tasks.forEach(t=>{if(t.type==='study')bySubj[t.subject]=(bySubj[t.subject]||0)+t.mins});
+  const totalM=sum(Object.values(bySubj),x=>x);
+  if(totalM>0){
+   const rows=Object.entries(bySubj).sort((a,b)=>b[1]-a[1]).slice(0,8);
+   alloc=`<h3 style="margin-top:12px">Subject allocation</h3>`+rows.map(([s,m])=>{
+    const p=Math.round(m/totalM*100);
+    return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(m)}</span></p><div class="bar" style="margin-bottom:8px"><i style="width:${p}%"></i></div>`;
+   }).join('');
+  }
+ }
+
+ let dropped='';
+ if(meta&&meta.droppedTopics&&meta.droppedTopics.length){
+  const list=meta.droppedTopics.slice(0,30);
+  dropped=`<details style="margin-top:8px"><summary class="sm"><b>Topics not scheduled (${meta.droppedTopics.length})</b></summary><ul class="sm mu" style="padding-left:18px;margin:6px 0 0">${list.map(t=>`<li>${esc(t.s)}: ${esc(t.n)} <span class="mu">(priority ${t.eff})</span></li>`).join('')}${meta.droppedTopics.length>30?`<li>… and ${meta.droppedTopics.length-30} more</li>`:''}</ul></details>`;
+ }
+
+ const crunchNote=isCrunch
+  ? `<p class="sm" style="margin:6px 0 0"><b>Crunch plan.</b> The exam is close, so the topic list and per-topic time are fixed and identical for every learner. Foundation first, then the highest-priority topics. Your declared level does not change this plan.</p>`
+  : '';
+
+ return`<section class="card"><h2>How this roadmap was built</h2>
+  <p class="sm" style="margin:0"><b>Mode:</b> ${esc(modeLabel)} · <b>Days left:</b> ${daysLeft}</p>
+  <div class="bar" style="margin:6px 0"><i style="width:${Math.min(100,(L.n/8)*100)}%"></i></div>
+  <p class="sm" style="margin:0"><b>${confLabel}</b></p>
+  ${L.n>0?`<p class="sm" style="margin:6px 0 0">Aggregated across all ${L.n} entr${L.n>1?'ies':'y'}. ${L.medHours?`Median ${L.medHours} h/day reported; `:''}${L.medMonths?`median ${L.medMonths} months reported; `:''}session ${L.sessionLen} min; revision every ~${L.revEveryDays} day${L.revEveryDays>1?'s':''}.</p>`:''}
+  ${coverage}
+  ${crunchNote}
+  ${alloc}
+  ${dropped}
+  <p class="sm mu" style="margin:8px 0 0">Daily budget: ${hm(Math.round((+S.p.hours||0)*60))} available → the plan uses ~${Math.round((L.buffer||0.8)*100)}% of it. Foundational subjects are scheduled first; low-priority topics drop out automatically when time is short.</p>
+ </section>`;
 }
 
 function roadmap(){
  const d=S.draft,L=d?d.tasks:S.tasks,st=d?d.start:(S.p.planStart||today());
- if(!L.length)return`<h1>Roadmap</h1>${learnCard(S.p.exam)}<div class="card"><h2>No roadmap yet</h2><p class="mu">Build a suggested plan from your answers and your sourced topper entries, review it, then accept it.</p><button class="btn w" data-a="regen">Build my roadmap</button></div>`;
+ if(!L.length)return`<h1>Roadmap</h1>${planCard()}<div class="card"><h2>No roadmap yet</h2><p class="mu">Build a suggested plan from your answers and your sourced topper entries, review it, then accept it.</p><button class="btn w" data-a="regen">Build my roadmap</button></div>`;
  const W={};L.forEach(t=>{const w=Math.max(0,Math.floor(diff(st,t.date)/7));(W[w]=W[w]||[]).push(t)});
  const ms=L.filter(t=>t.type!=='study'&&t.date>=today()).sort((a,b)=>a.date<b.date?-1:1).slice(0,5),rp=S.tasks.filter(repl).length;
  let h=`<h1>${d?'Review your roadmap':'Your roadmap'}</h1><p class="note"><b>Suggestions, not verified facts.</b> Built by simple rules plus aggregate statistics from every sourced topper entry for this exam (spaced revision, active recall, weekly mocks). If there are no entries yet, general study principles are used. No plan can guarantee a score or rank.</p>`;
- h+=learnCard(S.p.exam);
+ h+=planCard();
  h+=d?`<div class="card"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p><button class="btn w" data-a="accept">Accept roadmap</button><div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
  :`<div class="row" style="margin:12px 0"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button></div>`;
  h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
@@ -317,7 +541,6 @@ function authScreen(){
 function render(){try{
  const a=$('#app'),nv=$('#nv');
  if(!ready){a.innerHTML='<p class="mu" style="padding:48px 0;text-align:center">Loading your plan...</p>';nv.hidden=true;return}
- // Auth gate
  if(V.auth&&!(window.Auth&&Auth.user)){
   document.body.classList.remove('lv');nv.hidden=true;a.innerHTML=authScreen();
   return;
@@ -378,7 +601,7 @@ const A={
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
  redo:()=>{S.p.onboarded=false;V.step=2;save();render()},
  regen:()=>{S.draft=gen(S.p,S.top);V.tab='roadmap';save();render()},
- accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.draft=null;V.tab='home';V.day=today();save();render();toast('Roadmap accepted')},
+ accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMeta=d.meta;S.draft=null;V.tab='home';V.day=today();save();render();toast('Roadmap accepted')},
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
  st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render()},
@@ -428,7 +651,6 @@ const A={
  reset:()=>sheet(`<h2>Start over?</h2><p>This erases your profile, roadmap, tasks and study sessions${mode==='cloud'?' — including the copy saved to your account':''}.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="resetok">Erase everything</button></div>`),
  resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()},
 
- /* ---- auth actions ---- */
  authgo:d=>{V.auth=d.v;render();scrollTo(0,0)},
  authswap:d=>{V.auth=d.v;render();scrollTo(0,0)},
  authskip:()=>{V.auth=null;render()},
@@ -503,7 +725,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&
 document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S)S.p[f]=t.value;if(g==='rs')rsp();if(g==='tt')V.tt=t.value});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 
-/* ---------- reminders: usual study hour from timed-session history ---------- */
+/* ---------- reminders ---------- */
 const usualHour=()=>{const hs=S.sessions.map(x=>new Date(x.start).getHours());return hs.length>=3?Math.min(22,Math.max(5,Math.round(med(hs)))):19};
 const h12=h=>(h%12||12)+(h<12?' am':' pm');
 async function pushMeta(){if(!S||!window.caches)return null;
@@ -511,9 +733,6 @@ async function pushMeta(){if(!S||!window.caches)return null;
  const m={on:!!R.on,hour:usualHour(),seen:S.seen||new Date().toISOString(),studied:dn?pd(dn).toDateString():'',pending:S.tasks.filter(t=>t.date<=today()&&t.status!=='done'&&!t.resolved).length,next:nx?nx.subject+': '+nx.topic:'',lastNotif:R.lastNotif||''};
  try{const c=await caches.open('aimsarthi-meta'),o=await c.match('meta'),old=o?await o.json():{};if(old.lastNotif&&old.lastNotif>m.lastNotif)m.lastNotif=old.lastNotif;await c.put('meta',new Response(JSON.stringify(m)))}catch(e){}
  return m}
-
-/* NEW: push a small summary of this user's progress to their account, so a future
-   developer app can read aggregate usage from Firestore (users/{uid}/meta/summary). */
 async function pushUserMeta(){
  if(mode!=='cloud'||!window.Auth||!Auth.user)return;
  try{
@@ -535,7 +754,6 @@ async function pushUserMeta(){
   });
  }catch(e){}
 }
-
 async function notify(d){try{const r=await navigator.serviceWorker.ready;await r.showNotification(d.title,{body:d.body,tag:d.tag,icon:'icon-192.png',badge:'icon-192.png'});if(d.tag!=='test'){S.rem.lastNotif=new Date().toISOString();save()}return true}catch(e){return false}}
 async function chkRem(){if(!S||!S.rem||!S.rem.on||!window.Notification||Notification.permission!=='granted'||document.visibilityState==='visible')return;const d=reminderDue(await pushMeta(),Date.now());if(d)notify(d)}
 function remCard(){const R=S.rem||{},on=R.on&&window.Notification&&Notification.permission==='granted';
