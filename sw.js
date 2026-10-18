@@ -1,5 +1,5 @@
 importScripts('reminders.js');
-const V='aimsarthi-v6',SHELL=['./','index.html','styles.css','app.js','exams.js','plandata.js','strategies.js','reminders.js','engine.js','account.js','cloud.js','firebase-config.js','manifest.json','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png'];
+const V='aimsarthi-v7',SHELL=['./','index.html','styles.css','app.js','exams.js','plandata.js','strategies.js','reminders.js','engine.js','account.js','ai.js','cloud.js','firebase-config.js','manifest.json','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith('aimsarthi-v')&&x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 // Same-origin files: serve the saved copy instantly, refresh it in the background (works offline).

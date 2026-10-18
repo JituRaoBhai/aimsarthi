@@ -1,4 +1,4 @@
-AimSarthi v4 - hosting and files
+AceLife v8 - hosting and files
 
 SET UP (GitHub Pages, from a phone)
 1. Extract this zip. Create a Public GitHub repository, tap Add file > Upload files, select ALL extracted files, commit.
@@ -12,4 +12,6 @@ plandata.js      topic times by level, 1-month and 2-month times, priority %, fo
 engine.js        roadmap logic and learning     reminders.js   reminder rules
 cloud.js         all Firebase calls             account.js     login, account, feedback screens
 firebase-config.js  your Firebase keys          firestore.rules  paste into Firestore Rules
+ai.js            AI buttons (call /api/ai)       functions/     the Cloud Function that calls Gemini with a secret key
+firebase.json, .firebaserc  Firebase Hosting + Functions settings (see FIREBASE-SETUP.txt)
 app.js, styles.css, index.html, sw.js, manifest.json  the app itself

@@ -8,8 +8,12 @@
              p  = topic priority percent        t  = minutes by level (b=Beginner, i=Intermediate, a=Advanced)
              m1 = minutes in the 1-month plan (the same for every level)
              m2 = minutes in the 2-month plan (a number, or {b,i,a} if it should differ by level)
-   Topic names must match exams.js exactly. When time is short the engine drops the lowest-priority topics first. */
-window.PLAN_CONFIG={m1Days:30,m2Days:60,emit:120};   // 30 days or fewer to exam = 1-month plan, 60 or fewer = 2-month plan; emit = days of tasks created at once
+   Topic names must match exams.js exactly. When time is short the engine drops the lowest-priority topics first.
+   PLAN_CONFIG.dayCap (below): labels and factors of the Heavy Duty / Normal / Full Day chips. */
+window.PLAN_CONFIG={m1Days:30,m2Days:60,emit:120,
+ dayCap:[['Heavy Duty',0.3],['Normal',1],['Full Day',1.4]]};   // 30 days or fewer to exam = 1-month plan, 60 or fewer = 2-month plan; emit = days of tasks created at once
+/* dayCap = the 3 chips on Today (label, factor). A day's study minutes = your daily hours x the factor chosen for that date (S.p.dayCap['YYYY-MM-DD']).
+   Heavy Duty/Shift 0.3, Normal 1, Off or Full Study Day 1.4. Factors must stay between 0.1 and 2. 'Normal' (1) must stay in the list. */
 window.PLAN={
  neetpg:{
   def:{t:{b:360,i:240,a:150},m1:90,m2:150},          // PLACEHOLDER estimates: replace with real data

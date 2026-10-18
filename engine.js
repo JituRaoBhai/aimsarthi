@@ -42,13 +42,14 @@ const Engine=(()=>{
   const L=learn(p.exam,entries),prm=Object.assign({mockWk:1,revCycles:2,practice:25},L.params),c=cfg();
   const t0=today(),end=addD(p.examDate,-1),H=Math.max(1,diff(t0,end)+1),E=Math.min(H,c.emit),mode=modeFor(H),lv=LV[p.level]||'i';
   const cap=Math.round(+p.hours*60),pl=Math.min(cap,Math.max(30,Math.floor(cap*.85/15)*15)),nb=Math.max(1,Math.round(pl/75)),bl=clamp(Math.round(pl/nb/15)*15,30,90);   // every block is 30 minutes or more, in steps of 15
+  const DC=p.dayCap||{},cof=d=>Math.min(1080,Math.round(cap*(DC[d]>=.1&&DC[d]<=2?DC[d]:1))),plOf=d=>{const c=cof(d);return Math.min(c,Math.max(30,Math.floor(c*.85/15)*15))};   // each day's minutes = daily hours x its Heavy Duty (0.3) / Normal (1) / Full Day (1.4) factor
   const weak=p.weak||[],done=p.done||[],steps=[2,7,21].slice(0,clamp(Math.round(prm.revCycles)+1,1,3));
-  const revB=Math.round(pl*clamp(.1+.05*prm.revCycles,.15,.4)/15)*15,rb=clamp(Math.round(bl*.5/15)*15,30,45);
-  const mockDays=[[],[6],[3,6],[1,3,5]][clamp(Math.round(prm.mockWk),0,3)],mlen=Math.floor(pl*.7/15)*15,fm=Math.ceil(ex.mock/15)*15;
+  const revOf=d=>Math.round(plOf(d)*clamp(.1+.05*prm.revCycles,.15,.4)/15)*15,rb=clamp(Math.round(bl*.5/15)*15,30,45);
+  const mockDays=[[],[6],[3,6],[1,3,5]][clamp(Math.round(prm.mockWk),0,3)],mlenOf=d=>Math.floor(plOf(d)*.7/15)*15,fm=Math.ceil(ex.mock/15)*15;
   const cal=[];let supply=0;                                            // 1. which days can take new topics
   for(let i=0;i<H;i++){const d=addD(t0,i);let k='study';
-   if(p.off!==''&&String(pd(d).getDay())===p.off)k='off';else if(mockDays.includes(i%7)&&mlen>=30&&H-i>1)k='mock';else if(H>=14&&i>=H-2)k='final';
-   cal.push({i,d,k});if(k==='study')supply+=Math.max(0,pl-revB)}
+   if(p.off!==''&&String(pd(d).getDay())===p.off)k='off';else if(mockDays.includes(i%7)&&mlenOf(d)>=30&&H-i>1)k='mock';else if(H>=14&&i>=H-2)k='final';
+   cal.push({i,d,k});if(k==='study')supply+=Math.max(0,plOf(d)-revOf(d))}
   const done0={};(existing||[]).forEach(t=>{if(t.tk&&(t.status==='done'||t.status==='partial'))done0[t.tk]=(done0[t.tk]||0)+doneMin(t)});
   const M={};ex.sub.forEach(s=>M[s]=meta(p.exam,ex,s));
   const w=s=>Math.max(.1,M[s].p/100)*(weak.includes(s)?1.5:1)*(L.weights[s]||1);
@@ -65,11 +66,11 @@ const Engine=(()=>{
   const maint=[];done.forEach(s=>M[s]&&M[s].topics.forEach(t=>maint.push({s,tp:t.n})));let mi=0;
   const lab=(s,t)=>weak.includes(s)||M[s].p>=70||t.p>=70?'High':Math.max(M[s].p,t.p)<30?'Low':'Medium';
   const rv=[],out=[],mk=(date,subject,topic,mins,pri,type,why,tk)=>{const t={id:uid(),subject,topic,mins,pri,date,type,why,status:'todo',gen:true};if(tk)t.tk=tk;out.push(t);return t};
-  for(const D of cal){if(D.i>=E)break;if(D.k==='off')continue;const d=D.d;let free=pl;   // 4. schedule
-   if(D.k==='mock'){const m=Math.min(fm,mlen),an=Math.floor(Math.min(60,pl-m)/15)*15,sec=m<fm;
+  for(const D of cal){if(D.i>=E)break;if(D.k==='off')continue;const d=D.d;let free=plOf(d);   // 4. schedule
+   if(D.k==='mock'){const m=Math.min(fm,mlenOf(d)),an=Math.floor(Math.min(60,plOf(d)-m)/15)*15,sec=m<fm;
     mk(d,'Mock test',sec?'Sectional test, about '+Math.round(m/fm*100)+'% of a full '+ex.n+' paper':'Full-length '+ex.n+' mock',m,'High','mock',sec?'Your day is too short for a full paper':'Mock test');
     if(an>=30)mk(d,'Mock test','Analyse mistakes and note weak topics',an,'High','mock','Mock analysis');continue}
-   let rbud=(D.k==='final'||!live().length)?free:revB;
+   let rbud=(D.k==='final'||!live().length)?free:revOf(d);
    rv.filter(r=>r.due<=d&&!r.done).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:0).forEach(r=>{if(rbud>=rb&&free>=rb){mk(d,r.s,'Revise: '+r.tp,rb,'Medium','revision','Spaced revision, day +'+steps[r.j]);r.done=true;rbud-=rb;free-=rb}});
    if(D.k==='study'){const ds=[];let s;
     while(free>=30&&(s=pick())){const it=bySub[s][0];let m=Math.min(bl,free,it.rem);if(it.rem-m<30&&it.rem<=free)m=it.rem;
@@ -85,9 +86,9 @@ const Engine=(()=>{
     free-=m}}
   const rest=[];Object.keys(bySub).forEach(s=>bySub[s].forEach(it=>{if(it.rem>=30)rest.push(it)}));
   let later=0;if(H>E)later=rest.length;else rest.forEach(it=>skipped.push({s:it.s,n:it.t.n,min:it.rem}));
-  enforce(out,cap);
+  enforce(out,cof);
   const ks=[...kept],summary={mode,H,emit:E,demand,supply,keptN:ks.length,skipped,later,placeholder:ks.length?Math.round(100*ks.filter(i=>!i.own).length/ks.length):0};
   return{start:t0,tasks:out,at:new Date().toISOString(),basis:L.note,learned:L,mode,summary}}
- function check(tasks,cap){const by={};tasks.forEach(t=>by[t.date]=(by[t.date]||0)+t.mins);return Object.keys(by).filter(d=>by[d]>cap).map(d=>({date:d,mins:by[d]}))}
- function enforce(tasks,cap){check(tasks,cap).forEach(b=>{let over=b.mins-cap;tasks.filter(t=>t.date===b.date).sort((a,c)=>P[c.pri]-P[a.pri]).forEach(t=>{if(over>0){const cut=Math.min(over,Math.floor(Math.max(0,t.mins-30)/15)*15);t.mins-=cut;over-=cut}})});return tasks}
+ function check(tasks,cap){const cp=typeof cap==='function'?cap:()=>cap,by={};tasks.forEach(t=>by[t.date]=(by[t.date]||0)+t.mins);return Object.keys(by).filter(d=>by[d]>cp(d)).map(d=>({date:d,mins:by[d]}))}
+ function enforce(tasks,cap){const cp=typeof cap==='function'?cap:()=>cap;check(tasks,cap).forEach(b=>{let over=b.mins-cp(b.date);tasks.filter(t=>t.date===b.date).sort((a,c)=>P[c.pri]-P[a.pri]).forEach(t=>{if(over>0){const cut=Math.min(over,Math.floor(Math.max(0,t.mins-30)/15)*15);t.mins-=cut;over-=cut}})});return tasks}
  return{MIN_N,learn,plan,check,enforce,median,modeFor,modeName}})();
