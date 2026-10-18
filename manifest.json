@@ -1,7 +1,7 @@
 {
- "name": "AimSarthi",
- "short_name": "AimSarthi",
- "description": "Study roadmap, daily tracker and missed-task recovery for competitive exams.",
+ "name": "AceLife",
+ "short_name": "AceLife",
+ "description": "Study plan, daily tracker and missed-task recovery for competitive exams.",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

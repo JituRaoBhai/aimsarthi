@@ -1,6 +1,6 @@
 
 'use strict';
-const VER='v6, 17 Oct 2026';
+const VER='v7, 18 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -17,7 +17,7 @@ const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Th
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
 const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[]},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[]});
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false;
-let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:''};
+let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',nav:[]};
 const CL=()=>window.Cloud||{enabled:false,user:null};
 const lkey=()=>LK+(CL().user?':'+CL().user.uid:'');
 const byId=id=>S.tasks.find(t=>t.id===id);
@@ -89,15 +89,15 @@ function chk(s){const p=S.p;
  if(s===6)return(p.resOther||'').length>120?'Keep other resources under 120 characters.':'';
  return''}
 function wiz(){const p=S.p,s=V.step;
- if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AimSarthi</h1><p class="lead">Your study guide from today to exam day. Build a realistic roadmap, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p><p class="note">Built first for NEET PG aspirants who are also doing an internship. Available exams: ${Object.values(EX).map(e=>e.n).join(', ')}. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button></section>`;
+ if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AceLife</h1><p class="lead">Your study guide from today to exam day. Build a realistic plan, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p><p class="note">Built first for NEET PG aspirants who are also doing an internship. Available exams: ${Object.values(EX).map(e=>e.n).join(', ')}. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button></section>`;
  const T=['','Create your profile','Choose your exam','Exam date and target','Daily time and commitments','Where you stand','Study resources'][s];let b='';
- if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in as <b>'+esc(CL().user.username)+'</b>. Your plan is saved to your account.':'Accounts are not set up in this copy, so your plan is saved on this device only. Clearing browser data erases it.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" value="${esc(p.name||'')}"`);
- if(s===2)b=`<div class="chips">${Object.keys(EX).map(k=>chip('pick','exam',k,p.exam===k,EX[k].n)).join('')}</div><p class="sm mu" style="margin-top:8px">NEET PG is the pilot focus. Other exams use the same planner with their own subject lists.</p>`;
+ if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in as <b>'+esc(CL().user.username)+'</b>. Your plan is saved to your account.':'Your plan is saved on this phone.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" value="${esc(p.name||'')}"`);
+ if(s===2)b=`<div class="chips">${Object.keys(EX).map(k=>chip('pick','exam',k,p.exam===k,EX[k].n)).join('')}</div><p class="sm mu" style="margin-top:8px">Pick the exam you are preparing for.</p>`;
  if(s===3)b=inp('w_d','Exam date',`type="date" data-f="examDate" min="${addD(today(),2)}" max="${addD(today(),1100)}" value="${esc(p.examDate||'')}"`)+inp('w_t','Target score or rank',`data-f="target" maxlength="80" placeholder="For example: rank under 2,000" value="${esc(p.target||'')}"`)+'<p class="sm mu" style="margin-top:8px">Your target is for motivation. It does not change what is possible.</p>';
  if(s===4)b=inp('w_h','Hours per day you can study (0.5 to 16)',`type="number" inputmode="decimal" step="0.5" min="0.5" max="16" data-f="hours" value="${esc(p.hours)}"`)+inp('w_w','Internship or work hours per day',`type="number" inputmode="decimal" step="0.5" min="0" max="16" data-f="workHrs" value="${esc(p.workHrs)}"`)+`<label for="w_o">Weekly day off</label><select id="w_o" data-f="off"><option value="">No fixed day off</option>${DOW.map((d,i)=>`<option value="${i}" ${p.off===String(i)?'selected':''}>${d}</option>`).join('')}</select>`+inp('w_c','Commitment notes (optional)',`data-f="workNote" maxlength="120" placeholder="For example: night duty on Fridays" value="${esc(p.workNote||'')}"`);
  if(s===5)b=`<h3>Current level</h3><div class="chips" style="margin:8px 0">${['Beginner','Intermediate','Advanced'].map(l=>chip('pick','level',l,p.level===l)).join('')}</div><h3>Subjects completed</h3><div class="chips" style="margin:8px 0">${EX[p.exam].sub.map(x=>chip('tg','done',x,(p.done||[]).includes(x))).join('')}</div><h3>Subjects needing improvement</h3><div class="chips" style="margin:8px 0">${EX[p.exam].sub.map(x=>chip('tg','weak',x,(p.weak||[]).includes(x))).join('')}</div>`;
  if(s===6)b=`<div class="chips">${RES.map(x=>chip('tg','res',x,(p.res||[]).includes(x))).join('')}</div>`+inp('w_r','Other resources (optional)',`data-f="resOther" maxlength="120" value="${esc(p.resOther||'')}"`);
- return`<div class="bar" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="6" aria-valuenow="${s}"><i style="width:${s/6*100}%"></i></div><h1 style="margin-top:16px">${T}</h1>${b}<p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p><div class="row"><button class="btn o" data-a="back">Back</button><button class="btn" style="flex:1" data-a="next">${s<6?'Continue':'Build my roadmap'}</button></div>`}
+ return`<div class="bar" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="6" aria-valuenow="${s}"><i style="width:${s/6*100}%"></i></div><h1 style="margin-top:16px">${T}</h1>${b}<p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p><div class="row"><button class="btn o" data-a="back">Back</button><button class="btn" style="flex:1" data-a="next">${s<6?'Continue':'Build my plan'}</button></div>`}
 
 /* ---------- views ---------- */
 function cal(){const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(f.getDay()+6)%7;
@@ -107,10 +107,8 @@ function cal(){const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new
  return`<section class="card"><div class="row sp"><button class="btn o s" data-a="cm" data-v="-1" aria-label="Previous month">&lsaquo;</button><h2 style="margin:0">${f.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</h2><button class="btn o s" data-a="cm" data-v="1" aria-label="Next month">&rsaquo;</button></div><div class="grid7">${c}</div></section>`}
 const logged=t=>sum(S.sessions.filter(x=>x.taskId===t.id),x=>x.mins);
 const med=a=>{a=a.slice().sort((x,y)=>x-y);const n=a.length;return n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0};
-function agg(x){const E=STRATEGIES.concat(S.top).filter(e=>e.exam===x),mo=E.map(e=>e.mo||0).filter(v=>v>0),hr=E.map(e=>e.hr||0).filter(v=>v>0);
- return`<section class="card"><h2>Pattern from your entries</h2><p class="sm mu">Calculated only from entries you added with sources. Treat it as meaningful with 20 or more.</p><div class="bar" style="margin:6px 0"><i style="width:${Math.min(100,E.length*5)}%"></i></div><p class="sm" style="margin:0">${E.length} of 20 entries${mo.length?' · median '+med(mo)+' months reported':''}${hr.length?' · median '+med(hr)+' h/day reported':''}</p></section>`}
 const SYM={done:'&#10003;',partial:'&frac12;',incomplete:'&#10005;',todo:''},LAB={done:'done',partial:'partly done',incomplete:'not done',todo:'not started'};
-const trow=t=>`<div class="trow"><button class="chk ${t.status}" data-a="st" data-id="${t.id}" data-v="done" aria-pressed="${t.status==='done'}" aria-label="${esc(t.subject)}, ${LAB[t.status]}. Tap to mark done">${SYM[t.status]}</button><div class="m"><b>${esc(t.subject)}</b><span class="sm mu">${esc(t.topic)}</span><span class="sm">${hm(t.mins)}${logged(t)?' · studied '+hm(logged(t)):''} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+(t.type==='mock'?'mock test':'revision'):''}${t.history?' · moved':''}</span></div><button class="more" data-a="tm" data-id="${t.id}" aria-label="More options for ${esc(t.subject)}">&#8943;</button></div>`;
+const trow=t=>`<div class="trow"><button class="chk ${t.status}" data-a="st" data-id="${t.id}" data-v="done" aria-pressed="${t.status==='done'}" aria-label="${esc(t.subject)}, ${LAB[t.status]}. Tap to mark done">${SYM[t.status]}</button><div class="m"><b>${esc(t.subject)}</b><span class="sm mu">${esc(t.topic)}</span><span class="sm">${hm(t.mins)}${logged(t)?' · studied '+hm(logged(t)):''} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+(t.type==='mock'?'mock test':'revision'):''}${t.history?' · moved':''}</span>${t.log?`<span class="sm" style="color:var(--ok)">${esc(logText(t))}</span>`:''}</div><button class="more" data-a="tm" data-id="${t.id}" aria-label="More options for ${esc(t.subject)}">&#8943;</button></div>`;
 function ring(p){const c=251.3;return`<svg class="ring" viewBox="0 0 96 96" role="img" aria-label="${p}% of the plan done"><circle class="t" cx="48" cy="48" r="40"/><circle class="v" cx="48" cy="48" r="40" stroke-dasharray="${c}" stroke-dashoffset="${(c*(1-p/100)).toFixed(1)}" transform="rotate(-90 48 48)"/><text x="48" y="48">${p}%</text></svg>`}
 function act(){const a=new Set(),m={};S.tasks.forEach(t=>{if(t.doneDate&&(t.status==='done'||t.status==='partial'))a.add(t.doneDate)});S.sessions.forEach(x=>m[x.day]=(m[x.day]||0)+x.mins);for(const k in m)if(m[k]>=20)a.add(k);return a}
 function dayMins(k){return sum(S.sessions.filter(x=>x.day===k),x=>x.mins)+(S.timer&&dk(new Date(S.timer.start))===k?Math.floor((Date.now()-new Date(S.timer.start))/6e4):0)}
@@ -120,37 +118,39 @@ function home(){
  const next=T.find(t=>t.status==='todo')||T.find(t=>t.status==='partial'),up=S.tasks.filter(t=>t.date>today()&&t.status!=='done').sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:P[x.pri]-P[y.pri]).slice(0,4);
  const wk=wkDays(0).map(d=>`<button class="${d===V.day?'sel':''}${d===today()?' now':''}" data-a="day" data-v="${d}" aria-pressed="${d===V.day}" aria-label="${fD(d)}"><span class="sm">${pd(d).toLocaleDateString(undefined,{weekday:'narrow'})}</span><b>${pd(d).getDate()}</b><i class="${S.tasks.some(t=>t.date===d)?'has':''}"></i></button>`).join('');
  return`<div class="hero"><div style="flex:1;min-width:0"><h1>Hi ${esc(S.p.name)}</h1><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done · ${hm(dm)} of ${hm(est)}</p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
- +(M.length?`<div class="note" style="margin-bottom:14px"><b>${M.length} missed task${M.length>1?'s':''}.</b> <button class="btn s" data-a="tab" data-v="recover" style="margin-left:6px">Fix my plan</button></div>`:'')
+ +(M.length?`<div class="note" style="margin-bottom:14px"><b>${M.length} missed task${M.length>1?'s':''}.</b> <button class="btn s" data-a="tab" data-v="roadmap" style="margin-left:6px">Fix my plan</button></div>`:'')
  +`<div class="wk">${wk}</div>`
  +(next&&k===today()&&!S.timer?`<section class="card next"><p class="sm mu" style="margin:0">Up next</p><h2 style="margin:2px 0">${esc(next.subject)}</h2><p style="margin:0">${esc(next.topic)} · ${hm(next.mins)}</p><button class="btn" data-a="go" data-id="${next.id}">Start studying</button></section>`:'')
- +`<section class="card"><div class="row sp"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn o s" data-a="add">Add task</button></div>${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done. Tap the three dots for partly done, not done, or delete. Times are guides: studying a little more or less is fine.</p></section>`
+ +`<section class="card"><div class="row sp"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn o s" data-a="add">Add task</button></div>${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done, then note how you studied. The three dots have more options. Times are guides: a little more or less is fine.</p></section>`
  +`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
  +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 function planCard(d){const sm=d?d.summary:S.p.summary,m=d?d.mode:S.p.planMode;if(!sm)return'';
  const cur=Engine.modeFor(Math.max(1,diff(today(),S.p.examDate))),sk=sm.skipped||[],ch=!d&&m&&m!==cur;
  return(ch?`<div class="note" style="margin-bottom:12px"><b>Your exam is now closer.</b> Rebuild to switch to the ${esc(Engine.modeName(cur,S.p.level))}. Finished work is kept.<br><button class="btn s" style="margin-top:8px" data-a="regen">Build a new draft</button></div>`:'')
- +`<section class="card"><h2>${esc(Engine.modeName(m,S.p.level))}</h2><p class="sm">${Math.max(0,diff(today(),S.p.examDate))} days to the exam. Study time for new topics: <b>${hm(sm.supply)}</b>. Time the topics need: <b>${hm(sm.demand)}</b>.${sm.placeholder?' '+sm.placeholder+'% of topic times are placeholder estimates until real data is added.':''}</p>`
+ +`<section class="card"><h2>${esc(Engine.modeName(m,S.p.level))}</h2><p class="sm">${Math.max(0,diff(today(),S.p.examDate))} days to the exam. Study time for new topics: <b>${hm(sm.supply)}</b>. Time the topics need: <b>${hm(sm.demand)}</b>.</p>`
  +(sk.length?`<details><summary class="sm"><b>${sk.length} topic${sk.length>1?'s':''} skipped because time is short</b> (lowest priority first)</summary>${sk.map(x=>`<p class="sm" style="margin:4px 0">${esc(x.s)}: ${esc(x.n)} (${hm(x.min)})</p>`).join('')}</details>`:'<p class="sm mu" style="margin:0">Every topic fits in the time you have.</p>')
  +(sm.later?`<p class="sm mu" style="margin:8px 0 0">Showing the first ${sm.emit} days. Rebuild later to continue from where you are.</p>`:'')+'</section>'}
-function roadmap(){
+function planBody(){
  const d=S.draft,L=d?d.tasks:S.tasks,st=d?d.start:(S.p.planStart||today());
- if(!L.length)return`<h1>Roadmap</h1><div class="card"><h2>No roadmap yet</h2><p class="mu">Build a suggested plan from your answers, review it, then accept it.</p><button class="btn w" data-a="regen">Build my roadmap</button></div>`;
+ if(!L.length)return`<h1>Plan</h1><div class="card"><h2>No plan yet</h2><p class="mu">Build a suggested plan from your answers, review it, then accept it.</p><button class="btn w" data-a="regen">Build my plan</button></div>`;
  const W={};L.forEach(t=>{const w=Math.max(0,Math.floor(diff(st,t.date)/7));(W[w]=W[w]||[]).push(t)});
  const ms=L.filter(t=>t.type!=='study'&&t.date>=today()).sort((a,b)=>a.date<b.date?-1:1).slice(0,5),rp=S.tasks.filter(repl).length;
- const LR=Engine.learn(S.p.exam,STRATEGIES.concat(S.top));let h=`<h1>${d?'Review your roadmap':'Your roadmap'}</h1><p class="note"><b>Suggestions, not verified facts.</b> ${esc(LR.note)} About 85% of your ${S.p.hours} daily hours is planned and the rest stays free as catch-up buffer. Check topic names against your official syllabus. No plan can guarantee a score or rank.</p>`;
- h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p><button class="btn w" data-a="accept">Accept roadmap</button><div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
+ const LR=Engine.learn(S.p.exam,STRATEGIES.concat(S.top));let h=`<h1>${d?'Review your plan':'Your plan'}</h1><p class="note"><b>Suggestions, not verified facts.</b> ${LR.enough?`Tuned with ${LR.n} verified strategies and your answers.`:`Built from your answers and proven study habits: spaced revision, practice questions and weekly mocks.`} About 85% of your ${S.p.hours} daily hours is planned and the rest stays free for catching up. Check topics against your official syllabus. No plan can guarantee a score or rank.</p>`;
+ h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p><button class="btn w" data-a="accept">Accept plan</button><div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
  :`<div class="row" style="margin:12px 0"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button></div>`;
  h+=planCard(d);h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
  Object.keys(W).forEach(w=>{const X=W[w],ds=[...new Set(X.map(t=>t.date))].sort(),foc=[...new Set(X.filter(t=>t.type==='study').map(t=>t.subject))].slice(0,4).join(', ')||'revision';
   h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[ds.length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
   +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
  return h}
+function roadmap(){const c=!S.draft&&miss().length?recover():'',b=planBody();return c?b.replace('</h1>',()=>'</h1>'+c):b}
+const dataCard=()=>`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Saved to your account and on this phone.':'Saved on this phone.'}</p><button class="btn o s" data-a="reset">Start over</button></section>`;
 function recover(){
  const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1));
  if(!M.length)return`<h1>Recover</h1><div class="card"><h2>Nothing missed</h2><p class="mu">Unfinished tasks from past days appear here. Nothing is moved or deleted unless you accept it.</p></div>`;
  const tot=sum(M,t=>t.mins),c=cap(),free=sum([1,2,3,4,5,6,7].map(i=>addD(today(),i)),k=>Math.max(0,c-load(k)));
- return`<h1>Recover</h1><section class="card"><h2>Remaining workload</h2><div class="stats"><div><b>${hm(tot)}</b><span>Missed</span></div><div><b>${hm(free)}</b><span>Free, next 7 days</span></div><div><b>${hm(c)}</b><span>Daily limit</span></div></div><p class="sm">Putting all ${hm(tot)} on tomorrow would make it ${hm(load(addD(today(),1))+tot)}, above your ${hm(c)} limit. So we spread the work out instead. You approve every change.</p><button class="btn w" data-a="sug">Suggest a gentle plan</button></section>`
+ return`<h2 style="margin:18px 0 8px">Catch up</h2><section class="card"><h2>Remaining workload</h2><div class="stats"><div><b>${hm(tot)}</b><span>Missed</span></div><div><b>${hm(free)}</b><span>Free, next 7 days</span></div><div><b>${hm(c)}</b><span>Daily limit</span></div></div><p class="sm">Putting all ${hm(tot)} on tomorrow would make it ${hm(load(addD(today(),1))+tot)}, above your ${hm(c)} limit. So we spread the work out instead. You approve every change.</p><button class="btn w" data-a="sug">Suggest a gentle plan</button></section>`
  +M.map(t=>`<article class="card tk ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<p class="sm mu" style="margin:0 0 8px">Planned ${fD(t.date)} · ${hm(t.mins)} · ${t.status==='partial'?'partly done':'not done'}</p><div class="row"><button class="btn s" data-a="rs" data-id="${t.id}">Reschedule</button><button class="btn o s" data-a="skip" data-id="${t.id}">Dismiss</button></div></article>`).join('')}
 function progress(){
  const D=wkDays(V.wk),T=S.tasks.filter(t=>D.includes(t.date)),pl=sum(T,t=>t.mins),cp=sum(T,doneMin),a=act(),el=D.filter(k=>k<=today()),ac=el.filter(k=>a.has(k)).length;
@@ -159,30 +159,29 @@ function progress(){
  return`<h1>Weekly progress</h1><div class="row sp"><button class="btn o s" data-a="wk" data-v="-1">&lsaquo; Prev</button><b>${fD(D[0])} to ${fD(D[6])}</b><button class="btn o s" data-a="wk" data-v="1">Next &rsaquo;</button></div>`
  +`<section class="card" style="margin-top:12px"><div class="stats"><div><b>${hm(pl)}</b><span>Planned</span></div><div><b>${hm(cp)}</b><span>Completed</span></div><div><b>${hm(sum(S.sessions.filter(s=>D.includes(s.day)),s=>s.mins))}</b><span>Timed</span></div></div><div class="chart" role="img" aria-label="Planned versus completed study for each day, Monday to Sunday">${per.map((x,i)=>`<div class="col"><div class="bars"><i class="pl" style="height:${x[0]/mx*100}%"></i><i class="cp" style="height:${x[1]/mx*100}%"></i></div><span class="sm">${'MTWTFSS'[i]}</span></div>`).join('')}</div><p class="sm mu" style="margin:6px 0 0">Light bars: planned. Dark bars: completed (partial counts as half).</p></section>`
  +`<section class="card"><h2>Tasks and consistency</h2><p>${T.filter(t=>t.status==='done').length} of ${T.length} tasks completed. ${out.length} outstanding, ${out.filter(t=>t.date<today()).length} of them already past.</p><p>${el.length?ac+' of '+el.length+' days active this week.':'This week has not started yet.'}</p></section>`
- +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of ${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`
- +`<section class="card"><h2>Progress explanation</h2><p class="mu">Placeholder: a future AI summary will explain your week here. Everything above works without it.</p><button class="btn o w" disabled>Explain my week (coming soon)</button></section>`
- +remCard()+`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Saved to your AimSarthi account and on this phone.':'Stored in this browser only.'}</p><button class="btn o s" data-a="reset">Start over</button></section>`}
+ +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of ${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
- return accountCard()+`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
- +`<section><div class="row sp" style="margin-bottom:8px"><h2 style="margin:0">Source-based entries</h2><button class="btn s" data-a="te">Add entry</button></div><p class="sm mu">Entries appear only when you add them with a source. AimSarthi ships none and never invents interviews, quotes, ranks or preparation histories.</p>`
- +(E.length?E.map(e=>`<article class="card"><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${(e.fixed?e.verified:e.checked)?'ok':''}">${e.fixed?(e.verified?'Verified source':'Source supplied, not verified'):(e.checked?'Source checked by you':'Source not yet checked')}</span><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl>${e.fixed?'':`<div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div>`}</article>`).join(''):`<div class="card mu">No entries for ${EX[x].n} yet. Add one with a link or full citation.</div>`)+'</section>'
- +agg(x)+`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`}
+ return accountCard()+remCard()+`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
+ +`<section><h2>Toppers' strategies</h2><p class="sm mu">Every entry shows where it comes from. Nothing here is made up.</p>`
+ +(E.length?E.map(e=>`<article class="card"><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${(e.fixed?e.verified:e.checked)?'ok':''}">${e.fixed?(e.verified?'Verified source':'Source supplied, not verified'):(e.checked?'Source checked by you':'Source not yet checked')}</span><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl>${e.fixed?'':`<div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div>`}</article>`).join(''):`<div class="card mu">Toppers' strategies for ${EX[x].n} will appear here soon.</div>`)+'</section>'
+ +`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`+dataCard()}
 const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
-function render(){try{
+function render(){render0();try{syncGuard()}catch(e){}}
+function render0(){try{
  const a=$('#app'),nv=$('#nv');
  if(!ready){a.innerHTML=loadView();nv.hidden=true;return}
  if(V.build){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=buildView();return}
  if(authOn()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authView();return}
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
- nv.innerHTML=[['home','Today'],['roadmap','Roadmap'],['recover','Recover'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='recover'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
- a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span><br>AimSarthi ${VER}</p>`+(run?`<div class="live" role="group" aria-label="Study timer"><div><div class="t" id="tm">00:00:00</div><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}${run.goal?' · '+hm(run.goal)+' goal':''}</small></div><button class="btn s" data-a="timer">Stop</button></div>`:'');tick()
+ nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
+ a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?`<div class="live" role="group" aria-label="Study timer"><div><div class="t" id="tm">00:00:00</div><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}${run.goal?' · '+hm(run.goal)+' goal':''}</small></div><button class="btn s" data-a="timer">Stop</button></div>`:'');tick()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
 /* ---------- sheet, toast, timer ---------- */
-function sheet(h){$('#shb').innerHTML=h;$('#sh').classList.add('on');const i=$('#shb input,#shb button');if(i)i.focus()}
-function closeSheet(){$('#sh').classList.remove('on')}
+function sheet(h){$('#shb').innerHTML=h;$('#sh').classList.add('on');syncGuard();const i=$('#shb input,#shb button');if(i)i.focus()}
+function closeSheet(){$('#sh').classList.remove('on');syncGuard()}
 function toast(m){const e=$('#ts');e.textContent=m;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),2600)}
 function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 function tick(){if(S&&S.timer)checkAlarm();const e=$('#tm');if(!e||!S)return;
@@ -208,7 +207,7 @@ function rsp(){const m=+$('#r_m').value,k=$('#r_d').value,e=$('#rp');if(!e)retur
 
 /* ---------- actions ---------- */
 const A={
- tab:d=>{V.tab=d.v;scrollTo(0,0);render()},
+ tab:d=>{if(d.v!==V.tab){if(d.v==='home')V.nav=[];else V.nav.push(V.tab);V.tab=d.v}scrollTo(0,0);render()},
  next:()=>{const e=chk(V.step);if(e){V.err=e;render();return}V.err='';
   if(V.step<6){V.step++;save();render();scrollTo(0,0)}
   else{S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;S.p.onboarded=true;buildRoadmap()}},
@@ -218,10 +217,10 @@ const A={
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
  redo:()=>{S.p.onboarded=false;V.step=2;save();render()},
  regen:()=>buildRoadmap(),
- accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.day=today();save();render();toast('Roadmap accepted')},
+ accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted')},
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
- st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render()},
+ st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render();if(t.status==='done')A.lg({id:t.id})},
  x:closeSheet,
  remon:async()=>{if(!window.Notification||!navigator.serviceWorker){toast('This browser cannot show notifications.');return}
   if(await Notification.requestPermission()!=='granted'){toast('Notifications are blocked. Allow them in your browser settings.');return}
@@ -229,11 +228,11 @@ const A={
   S.rem.on=true;try{await reg.periodicSync.register('study-reminder',{minInterval:12*36e5});S.rem.bg=true}catch(e){S.rem.bg=false}
   save();render();toast(S.rem.bg?'Reminders are on':'Reminders are on while the app is open')},
  remoff:()=>{S.rem.on=false;save();render()},
- remtest:async()=>{toast(await notify({title:'AimSarthi',body:'Reminders are working.',tag:'test'})?'Test sent':'Could not show a notification')},
+ remtest:async()=>{toast(await notify({title:'AceLife',body:'Reminders are working.',tag:'test'})?'Test sent':'Could not show a notification')},
  go:async d=>{if(S.timer)A.timer();const t=d.id?byId(d.id):null,g=t?Math.max(30,Math.round((t.mins-logged(t))/15)*15):0;
   unlockAudio();S.timer={start:new Date().toISOString(),taskId:d.id||'',goal:g};startTick();armAlarm();closeSheet();save();render();toast(g?'Timer started. You will be alerted after '+hm(g)+'.':'Timer started');
   if(g&&window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){S.rem.askedTimer=true;save();try{await Notification.requestPermission()}catch(e){}}},
- tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
+ tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button><button class="btn o" data-a="lg" data-id="${t.id}">Log what I did</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
  st2:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;closeSheet();save();render()},
  add:()=>sheet(`<h2>Add task</h2>${inp('t_s','Subject',`list="sl" maxlength="60"`)}<datalist id="sl">${EX[S.p.exam].sub.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>${inp('t_t','Topic','maxlength="100"')}${inp('t_m','Estimated minutes (30 to 600, steps of 15)','type="number" inputmode="numeric" min="30" max="600" step="15" value="60"')}<label for="t_p">Priority</label><select id="t_p"><option>High</option><option selected>Medium</option><option>Low</option></select>${inp('t_d','Scheduled date',`type="date" min="${today()}" max="${S.p.examDate}" value="${V.day<today()?today():V.day}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="addok">Save task</button></div>`),
  addok:()=>{const s=$('#t_s').value.trim(),t=$('#t_t').value.trim(),m=+$('#t_m').value,d=$('#t_d').value;
@@ -272,7 +271,48 @@ const A={
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset);else if(e.target.id==='sh')closeSheet()});
 document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S)S.p[f]=t.value;if(g==='rs')rsp();if(g==='tt')V.tt=t.value});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
-/* ---------- timer alarm, loading screen and roadmap-building screen ---------- */
+/* ---------- back button: closes a sheet, goes back a step or screen, and leaves the app from Today ---------- */
+let guardOn=false,skipPop=false;
+const sheetOpen=()=>$('#sh').classList.contains('on');
+const needGuard=()=>!!(S&&ready&&(sheetOpen()||(V.build&&!V.build.err)||(authOn()&&!CL().user&&AUTH.mode==='signup')||(S.p.onboarded?V.tab!=='home':V.step>0)));
+function syncGuard(){const n=needGuard();                        // one extra history entry exists only while there is something for Back to undo
+ if(n&&!guardOn){try{history.pushState({g:1},'');guardOn=true}catch(e){}}
+ else if(!n&&guardOn){guardOn=false;skipPop=true;setTimeout(()=>{skipPop=false},500);try{history.back()}catch(e){}}}
+function handleBack(){
+ if(sheetOpen()){closeSheet();return true}
+ if(V.build&&!V.build.err)return true;
+ if(authOn()&&!CL().user){if(AUTH.mode==='signup'){AUTH.mode='login';AUTH.err='';return true}return false}
+ if(!S.p.onboarded){if(S.p.planStart||S.draft){S.p.onboarded=true;V.step=0;return true}if(V.step>0){V.err='';V.step--;return true}return false}
+ if(V.tab!=='home'){V.tab=V.nav.pop()||'home';return true}
+ return false}
+addEventListener('popstate',()=>{if(skipPop){skipPop=false;return}guardOn=false;try{handleBack()}catch(e){}render()});
+/* ---------- study log: what you did for a topic, and the adjustments it suggests ---------- */
+const LOGS=[['lec','Watched lectures'],['book','Read textbook'],['mcq','Solved practice questions'],['test','Took a topic test'],['grand','Took a grand test'],['rev','Revised notes']];
+const LOGSHORT={lec:'Lectures',book:'Textbook',mcq:'Questions',test:'Topic test',grand:'Grand test',rev:'Notes'};
+const logText=t=>[...t.log.k.map(k=>LOGSHORT[k]),...(t.log.n?[t.log.n+' questions']:[]),...(t.log.s!=null?[t.log.s+'%']:[])].join(' · ');
+function logSheet(){const t=byId(V.lg.id),on=V.lg.k;
+ sheet(`<h2>How did you study this?</h2><p class="mu">${esc(t.subject)}: ${esc(t.topic)}</p><div class="chips" role="group" aria-label="What you did">${LOGS.map(([k,l])=>chip('lgt','',k,on.includes(k),l)).join('')}</div>${inp('lg_n','Questions solved (optional)',`type="number" inputmode="numeric" min="0" max="500" data-g="lg" data-key="n" value="${esc(V.lg.n)}"`)}${inp('lg_s','Score in percent (optional)',`type="number" inputmode="numeric" min="0" max="100" data-g="lg" data-key="s" value="${esc(V.lg.s)}"`)}<p class="sm mu" style="margin-top:8px">This helps adjust your next practice and revision.</p><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Skip</button><button class="btn" style="flex:1" data-a="lgok">Save</button></div>`)}
+function advise(t){const L=t.log,out=[],name=t.tk?t.tk.split('|')[1]:t.topic,practice=L.k.includes('mcq')||L.k.includes('test')||L.n>0;
+ const addT=(m,topic,txt)=>{const d=bestDays(m,0,t).filter(k=>diff(today(),k)<=3).sort()[0];if(d)out.push({kind:'add',d,m,topic,txt})};
+ if(L.s!=null&&L.s<60)addT(45,'Practice questions: '+name,'Your score was low. Add a 45-minute practice session on this topic.');
+ else if(!practice&&(L.k.includes('lec')||L.k.includes('book')))addT(30,'Practice questions: '+name,'You have studied this but not practised yet. Add a 30-minute question session.');
+ if(L.k.includes('grand'))addT(45,'Grand test review: '+t.subject,'Add a 45-minute review of the mistakes from your grand test.');
+ if(L.s!=null&&L.s>=80&&practice){const r=S.tasks.filter(x=>x.type==='revision'&&x.status==='todo'&&x.date>=today()&&x.subject===t.subject&&x.topic==='Revise: '+name).sort((x,y)=>x.date<y.date?-1:1)[0];
+  if(r){const d=bestDays(r.mins,0,r).filter(k=>diff(r.date,k)>=5)[0];if(d)out.push({kind:'move',id:r.id,d,txt:'Strong score. Move the next revision of this topic to '+fD(d)+'.'})}}
+ return out.slice(0,2)}
+A.lg=d=>{const t=byId(d.id),L=t.log||{k:[]};V.lg={id:t.id,k:L.k.slice(),n:L.n?String(L.n):'',s:L.s!=null?String(L.s):''};logSheet()};
+A.lgt=d=>{const k=V.lg.k,i=k.indexOf(d.v);i<0?k.push(d.v):k.splice(i,1);logSheet()};
+A.lgok=()=>{const t=byId(V.lg.id),n=V.lg.n===''?null:+V.lg.n,s=V.lg.s===''?null:+V.lg.s,e=$('#se');
+ if(n!==null&&!(Number.isInteger(n)&&n>=0&&n<=500)){e.textContent='Questions solved must be a whole number from 0 to 500.';return}
+ if(s!==null&&!(s>=0&&s<=100)){e.textContent='Score must be between 0 and 100.';return}
+ if(!V.lg.k.length&&n===null&&s===null){closeSheet();return}
+ t.log={k:V.lg.k.slice(),n:n||0,s,at:new Date().toISOString()};save();
+ const adv=V.adj=advise(t);
+ if(!adv.length){closeSheet();render();toast('Saved. Thanks.');return}
+ sheet(`<h2>Adjust your next sessions?</h2>${adv.map(o=>`<p>${esc(o.txt)}${o.kind==='add'?'<br><span class="sm mu">'+fD(o.d)+', '+hm(o.m)+'</span>':''}</p>`).join('')}<p class="sm mu">Nothing changes unless you apply it.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">No thanks</button><button class="btn" style="flex:1" data-a="adjok">Apply</button></div>`);render()};
+A.adjok=()=>{const t=byId(V.lg.id);(V.adj||[]).forEach(o=>{if(o.kind==='add')S.tasks.push({id:uid(),subject:t.subject,topic:o.topic,mins:o.m,pri:'High',date:o.d,type:'study',why:'Added after your study log',status:'todo'});else{const r=byId(o.id);if(r)moveT(r,o.d,r.mins)}});V.adj=[];closeSheet();save();render();toast('Plan adjusted')};
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.g==='lg'&&V.lg)V.lg[t.dataset.key]=t.value});
+/* ---------- timer alarm, loading screen and plan-building screen ---------- */
 let alarmT=null,actx=null,errAt=0;
 function unlockAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){actx=actx||new AC();if(actx.state==='suspended')actx.resume()}}catch(e){}}
 function beep(){try{if(!actx)return;[0,.4,.8].forEach(o=>{const s=actx.createOscillator(),g=actx.createGain();s.frequency.value=880;g.gain.value=.25;s.connect(g);g.connect(actx.destination);s.start(actx.currentTime+o);s.stop(actx.currentTime+o+.2)})}catch(e){}}
@@ -286,22 +326,22 @@ function timeUp(){const T=S.timer,t=T.taskId?byId(T.taskId):null;
 function checkAlarm(){const T=S&&S.timer;if(!T||!T.goal)return;if((Date.now()-new Date(T.start))/6e4<T.goal)return;
  if(!T.fired){T.fired=true;save();alertNow(T)}
  if(!T.ack&&document.visibilityState==='visible'){T.ack=true;save();timeUp()}}
-A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();save();render()}};
+A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();save();render();A.lg({id:t.id})}};
 A.tumore=()=>{if(!S.timer)return;S.timer.goal+=15;S.timer.fired=false;S.timer.ack=false;closeSheet();armAlarm();save();render()};
 A.offline=()=>skipNow();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S&&S.timer){armAlarm();checkAlarm();render()}});
 addEventListener('error',e=>{if(Date.now()-errAt>1e4){errAt=Date.now();try{toast('Something went wrong. Your data is safe.')}catch(x){}}console.error(e.error||e.message)});
 addEventListener('unhandledrejection',e=>console.error(e.reason));
 const BSTEPS=['Reading your answers','Ordering subjects, foundation first','Fitting topics into your hours','Balancing priorities and revision','Placing mock tests and checking every day fits'];
-const loadView=()=>`<section class="load"><div class="spin" aria-hidden="true"></div><h2>AimSarthi</h2><p class="mu">${esc(V.lm||'Starting up')}...</p>${V.slow?'<p class="sm mu">This is taking longer than usual. Your connection may be slow.</p><button class="btn o" data-a="offline">Continue with saved data</button>':''}</section>`;
+const loadView=()=>`<section class="load"><div class="spin" aria-hidden="true"></div><h2>AceLife</h2><p class="mu">${esc(V.lm||'Starting up')}...</p>${V.slow?'<p class="sm mu">This is taking longer than usual. Your connection may be slow.</p><button class="btn o" data-a="offline">Continue with saved data</button>':''}</section>`;
 function buildView(){const b=V.build;
- if(b.err)return`<div class="card"><h2>Could not build the roadmap</h2><p class="mu">Your answers are saved. Please try again.</p><button class="btn w" data-a="regen">Try again</button></div>`;
- const n=BSTEPS.length;return`<section class="load"><div class="spin" aria-hidden="true"></div><h2>Building your roadmap</h2><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${b.i}" style="margin:12px 0"><i style="width:${b.i/n*100}%"></i></div><ul class="steps">${BSTEPS.map((s,i)=>`<li class="${i<b.i?'ok':i===b.i?'now':''}">${esc(s)}</li>`).join('')}</ul><p class="sm mu">This runs on your phone, so it keeps working on a slow connection.</p></section>`}
+ if(b.err)return`<div class="card"><h2>Could not build the plan</h2><p class="mu">Your answers are saved. Please try again.</p><button class="btn w" data-a="regen">Try again</button></div>`;
+ const n=BSTEPS.length;return`<section class="load"><div class="spin" aria-hidden="true"></div><h2>Building your plan</h2><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${b.i}" style="margin:12px 0"><i style="width:${b.i/n*100}%"></i></div><ul class="steps">${BSTEPS.map((s,i)=>`<li class="${i<b.i?'ok':i===b.i?'now':''}">${esc(s)}</li>`).join('')}</ul><p class="sm mu">This runs on your phone, so it keeps working on a slow connection.</p></section>`}
 async function buildRoadmap(){if(V.build&&!V.build.err)return;V.build={i:0};save();render();scrollTo(0,0);await sleep(120);
  let d=null;try{d=gen(S.p)}catch(e){console.error(e)}
  if(!d){V.build={err:true};render();return}
  for(let i=1;i<=BSTEPS.length;i++){V.build.i=i;render();await sleep(450)}
- S.draft=d;V.build=null;V.tab='roadmap';save();render();scrollTo(0,0)}
+ S.draft=d;V.build=null;V.tab='roadmap';V.nav=['home'];save();render();scrollTo(0,0)}
 
 /* ---------- reminders: usual study hour comes from timed-session history ---------- */
 const usualHour=()=>{const hs=S.sessions.map(x=>new Date(x.start).getHours());return hs.length>=3?Math.min(22,Math.max(5,Math.round(med(hs)))):19};
@@ -314,7 +354,7 @@ async function pushMeta(){if(!S||!window.caches)return null;
 async function notify(d){try{const r=await navigator.serviceWorker.ready;await r.showNotification(d.title,{body:d.body,tag:d.tag,icon:'icon-192.png',badge:'icon-192.png'});if(d.tag!=='test'){S.rem.lastNotif=new Date().toISOString();save()}return true}catch(e){return false}}
 async function chkRem(){if(!S||!S.rem||!S.rem.on||!window.Notification||Notification.permission!=='granted'||document.visibilityState==='visible')return;const d=reminderDue(await pushMeta(),Date.now());if(d)notify(d)}
 function remCard(){const R=S.rem||{},on=R.on&&window.Notification&&Notification.permission==='granted';
- return`<section class="card"><h2>Study reminders</h2><p class="sm mu">${on?'On. You get a nudge around '+h12(usualHour())+' on days you have not studied. The time is learned from your timed sessions (7 pm until you have a few). After 2 days without opening the app, you get a "your plan is waiting" nudge.':'Get a nudge at your usual study time, and another if you have not opened the app for 2 days.'}</p><div class="row"><button class="btn ${on?'o ':''}s" data-a="${on?'remoff':'remon'}">${on?'Turn off':'Turn on reminders'}</button>${on?'<button class="btn o s" data-a="remtest">Send a test</button>':''}</div><p class="sm mu" style="margin:8px 0 0">Background reminders work on Chrome for Android with the app installed, and the browser picks the exact time, so they can arrive late. ${on&&R.bg===false?'Background reminders are unavailable here, so you are only reminded while the app is open in the background.':''}</p></section>`}
+ return`<section class="card"><h2>Study reminders</h2><p class="sm mu">${on?'On. You get a nudge around '+h12(usualHour())+' on days you have not studied. The time is learned from your timed sessions (7 pm until you have a few). After 2 days without opening the app, you get a "your plan is waiting" nudge.':'Get a nudge at your usual study time, and another if you have not opened the app for 2 days.'}</p><div class="row"><button class="btn ${on?'o ':''}s" data-a="${on?'remoff':'remon'}">${on?'Turn off':'Turn on reminders'}</button>${on?'<button class="btn o s" data-a="remtest">Send a test</button>':''}</div><p class="sm mu" style="margin:8px 0 0">Reminders can arrive a little late on some phones. ${on&&R.bg===false?'On this phone they only arrive while the app is open in the background.':''}</p></section>`}
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
