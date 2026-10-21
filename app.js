@@ -16,38 +16,29 @@ const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Th
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
 const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[]}});
 const cleanCap=m=>{const o={},t=addD(today(),-7);if(m&&typeof m==='object')for(const k in m){const v=+m[k];if(okD(k)&&k>=t&&v>=.1&&v<=2)o[k]=v}return o};
-function hydrate(s){const o=Object.assign(fresh(),s||{});o.p=Object.assign(fresh().p,o.p);o.p.dayCap=cleanCap(o.p.dayCap);
- o.soc=Object.assign(fresh().soc,o.soc||{});
- if(!o.soc.apps||typeof o.soc.apps!=='object')o.soc.apps={};
- if(!o.soc.use||typeof o.soc.use!=='object')o.soc.use={};
- o.ai=Object.assign(fresh().ai,o.ai||{});return o}
+function hydrate(s){const o=Object.assign(fresh(),s||{});o.p=Object.assign(fresh().p,o.p);o.p.dayCap=cleanCap(o.p.dayCap);o.soc=Object.assign(fresh().soc,o.soc);o.ai=Object.assign(fresh().ai,o.ai);return o}
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false,unW=null,loadedUid=null,socT=null,pomoT=null,pomoKey='';
 let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',nav:[]};
 const CL=()=>window.Cloud||{enabled:false,user:null};
-/* the sign-in module is optional: these helpers keep the app usable without it */
-const hasAuth=()=>{try{return typeof authOn==='function'&&!!authOn()}catch(e){return false}};
-const authMode=()=>{try{return typeof AUTH!=='undefined'&&AUTH?AUTH.mode:''}catch(e){return''}};
-const authScreen=()=>{try{return typeof authView==='function'?authView():'<section class="card"><h2>Sign-in is unavailable</h2><p class="mu">Reload the page. If this keeps happening, continue without signing in.</p></section>'}catch(e){return'<section class="card"><h2>Sign-in is unavailable</h2></section>'}};
 const lkey=()=>LK+(CL().user?':'+CL().user.uid:'');
 const byId=id=>S.tasks.find(t=>t.id===id);
 const doneMin=t=>t.status==='done'?t.mins:t.status==='partial'?Math.round(t.mins/2):0;
 const okM=m=>Number.isInteger(m)&&m>=30&&m<=600&&m%15===0,r15=m=>Math.max(30,Math.round(m/15)*15),remain=t=>t.status==='partial'?r15(t.mins-Math.round(t.mins/2)):Math.max(30,t.mins);
 const tasksOn=k=>S.tasks.filter(t=>t.date===k).sort((a,b)=>P[a.pri]-P[b.pri]||a.mins-b.mins);
 const miss=()=>S.tasks.filter(t=>!t.resolved&&t.date<today()&&t.status!=='done');
-const cap=k=>Math.min(1080,Math.round((+S.p.hours)*60*((S.p.dayCap&&S.p.dayCap[k||today()])||1)));   // minutes allowed on day k: daily hours x that day's Heavy Duty / Normal / Full Day factor
+const cap=k=>Math.min(1080,Math.round((+S.p.hours)*60*((S.p.dayCap&&S.p.dayCap[k||today()])||1)));
 const load=(k,x)=>sum(S.tasks.filter(t=>t.date===k),t=>t.mins)+((x&&x[k])||0);
 const repl=t=>t.gen&&t.status==='todo'&&!t.history&&t.date>=today();
 const wkDays=o=>{const d=pd(today());d.setDate(d.getDate()-(d.getDay()+6)%7+o*7);const s=dk(d);return[...Array(7)].map((_,i)=>addD(s,i))};
 const chip=(a,k,v,on,l)=>`<button type="button" class="chip" data-a="${a}" data-k="${k}" data-v="${esc(v)}" aria-pressed="${!!on}">${esc(l||v)}</button>`;
 const inp=(id,l,a)=>`<label for="${id}">${l}</label><input id="${id}" ${a}>`;
 
-/* ---------- storage: private per-user doc in the artifact db, else this browser ---------- */
 function setSt(t){V.st=t;const e=$('#st');if(e)e.textContent=t}
 function ls(d){try{localStorage.setItem(lkey(),JSON.stringify(d));setSt('Saved on this device')}catch(e){setSt('Could not save: browser storage is unavailable.')}}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let skipNow=()=>{};const skipP=new Promise(r=>{skipNow=r});
-const wait=(p,ms,skip)=>Promise.race([p,sleep(ms).then(()=>'timeout')].concat(skip?[skipP.then(()=>'timeout')]:[]));   // never wait forever on a slow connection
-let pull=false;                                  // true while the cloud copy has not been read: we then avoid overwriting it
+const wait=(p,ms,skip)=>Promise.race([p,sleep(ms).then(()=>'timeout')].concat(skip?[skipP.then(()=>'timeout')]:[]));
+let pull=false;
 function save(){S.upd=Date.now();clearTimeout(sT);sT=setTimeout(()=>{flush();pushMeta()},300)}
 function flush(){q=q.then(async()=>{
  S.sessions=S.sessions.slice(-500);const data=JSON.parse(JSON.stringify(S));ls(data);
@@ -59,11 +50,11 @@ function statsNow(){const a=act();let st=0,c=today();if(!a.has(c))c=addD(c,-1);w
  return{exam:S.p.exam||'',examDate:S.p.examDate||'',level:S.p.level||'',daysUsed:(S.days||[]).length,streak:st,tasksTotal:S.tasks.length,tasksDone:S.tasks.filter(t=>t.status==='done').length,minutesStudied:sum(S.sessions,x=>x.mins),app:VER}}
 function pushStats(){if(!CL().user||Date.now()-lastStats<6e4)return;lastStats=Date.now();Cloud.saveProfile(statsNow()).catch(()=>{})}
 const readLocal=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
-async function pullCloud(){try{const s=await wait(Cloud.loadState(),7000,true);return s==='timeout'?null:(s||{})}catch(e){return null}}   // null = could not read
+async function pullCloud(){try{const s=await wait(Cloud.loadState(),7000,true);return s==='timeout'?null:(s||{})}catch(e){return null}}
 async function loadState(){
  const u=CL().user;let s=null;pull=false;loadedUid=u?u.uid:null;const loc=readLocal(lkey());
  if(u){const c=await pullCloud();if(c===null)pull=true;
-  s=[c,loc].filter(x=>x&&x.p).sort((x,y)=>(y.upd||0)-(x.upd||0))[0]||null;                 // the newer copy wins
+  s=[c,loc].filter(x=>x&&x.p).sort((x,y)=>(y.upd||0)-(x.upd||0))[0]||null;
   if(!s){const g=readLocal(LK);if(g&&g.p){s=g;try{localStorage.removeItem(LK)}catch(e){}}}}
  else s=loc;
  S=hydrate(s);
@@ -74,14 +65,12 @@ async function loadState(){
   if(pull)setSt('Offline: your saved plan is loaded. It will sync when you are back online.');else{flush();pushStats()}startWatch()}}
 async function retryPull(){if(!pull||!CL().user||!S)return;const c=await pullCloud();if(c===null)return;pull=false;
  if(c.p&&(c.upd||0)>(S.upd||0)){const k=S.timer;S=hydrate(c);if(k)S.timer=k;ls(S);render();toast('Updated from your account')}else flush()}
-function startWatch(){try{if(unW){unW();unW=null}if(CL().user&&Cloud.watch)unW=Cloud.watch(c=>remote(c))}catch(e){}}   // live updates from your other devices
+function startWatch(){try{if(unW){unW();unW=null}if(CL().user&&Cloud.watch)unW=Cloud.watch(c=>remote(c))}catch(e){}}
 function remote(c,n){if(!S||!c||!c.p||(c.upd||0)<=(S.upd||0))return;if(sheetOpen()||V.build){if((n||0)<6)setTimeout(()=>remote(c,(n||0)+1),5e3);return}
  const k=S.timer,r=S.soc.run,mine=S.sessions.filter(x=>!(c.sessions||[]).some(y=>y.id===x.id));S=hydrate(c);S.timer=k;S.soc.run=r;
  if(mine.length){S.sessions=S.sessions.concat(mine).sort((a,b)=>a.start<b.start?-1:1);save()}else ls(S);render();toast('Updated from another device')}
 async function afterAuth(){await loadState();if(!S.p.onboarded)V.step=1;V.tab='home';ready=true}
-let booted=false;
 async function boot(){
- if(booted)return;booted=true;
  V.lm='Starting up';render();
  const slowT=setTimeout(()=>{if(!ready){V.slow=true;render()}},6000);
  V.lm='Connecting';render();try{await wait(window.cloudReady,6000,true)}catch(e){}
@@ -91,10 +80,8 @@ async function boot(){
  setInterval(chkRem,6e4);setInterval(retryPull,6e4);addEventListener('online',()=>{retryPull();if(typeof flushFb==='function')flushFb()});
  pushMeta();if(typeof flushFb==='function')flushFb();render();if(S.soc.run&&S.soc.run.left)socBack()}
 
-/* ---------- plan generation (plain rules, no API) ---------- */
 function gen(p){return Engine.plan(p,EX[p.exam],STRATEGIES.concat(S.top),S.tasks)}
 
-/* ---------- onboarding ---------- */
 function chk(s){const p=S.p;
  if(s===1){const n=(p.name||'').trim();return n&&n.length<=40?'':'Enter your name (up to 40 characters).'}
  if(s===2)return EX[p.exam]?'':'Choose an exam.';
@@ -114,7 +101,6 @@ function wiz(){const p=S.p,s=V.step;
  if(s===6)b=`<div class="chips">${RES.map(x=>chip('tg','res',x,(p.res||[]).includes(x))).join('')}</div>`+inp('w_r','Other resources (optional)',`data-f="resOther" maxlength="120" value="${esc(p.resOther||'')}"`);
  return`<div class="bar" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="6" aria-valuenow="${s}"><i style="width:${s/6*100}%"></i></div><h1 style="margin-top:16px">${T}</h1>${b}<p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p><div class="row"><button class="btn o" data-a="back">Back</button><button class="btn" style="flex:1" data-a="next">${s<6?'Continue':'Build my plan'}</button></div>`}
 
-/* ---------- views ---------- */
 function cal(){const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(f.getDay()+6)%7;
  let c='MTWTFSS'.split('').map(x=>`<span class="wd" aria-hidden="true">${x}</span>`).join('')+'<span></span>'.repeat(off);
  for(let d=1;d<=n;d++){const k=y+'-'+pad(m)+'-'+pad(d),T=S.tasks.filter(t=>t.date===k),all=T.length&&T.every(t=>t.status==='done');
@@ -139,7 +125,7 @@ function home(){
  +(next&&k===today()&&!S.timer?`<section class="card next"><p class="sm mu" style="margin:0">Up next</p><h2 style="margin:2px 0">${esc(next.subject)}</h2><p style="margin:0">${esc(next.topic)}</p><button class="btn" data-a="go" data-id="${next.id}">Start studying</button></section>`:'')
  +`<section class="card"><div class="row sp"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn o s" data-a="add">Add task</button></div>${capRow(k)}${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done, then note how you studied. The three dots have more options. Times are guides: a little more or less is fine.</p></section>`
  +`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
- +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
+ +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}:${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 function planCard(d){const sm=d?d.summary:S.p.summary,m=d?d.mode:S.p.planMode;if(!sm)return'';
  const cur=Engine.modeFor(Math.max(1,diff(today(),S.p.examDate))),sk=sm.skipped||[],ch=!d&&m&&m!==cur;
@@ -160,7 +146,7 @@ function planBody(){
   h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[ds.length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
   +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
  return h}
-function roadmap(){const c=!S.draft&&miss().length?recover():'',k=typeof coachCard==='function'?coachCard():'',b=planBody();return c||k?b.replace('</h1>',()=>'</h1>'+k+c):b}
+function roadmap(){const c=!S.draft&&miss().length?recover():'',k=coachCard(),b=planBody();return c||k?b.replace('</h1>',()=>'</h1>'+k+c):b}
 const dataCard=()=>`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Saved to your account and on this phone.':'Saved on this phone.'}</p><div class="row" style="flex-wrap:wrap"><button class="btn o s" data-a="bkx">Export backup (.json)</button><button class="btn o s" data-a="bki">Import backup</button><button class="btn o s" data-a="reset">Start over</button></div><input type="file" id="bk" accept="application/json,.json" hidden></section>`;
 function recover(){
  const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1));
@@ -175,12 +161,10 @@ function progress(){
  return`<h1>Weekly progress</h1><div class="row sp"><button class="btn o s" data-a="wk" data-v="-1">&lsaquo; Prev</button><b>${fD(D[0])} to ${fD(D[6])}</b><button class="btn o s" data-a="wk" data-v="1">Next &rsaquo;</button></div>`
  +`<section class="card" style="margin-top:12px"><div class="stats"><div><b>${hm(pl)}</b><span>Planned</span></div><div><b>${hm(cp)}</b><span>Completed</span></div><div><b>${hm(sum(S.sessions.filter(s=>D.includes(s.day)),s=>s.mins))}</b><span>Timed</span></div></div><div class="chart" role="img" aria-label="Planned versus completed study for each day, Monday to Sunday">${per.map((x,i)=>`<div class="col"><div class="bars"><i class="pl" style="height:${x[0]/mx*100}%"></i><i class="cp" style="height:${x[1]/mx*100}%"></i></div><span class="sm">${'MTWTFSS'[i]}</span></div>`).join('')}</div><p class="sm mu" style="margin:6px 0 0">Light bars: planned. Dark bars: completed (partial counts as half).</p></section>`
  +`<section class="card"><h2>Tasks and consistency</h2><p>${T.filter(t=>t.status==='done').length} of ${T.length} tasks completed. ${out.length} outstanding, ${out.filter(t=>t.date<today()).length} of them already past.</p><p>${el.length?ac+' of '+el.length+' days active this week.':'This week has not started yet.'}</p><button class="btn o s" data-a="share">Share today's progress</button></section>`
- +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of ${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
+ +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
- const acct=typeof accountCard==='function'?accountCard():'';
- const ai=typeof aiCard==='function'?aiCard():'';
- return acct+remCard()+socCard()+ai+`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
+ return accountCard()+remCard()+socCard()+aiCard()+`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
  +`<section><h2>Toppers' strategies</h2><p class="sm mu">Every entry shows where it comes from. Nothing here is made up.</p>`
  +(E.length?E.map(e=>`<article class="card"><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${(e.fixed?e.verified:e.checked)?'ok':''}">${e.fixed?(e.verified?'Verified source':'Source supplied, not verified'):(e.checked?'Source checked by you':'Source not yet checked')}</span><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl>${e.fixed?'':`<div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div>`}</article>`).join(''):`<div class="card mu">Toppers' strategies for ${EX[x].n} will appear here soon.</div>`)+'</section>'
  +`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`+dataCard()}
@@ -190,25 +174,23 @@ function render0(){try{
  const a=$('#app'),nv=$('#nv');
  if(!ready){a.innerHTML=loadView();nv.hidden=true;return}
  if(V.build){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=buildView();return}
- if(hasAuth()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authScreen();return}
+ if(authOn()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authView();return}
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
  nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
  a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?`<div class="live" role="group" aria-label="Study timer"><svg class="clk" viewBox="0 0 200 200" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${run.pomo&&run.pomo.ph==='b'?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${run.pomo&&run.pomo.ph==='b'?' brk':''}" id="tm" x="100" y="110">00:00:00</text></svg><small>${run.pomo?(run.pomo.ph==='b'?'Break · ':'Focus · '):''}${rt?esc(rt.subject+': '+rt.topic):'General study'}</small><div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!run.pomo}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button><button class="btn s" data-a="timer">Stop</button></div></div>`:'');tick()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
-/* ---------- sheet, toast, timer ---------- */
 function sheet(h){$('#shb').innerHTML=h;$('#sh').classList.add('on');syncGuard();const i=$('#shb input,#shb button');if(i)i.focus()}
 function closeSheet(){$('#sh').classList.remove('on');syncGuard()}
 function toast(m){const e=$('#ts');e.textContent=m;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),2600)}
 function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S)return;
  let s=S.timer?Math.floor(stMs(S.timer)/1e3):0,pre='';
- const T=S.timer;if(T&&T.pomo)s=Math.max(0,(T.pomo.ph==='f'?25:5)*60-Math.floor((Date.now()-new Date(T.pomo.ps))/1e3));else if(T&&T.goal){s=T.goal*60-s;if(s<0){s=-s;pre='+'}}   // counts down to the goal, then up with a plus sign
+ const T=S.timer;if(T&&T.pomo)s=Math.max(0,(T.pomo.ph==='f'?25:5)*60-Math.floor((Date.now()-new Date(T.pomo.ps))/1e3));else if(T&&T.goal){s=T.goal*60-s;if(s<0){s=-s;pre='+'}}
  {const cv=$('#cv');if(cv&&T){const f=T.pomo?1-s/((T.pomo.ph==='f'?25:5)*60):(stMs(T)/1e3%3600)/3600;cv.setAttribute('stroke-dashoffset',(552.9*(1-Math.min(1,Math.max(0,f)))).toFixed(1))}}
  e.textContent=pre+pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);const t=$('#tm2');if(t)t.textContent=hm(dayMins(V.day))}
 
-/* ---------- recovery helpers ---------- */
 function bestDays(m,x,t){const e=addD(S.p.examDate,-1),r=[];
  for(let i=0;i<14;i++){const k=addD(today(),i);if(k>e)break;if(String(pd(k).getDay())===S.p.off)continue;
   const D=S.tasks.filter(z=>z.date===k);if(D.some(z=>z.type==='mock'))continue;
@@ -224,9 +206,8 @@ function rsp(){const m=+$('#r_m').value,k=$('#r_d').value,e=$('#rp');if(!e)retur
  if(b>c){const alt=bestDays(m).filter(x=>x!==k).slice(0,2);h+=`That is ${hm(b-c)} over your limit. Options: `+(alt.map(x=>`<button class="btn o s" data-a="pickd" data-v="${x}">${fD(x)} (${hm(cap(x)-load(x))} free)</button>`).join(' ')||'no day in the next 2 weeks has room. ')+(c-a>=30?` <button class="btn o s" data-a="fit" data-v="${Math.floor((c-a)/15)*15}">Shorten to ${hm(Math.floor((c-a)/15)*15)}</button>`:'')}
  else h+='This fits your daily limit.';e.innerHTML=h}
 
-/* ---------- actions ---------- */
 const A={
- tab:d=>{if(d.v!==V.tab){if(d.v==='home')V.nav=[];else{V.nav.push(V.tab);if(V.nav.length>20)V.nav=V.nav.slice(-20)}V.tab=d.v}scrollTo(0,0);render()},
+ tab:d=>{if(d.v!==V.tab){if(d.v==='home')V.nav=[];else V.nav.push(V.tab);V.tab=d.v}scrollTo(0,0);render()},
  next:()=>{const e=chk(V.step);if(e){V.err=e;render();return}V.err='';
   if(V.step<6){V.step++;save();render();scrollTo(0,0)}
   else{S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;S.p.onboarded=true;buildRoadmap()}},
@@ -236,7 +217,7 @@ const A={
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
  redo:()=>{S.p.onboarded=false;V.step=2;save();render()},
  regen:()=>buildRoadmap(),
- accept:()=>{const d=S.draft;if(!d)return;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks.map(t=>({...t,gen:true})));S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted')},
+ accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted')},
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
  st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render();if(t.status==='done')A.lg({id:t.id})},
@@ -248,10 +229,17 @@ const A={
   save();render();toast(S.rem.bg?'Reminders are on':'Reminders are on while the app is open')},
  remoff:()=>{S.rem.on=false;save();render()},
  remtest:async()=>{toast(await notify({title:'AceLife',body:'Reminders are working.',tag:'test'})?'Test sent':'Could not show a notification')},
- go:async d=>{if(S.timer)A.timer();
-  const t=d.id?byId(d.id):null,left=t?t.mins-logged(t):0,g=t&&left>0?Math.min(600,Math.max(30,Math.round(left/15)*15)):0;
-  unlockAudio();const n0=new Date().toISOString();S.timer={start:n0,taskId:d.id||'',goal:g,brk:0,pomo:S.p.pomo?{ph:'f',ps:n0}:null};startTick();armAlarm();closeSheet();save();render();toast(g?'Timer started. You will be alerted after '+hm(g)+'.':'Timer started');
-  if(g&&window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){S.rem.askedTimer=true;save();try{await Notification.requestPermission()}catch(e){}}},
+ go:async d=>{
+  if(S.timer)A.timer();
+  const t=d.id?byId(d.id):null,g=t?Math.max(30,Math.round((t.mins-logged(t))/15)*15):0;
+  unlockAudio();const n0=new Date().toISOString();
+  S.timer={start:n0,taskId:d.id||'',goal:g,brk:0,pomo:S.p.pomo?{ph:'f',ps:n0}:null};
+  startTick();armAlarm();closeSheet();save();render();
+  toast(g?'Timer started. You will be alerted after '+hm(g)+'.':'Timer started');
+  if(g&&window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){
+   S.rem.askedTimer=true;save();try{await Notification.requestPermission()}catch(e){}
+  }
+ },
  tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button>${t.status==='todo'&&aiOn()?`<button class="btn o" data-a="aisp" data-id="${t.id}">Break into sub-topics (AI)</button>`:''}<button class="btn o" data-a="lg" data-id="${t.id}">Log what I did</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
  st2:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;closeSheet();save();render()},
  add:()=>sheet(`<h2>Add task</h2>${inp('t_s','Subject',`list="sl" maxlength="60"`)}<datalist id="sl">${EX[S.p.exam].sub.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>${inp('t_t','Topic','maxlength="100"')}${inp('t_m','Estimated minutes (30 to 600, steps of 15)','type="number" inputmode="numeric" min="30" max="600" step="15" value="60"')}<label for="t_p">Priority</label><select id="t_p"><option>High</option><option selected>Medium</option><option>Low</option></select>${inp('t_d','Scheduled date',`type="date" min="${today()}" max="${S.p.examDate}" value="${V.day<today()?today():V.day}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="addok">Save task</button></div>`),
@@ -261,13 +249,9 @@ const A={
   S.tasks.push({id:uid(),subject:s,topic:t,mins:m,pri:$('#t_p').value,date:d,type:'study',status:'todo'});closeSheet();save();render();toast('Task added')},
  del:d=>sheet(`<h2>Delete this task?</h2><p>${esc(byId(d.id).subject)}: ${esc(byId(d.id).topic)}. This cannot be undone.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep it</button><button class="btn" style="flex:1" data-a="delok" data-id="${d.id}">Delete</button></div>`),
  delok:d=>{S.tasks=S.tasks.filter(t=>t.id!==d.id);closeSheet();save();render();toast('Task deleted')},
- timer:()=>{if(S.timer){pomoStep(1);
-   const total=Math.min(1440,Math.round(stMs(S.timer)/6e4)),tid=S.timer.taskId;
-   if(total<1)toast('Under a minute, so it was not logged.');
-   else{splitSession(new Date(S.timer.start),total).forEach(p=>S.sessions.push(Object.assign({id:uid(),taskId:tid},p)));toast('Saved '+hm(total)+' of study')}
-   S.timer=null;clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}
-  else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}
-  save();render()},
+ timer:()=>{if(S.timer){pomoStep(1);const s=new Date(S.timer.start),m=Math.min(720,Math.round(stMs(S.timer)/6e4));
+   if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
+   S.timer=null;clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
  rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r,0,t)[0]||addD(today(),1);V.rs=t.id;
   sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (30 to 600, in steps of 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
  pickd:d=>{$('#r_d').value=d.v;rsp()},fit:d=>{$('#r_m').value=d.v;rsp()},
@@ -281,7 +265,7 @@ const A={
   V.pl=pl;V.sk=sk.map(t=>t.id);
   sheet(`<h2>Suggested recovery plan</h2><p class="sm mu">A suggestion only. Nothing moves until you accept. It spreads work across days, keeps mock days clear, groups related subjects, and trims low-priority items last.</p>`+(pl.length?pl.map(x=>{const t=byId(x.id);return`<p><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm">${fD(t.date)} to <b>${fD(x.d)}</b>, ${hm(x.m)}${x.m<x.r?' (shortened from '+hm(x.r)+')':''}</span></p>`}).join('')+`<p class="sm"><b>Workload after:</b> ${Object.keys(add).sort().map(k=>fD(k)+' '+hm(load(k)+add[k])+' of '+hm(cap(k))).join('; ')}</p>`:'<p>No task fits the next two weeks without going over your daily limit.</p>')+(sk.length?`<p class="sm"><b>Suggest dismissing (${sk.length}):</b> ${sk.map(t=>esc(t.subject)).join(', ')}. They stay in your history, and you can still reschedule them by hand.</p>`:'')+(un.length?`<p class="sm">${un.length} not placed. Reschedule them yourself.</p>`:'')+`<div class="row"><button class="btn o" style="flex:1" data-a="x">Reject</button>${pl.length||sk.length?'<button class="btn" style="flex:1" data-a="sugok">Accept plan</button>':''}</div>`)},
  sugok:()=>{const n=V.pl.length,s=V.sk.length;V.pl.forEach(x=>moveT(byId(x.id),x.d,x.m));V.sk.forEach(id=>{byId(id).resolved=true});V.pl=[];V.sk=[];closeSheet();save();render();toast(n+' moved, '+s+' dismissed')},
- wk:d=>{V.wk=Math.max(-52,Math.min(52,V.wk+(+d.v)));render()},
+ wk:d=>{V.wk+=+d.v;render()},
  lx:d=>{V.lx=d.v;render()},
  te:()=>sheet(`<h2>Add a source-based entry</h2><p class="sm mu">Only record what the source states. Do not fill gaps from memory.</p>${inp('e_n','Candidate name','maxlength="60"')}${inp('e_y','Exam year',`type="number" inputmode="numeric" min="1990" max="${new Date().getFullYear()}"`)}${inp('e_d','Reported preparation duration','maxlength="60"')}${inp('e_r','Reported resources','maxlength="200"')}${inp('e_mo','Reported months of preparation (optional)','type="number" inputmode="numeric" min="0" max="60"')}${inp('e_hr','Reported study hours per day (optional)','type="number" inputmode="decimal" step="0.5" min="0" max="16"')}${inp('e_v','Revision approach','maxlength="200"')}${inp('e_s','Source (link or full citation)','maxlength="300"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="teok">Save entry</button></div>`),
  teok:()=>{const g=i=>$(i).value.trim(),n=g('#e_n'),y=+g('#e_y'),s=g('#e_s');
@@ -291,28 +275,27 @@ const A={
  tc:d=>{const e=S.top.find(x=>x.id===d.id);e.checked=!e.checked;save();render()},
  tr:d=>{S.top=S.top.filter(x=>x.id!==d.id);save();render()},
  reset:()=>sheet(`<h2>Start over?</h2><p>This erases your profile, roadmap, tasks and study sessions.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="resetok">Erase everything</button></div>`),
- resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()}};
-if(!A.aisp)A.aisp=()=>toast('AI features are not available right now.');
-if(!A.aiq0)A.aiq0=()=>toast('AI features are not available right now.');
+ resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()}
+};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset);else if(e.target.id==='sh')closeSheet()});
 document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S)S.p[f]=t.value;if(g==='rs')rsp();if(g==='tt')V.tt=t.value});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
-/* ---------- back button: closes a sheet, goes back a step or screen, and leaves the app from Today ---------- */
+
 let guardOn=false,skipPop=false;
 const sheetOpen=()=>$('#sh').classList.contains('on');
-const needGuard=()=>!!(S&&ready&&(sheetOpen()||(V.build&&!V.build.err)||(hasAuth()&&!CL().user&&authMode()==='signup')||(S.p.onboarded?V.tab!=='home':V.step>0)));
-function syncGuard(){const n=needGuard();                        // one extra history entry exists only while there is something for Back to undo
+const needGuard=()=>!!(S&&ready&&(sheetOpen()||(V.build&&!V.build.err)||(authOn()&&!CL().user&&AUTH.mode==='signup')||(S.p.onboarded?V.tab!=='home':V.step>0)));
+function syncGuard(){const n=needGuard();
  if(n&&!guardOn){try{history.pushState({g:1},'');guardOn=true}catch(e){}}
  else if(!n&&guardOn){guardOn=false;skipPop=true;setTimeout(()=>{skipPop=false},500);try{history.back()}catch(e){}}}
 function handleBack(){
  if(sheetOpen()){closeSheet();return true}
  if(V.build&&!V.build.err)return true;
- if(hasAuth()&&!CL().user){if(authMode()==='signup'){try{AUTH.mode='login';AUTH.err=''}catch(e){}return true}return false}
+ if(authOn()&&!CL().user){if(AUTH.mode==='signup'){AUTH.mode='login';AUTH.err='';return true}return false}
  if(!S.p.onboarded){if(S.p.planStart||S.draft){S.p.onboarded=true;V.step=0;return true}if(V.step>0){V.err='';V.step--;return true}return false}
  if(V.tab!=='home'){V.tab=V.nav.pop()||'home';return true}
  return false}
 addEventListener('popstate',()=>{if(skipPop){skipPop=false;return}guardOn=false;try{handleBack()}catch(e){}render()});
-/* ---------- study log: what you did for a topic, and the adjustments it suggests ---------- */
+
 const LOGS=[['lec','Watched lectures'],['book','Read textbook'],['mcq','Solved practice questions'],['test','Took a topic test'],['grand','Took a grand test'],['rev','Revised notes']];
 const LOGSHORT={lec:'Lectures',book:'Textbook',mcq:'Questions',test:'Topic test',grand:'Grand test',rev:'Notes'};
 const logText=t=>[...t.log.k.map(k=>LOGSHORT[k]),...(t.log.n?[t.log.n+' questions']:[]),...(t.log.s!=null?[t.log.s+'%']:[])].join(' · ');
@@ -338,7 +321,7 @@ A.lgok=()=>{const t=byId(V.lg.id),n=V.lg.n===''?null:+V.lg.n,s=V.lg.s===''?null:
  sheet(`<h2>Adjust your next sessions?</h2>${adv.map(o=>`<p>${esc(o.txt)}${o.kind==='add'?'<br><span class="sm mu">'+fD(o.d)+', '+hm(o.m)+'</span>':''}</p>`).join('')}<p class="sm mu">Nothing changes unless you apply it.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">No thanks</button><button class="btn" style="flex:1" data-a="adjok">Apply</button></div>`);render()};
 A.adjok=()=>{const t=byId(V.lg.id);(V.adj||[]).forEach(o=>{if(o.kind==='add')S.tasks.push({id:uid(),subject:t.subject,topic:o.topic,mins:o.m,pri:'High',date:o.d,type:'study',why:'Added after your study log',status:'todo'});else{const r=byId(o.id);if(r)moveT(r,o.d,r.mins)}});V.adj=[];closeSheet();save();render();toast('Plan adjusted')};
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.g==='lg'&&V.lg)V.lg[t.dataset.key]=t.value});
-/* ---------- timer alarm, loading screen and plan-building screen ---------- */
+
 let alarmT=null,actx=null,errAt=0;
 function unlockAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){actx=actx||new AC();if(actx.state==='suspended')actx.resume()}}catch(e){}}
 function beep(){try{if(!actx)return;[0,.4,.8].forEach(o=>{const s=actx.createOscillator(),g=actx.createGain();s.frequency.value=880;g.gain.value=.25;s.connect(g);g.connect(actx.destination);s.start(actx.currentTime+o);s.stop(actx.currentTime+o+.2)})}catch(e){}}
@@ -369,7 +352,6 @@ async function buildRoadmap(){if(V.build&&!V.build.err)return;V.build={i:0};save
  for(let i=1;i<=BSTEPS.length;i++){V.build.i=i;render();await sleep(450)}
  S.draft=d;V.build=null;V.tab='roadmap';V.nav=['home'];save();render();scrollTo(0,0)}
 
-/* ---------- reminders: usual study hour comes from timed-session history ---------- */
 const usualHour=()=>{const hs=S.sessions.map(x=>new Date(x.start).getHours());return hs.length>=3?Math.min(22,Math.max(5,Math.round(med(hs)))):19};
 const h12=h=>(h%12||12)+(h<12?' am':' pm');
 async function pushMeta(){if(!S||!window.caches)return null;
@@ -378,12 +360,10 @@ async function pushMeta(){if(!S||!window.caches)return null;
  try{const c=await caches.open('aimsarthi-meta'),o=await c.match('meta'),old=o?await o.json():{};if(old.lastNotif&&old.lastNotif>m.lastNotif)m.lastNotif=old.lastNotif;await c.put('meta',new Response(JSON.stringify(m)))}catch(e){}
  return m}
 async function notify(d){try{const r=await navigator.serviceWorker.ready;await r.showNotification(d.title,{body:d.body,tag:d.tag,icon:'icon-192.png',badge:'icon-192.png'});if(d.tag!=='test'){S.rem.lastNotif=new Date().toISOString();save()}return true}catch(e){return false}}
-async function chkRem(){try{if(!S||!S.rem||!S.rem.on||!window.Notification||Notification.permission!=='granted'||document.visibilityState==='visible')return;
- if(typeof reminderDue!=='function')return;const d=reminderDue(await pushMeta(),Date.now());if(d)notify(d)}catch(e){}}
+async function chkRem(){if(!S||!S.rem||!S.rem.on||!window.Notification||Notification.permission!=='granted'||document.visibilityState==='visible')return;const d=reminderDue(await pushMeta(),Date.now());if(d)notify(d)}
 function remCard(){const R=S.rem||{},on=R.on&&window.Notification&&Notification.permission==='granted';
  return`<section class="card"><h2>Study reminders</h2><p class="sm mu">${on?'On. You get a nudge around '+h12(usualHour())+' on days you have not studied. The time is learned from your timed sessions (7 pm until you have a few). After 2 days without opening the app, you get a "your plan is waiting" nudge.':'Get a nudge at your usual study time, and another if you have not opened the app for 2 days.'}</p><div class="row"><button class="btn ${on?'o ':''}s" data-a="${on?'remoff':'remon'}">${on?'Turn off':'Turn on reminders'}</button>${on?'<button class="btn o s" data-a="remtest">Send a test</button>':''}</div><p class="sm mu" style="margin:8px 0 0">Reminders can arrive a little late on some phones. ${on&&R.bg===false?'On this phone they only arrive while the app is open in the background.':''}</p></section>`}
 
-/* ---------- v8 helpers: download, Pomodoro, day capacity ---------- */
 const aiOn=()=>typeof AI!=='undefined'&&AI.on();
 const DCAP=()=>(window.PLAN_CONFIG&&PLAN_CONFIG.dayCap)||[['Heavy Duty',.3],['Normal',1],['Full Day',1.4]];
 const capRow=k=>{if(k<today())return'';const m=(S.p.dayCap||{})[k]||1,c=cap(k),l=load(k);
@@ -391,13 +371,7 @@ const capRow=k=>{if(k<today())return'';const m=(S.p.dayCap||{})[k]||1,c=cap(k),l
 A.dcap=d=>{const m=+d.v,k=V.day;S.p.dayCap=S.p.dayCap||{};if(m===1)delete S.p.dayCap[k];else S.p.dayCap[k]=m;save();render()};
 function dl(name,data,type){const b=data instanceof Blob?data:new Blob([data],{type:type||'text/plain'}),a=document.createElement('a');
  a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
-const stMs=T=>{const n=Date.now();return n-new Date(T.start)-(T.brk||0)-(T.pomo&&T.pomo.ph==='b'?Math.min(n-new Date(T.pomo.ps),3e5):0)};   // study time only: Pomodoro breaks are left out
-function splitSession(start,mins){const out=[];let t=new Date(start),left=Math.max(0,Math.round(mins));
- while(left>0&&out.length<24){const end=new Date(t);end.setHours(24,0,0,0);
-  const avail=Math.max(1,Math.floor((end-t)/6e4)),m=Math.min(left,avail,720);
-  out.push({start:t.toISOString(),end:new Date(t.getTime()+m*6e4).toISOString(),day:dk(t),mins:m});
-  left-=m;t=new Date(t.getTime()+m*6e4)}
- return out}
+const stMs=T=>{const n=Date.now();return n-new Date(T.start)-(T.brk||0)-(T.pomo&&T.pomo.ph==='b'?Math.min(n-new Date(T.pomo.ps),3e5):0)};
 function pomoAlert(ph){const b=ph==='b',tt=b?'Break time: 5 minutes':'Back to focus: 25 minutes',bd=b?'Stand up, drink water, rest your eyes.':'Break is over. Start the next focus block.';
  try{navigator.vibrate&&navigator.vibrate(b?[300,150,300]:[500])}catch(e){}beep();toast(tt);
  if(window.Notification&&Notification.permission==='granted'&&navigator.serviceWorker)navigator.serviceWorker.ready.then(r=>r.showNotification(tt,{body:bd,tag:'pomo',renotify:true,vibrate:[300,150,300],icon:'icon-192.png',badge:'icon-192.png'})).catch(()=>{})}
@@ -413,7 +387,6 @@ A.pomo=async()=>{const T=S.timer;if(!T)return;unlockAudio();pomoStep(1);
  armAlarm();save();render();toast(T.pomo?'Pomodoro on: 25 minutes focus, 5 minutes break':'Pomodoro off');
  if(T.pomo&&window.Notification&&Notification.permission==='default')try{await Notification.requestPermission()}catch(e){}};
 
-/* ---------- backup: export and import ---------- */
 A.bkx=()=>{dl('acelife-backup-'+today()+'.json',JSON.stringify(S,null,1),'application/json');toast('Backup downloaded')};
 A.bki=()=>{const f=$('#bk');if(f){f.value='';f.click()}};
 function okBk(o){if(!o||typeof o!=='object'||Array.isArray(o)||!o.p||typeof o.p!=='object'||!Array.isArray(o.tasks)||!Array.isArray(o.sessions))return'This is not an AceLife backup. It needs a profile, tasks and sessions.';
@@ -436,7 +409,6 @@ A.bkm=()=>{const o=V.imp;if(!o)return;const ids=new Set(S.tasks.map(t=>t.id)),si
  S.top=S.top.concat(o.top.filter(x=>!tid.has(x.id)));S.days=[...new Set(S.days.concat(o.days))].sort().slice(-400);S.ai.hist=S.ai.hist.concat(o.ai.hist.filter(x=>!hid.has(x.id))).slice(-60);
  V.imp=null;closeSheet();save();render();toast('Backup merged')};
 
-/* ---------- calendar export (.ics) ---------- */
 const icsT=s=>String(s).replace(/\\/g,'\\\\').replace(/[,;]/g,m=>'\\'+m).replace(/\r?\n/g,'\\n');
 const icsF=l=>{const o=[],E=new TextEncoder();let c='',b=0;for(const ch of l){const n=E.encode(ch).length;if(b+n>(o.length?74:75)){o.push(c);c='';b=0}c+=ch;b+=n}o.push(c);return o.join('\r\n ')};
 const icsD=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'T'+pad(d.getHours())+pad(d.getMinutes())+'00';
@@ -449,7 +421,6 @@ A.icsok=()=>{const v=$('#ic_t').value;if(!/^\d{2}:\d{2}$/.test(v)){toast('Pick a
  if(!n){toast('No tasks in the next 7 days.');return}
  L.push('END:VCALENDAR');closeSheet();save();dl('acelife-week-'+today()+'.ics',L.join('\r\n')+'\r\n','text/calendar');toast(n+' study blocks exported')};
 
-/* ---------- share today's progress: a 1080x1350 picture ---------- */
 const stk=()=>{const a=act();let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}return st};
 async function shareImg(){
  const k=today(),T=tasksOn(k),est=sum(T,t=>t.mins),pc=est?Math.round(sum(T,doneMin)/est*100):0,n=diff(k,S.p.examDate),st=stk(),dn=T.filter(t=>t.status==='done'),ex=EX[S.p.exam]?EX[S.p.exam].n:'AceLife';
@@ -481,12 +452,10 @@ A.shimg=async()=>{const b=V.shb;if(!b)return;const f=new File([b],'acelife-progr
  toast('Sharing is not available here. Downloading instead.');A.shdl()};
 A.shdl=()=>{if(V.shb)dl('acelife-progress-'+today()+'.png',V.shb)};
 
-/* ---------- social media time: limits, the Rest screen and gentle reminders ----------
-   A web app cannot read what you do in other apps. So time is counted from the moment you open an app with Rest until you come back to AceLife (or add it by hand). */
-const SOC=[['ig','Instagram','#C13584','instagram://app','https://instagram.com'],['yt','YouTube','#E62117','vnd.youtube://','https://youtube.com'],['wa','WhatsApp','#1FA855','whatsapp://','http://whatsapp.com'],['x','X','#14171A','twitter://','https://x.com/'],['fb','Facebook','#1877F2','fb://','https://facebook.com'],['sc','Snapchat','#C9A800','snapchat://','https://snapchat.com'],['tg','Telegram','#229ED9','tg://','https://telegram.org'],['rd','Reddit','#FF4500','reddit://','https://reddit.com'],['li','LinkedIn','#0A66C2','linkedin://','https://linkedin.com']];
+const SOC=[['ig','Instagram','#C13584','instagram://app','https://instagram.com'],['yt','YouTube','#E62117','vnd.youtube://','https://youtube.com'],['wa','WhatsApp','#1FA855','whatsapp://','http://whatsapp.com'],['x','X','#14171A','twitter://','https://x.com/'],['fb','Facebook','#1877F2','fb://','https://facebook.com/'],['sc','Snapchat','#C9A800','snapchat://','https://snapchat.com'],['tg','Telegram','#229ED9','tg://','https://telegram.org'],['rd','Reddit','#FF4500','reddit://','https://reddit.com'],['li','LinkedIn','#0A66C2','linkedin://','https://linkedin.com']];
 const socUse=(id,k)=>((S.soc.use[k||today()]||{})[id])||0,socLeft=id=>Math.max(0,S.soc.apps[id].lim-socUse(id)),socList=()=>SOC.filter(a=>S.soc.apps[a[0]]);
 const tile=a=>`<span class="stl" style="background:${a[2]}" aria-hidden="true">${esc(a[1][0])}</span>`,socEx=()=>EX[S.p.exam]?EX[S.p.exam].n:'your exam';
-function socAdd(id,m){const k=today();S.soc.use=S.soc.use||{};const u=S.soc.use;u[k]=u[k]||{};u[k][id]=(u[k][id]||0)+m;Object.keys(u).sort().slice(0,-14).forEach(z=>delete u[z])}
+function socAdd(id,m){const k=today(),u=S.soc.use;u[k]=u[k]||{};u[k][id]=(u[k][id]||0)+m;Object.keys(u).sort().slice(0,-14).forEach(z=>delete u[z])}
 function socCard(){const L=socList(),tot=sum(L,a=>socUse(a[0]));
  return`<section class="card"><h2>Social media time</h2><p class="sm mu">${L.length?'Today: '+hm(tot)+' across '+L.length+' app'+(L.length>1?'s':'')+'. Time counts from opening an app with the Rest button until you return to AceLife, or when you add it yourself.':'Choose the apps you use and how long you want to spend on each. Browsers cannot see what you do in other apps, so AceLife counts the time between opening an app from Rest and coming back.'}</p>`
  +L.map(a=>{const u=socUse(a[0]),l=S.soc.apps[a[0]].lim;return`<p class="row sp" style="margin:8px 0 2px"><span class="row" style="gap:8px">${tile(a)}${esc(a[1])}</span><span class="sm ${u>=l?'er':'mu'}">${hm(u)} of ${hm(l)}</span></p><div class="bar ${u>=l?'ov':'g'}"><i style="width:${Math.min(100,Math.round(u/l*100))}%"></i></div>`}).join('')
@@ -495,7 +464,7 @@ A.rest=()=>{const L=socList();
  sheet(`<h2>Rest</h2>`+(L.length?`<p class="sm mu">Tap an app to open it. The time you spend there counts against today's limit when you come back.</p><div class="soc">${L.map(a=>{const l=socLeft(a[0]);return`<button class="sb" data-a="socgo" data-id="${a[0]}" aria-label="Open ${esc(a[1])}, ${l?hm(l)+' left':'no time left'}">${tile(a)}<b>${esc(a[1])}</b><span class="sm ${l?'mu':'er'}">${l?hm(l)+' left':'Limit reached'}</span></button>`}).join('')}</div>`:'<p class="mu">Choose the apps you use and set a daily limit for each.</p>')+`<div class="row" style="margin-top:12px"><button class="btn o" data-a="x">Close</button><button class="btn o" style="flex:1" data-a="soclim">Choose apps and limits</button></div>`)};
 A.socgo=d=>{const a=SOC.find(z=>z[0]===d.id);if(!a||!S.soc.apps[a[0]])return;if(S.timer)A.timer();unlockAudio();
  S.soc.run={id:a[0],start:new Date().toISOString(),left:false};save();closeSheet();clearTimeout(socT);const l=socLeft(a[0]);if(l>0&&S.soc.rem)socT=setTimeout(()=>socCheck(a[0]),l*6e4+500);
- location.href=a[3];                                           // opens the installed app; nothing happens when it is not installed
+ location.href=a[3];
  setTimeout(()=>{const R=S.soc.run;if(R&&!R.left&&document.visibilityState==='visible'){S.soc.run=null;clearTimeout(socT);save();
   sheet(`<h2>${esc(a[1])} did not open</h2><p class="mu">It may not be installed on this device.</p><div class="stack"><button class="btn" data-a="socweb" data-id="${a[0]}">Open in browser</button><button class="btn o" data-a="x">Close</button></div>`)}},1500)};
 A.socweb=d=>{const a=SOC.find(z=>z[0]===d.id);if(!a)return;S.soc.run={id:a[0],start:new Date().toISOString(),left:false};save();closeSheet();const l=socLeft(a[0]);clearTimeout(socT);if(l>0&&S.soc.rem)socT=setTimeout(()=>socCheck(a[0]),l*6e4+500);window.open(a[4],'_blank','noopener')};
@@ -527,4 +496,3 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
  afterAuth().then(render)};
 
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-boot().catch(e=>{console.error(e);ready=true;render()});
