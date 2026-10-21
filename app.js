@@ -194,6 +194,7 @@ function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S)return;
  let s=S.timer?Math.floor(stMs(S.timer)/1e3):0,pre='';
  const T=S.timer;if(T&&T.pomo)s=Math.max(0,(T.pomo.ph==='f'?25:5)*60-Math.floor((Date.now()-new Date(T.pomo.ps))/1e3));else if(T&&T.goal){s=T.goal*60-s;if(s<0){s=-s;pre='+'}}   // counts down to the goal, then up with a plus sign
+ {const cv=$('#cv');if(cv&&T){const f=T.pomo?1-s/((T.pomo.ph==='f'?25:5)*60):(stMs(T)/1e3%3600)/3600;cv.setAttribute('stroke-dashoffset',(552.9*(1-Math.min(1,Math.max(0,f)))).toFixed(1))}}
  e.textContent=pre+pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);const t=$('#tm2');if(t)t.textContent=hm(dayMins(V.day))}
 
 /* ---------- recovery helpers ---------- */
