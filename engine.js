@@ -8,7 +8,7 @@
    To teach the engine something new: add a field to FIELDS (accepted range) and read it in plan(). */
 const Engine=(()=>{
  const MIN_N=20;
- const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),srt=a=>a.slice().sort((x,y)=>x-y);
+ const sum0=(a,f)=>a.reduce((x,v)=>x+f(v),0),clamp=(v,a,b)=>Math.min(b,Math.max(a,v)), srt=a=>a.slice().sort((x,y)=>x-y);
  const median=a=>{const s=srt(a),n=s.length;return n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):0};
  const trim=a=>{const s=srt(a),k=Math.floor(s.length*.1);return s.slice(k,s.length-k)};
  const inR=(v,r)=>typeof v==='number'&&isFinite(v)&&v>=r[0]&&v<=r[1];
@@ -54,8 +54,9 @@ const Engine=(()=>{
   const M={};ex.sub.forEach(s=>M[s]=meta(p.exam,ex,s));
   const w=s=>Math.max(.1,M[s].p/100)*(weak.includes(s)?1.5:1)*(L.weights[s]||1);
   const subs=ex.sub.filter(s=>!done.includes(s)),items=[];let demand=0;   // 2. demand
-  subs.forEach(s=>M[s].topics.forEach(t=>{const tk=s+'|'+t.n,tot=mins(t,mode,lv),rem=Math.max(0,Math.round((tot-(done0[tk]||0))/15)*15);if(rem<30)return;
-   items.push({s,t,tk,tot,rem,sc:(M[s].p/100)*(t.p/100)*(weak.includes(s)?1.5:1)*(L.weights[s]||1),o:M[s].order,own:mode==='std'?t.own.std:t.own[mode]});demand+=rem}));
+  const wt=(s,t)=>(M[s].p/100)*(t.p/100)*(weak.includes(s)?1.5:1)*(L.weights[s]||1),tw=Math.max(1e-4,sum0(subs,s=>M[s].topics.reduce((a,t)=>a+wt(s,t),0)));   // no fixed topic times: each topic gets a share of the study time you have
+  subs.forEach(s=>M[s].topics.forEach(t=>{const tk=s+'|'+t.n,tot=Math.max(30,Math.round(supply*wt(s,t)/tw/15)*15),rem=Math.max(0,Math.round((tot-(done0[tk]||0))/15)*15);if(rem<30)return;
+   items.push({s,t,tk,tot,rem,sc:(M[s].p/100)*(t.p/100)*(weak.includes(s)?1.5:1)*(L.weights[s]||1),o:M[s].order,own:true});demand+=rem}));
   const kept=new Set(),skipped=[];let left=supply;                       // 3. keep by priority
   items.slice().sort((a,b)=>b.sc-a.sc||a.o-b.o||a.t.i-b.t.i).forEach(it=>{if(it.rem<=left){left-=it.rem;kept.add(it)}else skipped.push({s:it.s,n:it.t.n,min:it.rem})});
   const bySub={};items.filter(it=>kept.has(it)).sort((a,b)=>a.t.i-b.t.i).forEach(it=>(bySub[it.s]=bySub[it.s]||[]).push(it));
