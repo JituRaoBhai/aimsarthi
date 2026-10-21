@@ -129,7 +129,7 @@ function home(){
  +(next&&k===today()&&!S.timer?`<section class="card next"><p class="sm mu" style="margin:0">Up next</p><h2 style="margin:2px 0">${esc(next.subject)}</h2><p style="margin:0">${esc(next.topic)}</p><button class="btn" data-a="go" data-id="${next.id}">Start studying</button></section>`:'')
  +`<section class="card"><div class="row sp"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn o s" data-a="add">Add task</button></div>${capRow(k)}${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done, then note how you studied. The three dots have more options. Times are guides: a little more or less is fine.</p></section>`
  +`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
- +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}:${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
+ +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}: ${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 function planCard(d){const sm=d?d.summary:S.p.summary,m=d?d.mode:S.p.planMode;if(!sm)return'';
  const cur=Engine.modeFor(Math.max(1,diff(today(),S.p.examDate))),sk=sm.skipped||[],ch=!d&&m&&m!==cur;
@@ -147,7 +147,7 @@ function planBody(){
  :`<div class="row" style="margin:12px 0;flex-wrap:wrap"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button><button class="btn o s" data-a="ics">Export week to Calendar (.ics)</button></div>`;
  h+=planCard(d);h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
  Object.keys(W).forEach(w=>{const X=W[w],ds=[...new Set(X.map(t=>t.date))].sort(),foc=[...new Set(X.filter(t=>t.type==='study').map(t=>t.subject))].slice(0,4).join(', ')||'revision';
-  h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
+  h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[ds.length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
   +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
  return h}
 function roadmap(){const c=!S.draft&&miss().length?recover():'',k=coachCard(),b=planBody();return c||k?b.replace('</h1>',()=>'</h1>'+k+c):b}
@@ -165,7 +165,7 @@ function progress(){
  return`<h1>Weekly progress</h1><div class="row sp"><button class="btn o s" data-a="wk" data-v="-1">&lsaquo; Prev</button><b>${fD(D[0])} to ${fD(D[6])}</b><button class="btn o s" data-a="wk" data-v="1">Next &rsaquo;</button></div>`
  +`<section class="card" style="margin-top:12px"><div class="stats"><div><b>${hm(pl)}</b><span>Planned</span></div><div><b>${hm(cp)}</b><span>Completed</span></div><div><b>${hm(sum(S.sessions.filter(s=>D.includes(s.day)),s=>s.mins))}</b><span>Timed</span></div></div><div class="chart" role="img" aria-label="Planned versus completed study for each day, Monday to Sunday">${per.map((x,i)=>`<div class="col"><div class="bars"><i class="pl" style="height:${x[0]/mx*100}%"></i><i class="cp" style="height:${x[1]/mx*100}%"></i></div><span class="sm">${'MTWTFSS'[i]}</span></div>`).join('')}</div><p class="sm mu" style="margin:6px 0 0">Light bars: planned. Dark bars: completed (partial counts as half).</p></section>`
  +`<section class="card"><h2>Tasks and consistency</h2><p>${T.filter(t=>t.status==='done').length} of ${T.length} tasks completed. ${out.length} outstanding, ${out.filter(t=>t.date<today()).length} of them already past.</p><p>${el.length?ac+' of '+el.length+' days active this week.':'This week has not started yet.'}</p><button class="btn o s" data-a="share">Share today's progress</button></section>`
- +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
+ +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of ${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
  return accountCard()+remCard()+socCard()+aiCard()+`<h1>Strategy library</h1><div class="chips" style="margin:8px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div>`
@@ -236,24 +236,9 @@ const A={
   save();render();toast(S.rem.bg?'Reminders are on':'Reminders are on while the app is open')},
  remoff:()=>{S.rem.on=false;save();render()},
  remtest:async()=>{toast(await notify({title:'AceLife',body:'Reminders are working.',tag:'test'})?'Test sent':'Could not show a notification')},
- go:async d=>{
-  if(S.timer)A.timer();
-  const t=d.id?byId(d.id):null,g=t?Math.max(30,Math.round((t.mins-logged(t))/15)*15):0;
-  unlockAudio();
-  const n0=new Date().toISOString();
-  S.timer={start:n0,taskId:d.id||'',goal:g,brk:0,pomo:S.p.pomo?{ph:'f',ps:n0}:null};
-  startTick();
-  armAlarm();
-  closeSheet();
-  save();
-  render();
-  toast(g?'Timer started. You will be alerted after '+hm(g)+'.':'Timer started');
-  if(g&&window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){
-    S.rem.askedTimer=true;
-    save();
-    try{await Notification.requestPermission()}catch(e){}
-  }
- },
+ go:async d=>{if(S.timer)A.timer();maxconst t=d.id?byId(d.id):null,g=0;(30,Math.round((t.mins-logged(t))/15)*15):0;
+  unlockAudio();const n0=new Date().toISOString();S.timer={start:n0,taskId:d.id||'',goal:g,brk:0,pomo:S.p.pomo?{ph:'f',ps:n0}:null};startTick();armAlarm();closeSheet();save();render();toast(g?'Timer started. You will be alerted after '+hm(g)+'.':'Timer started');
+  if(g&&window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){S.rem.askedTimer=true;save();try{await Notification.requestPermission()}catch(e){}}},
  tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button>${t.status==='todo'&&aiOn()?`<button class="btn o" data-a="aisp" data-id="${t.id}">Break into sub-topics (AI)</button>`:''}<button class="btn o" data-a="lg" data-id="${t.id}">Log what I did</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
  st2:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;closeSheet();save();render()},
  add:()=>sheet(`<h2>Add task</h2>${inp('t_s','Subject',`list="sl" maxlength="60"`)}<datalist id="sl">${EX[S.p.exam].sub.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>${inp('t_t','Topic','maxlength="100"')}${inp('t_m','Estimated minutes (30 to 600, steps of 15)','type="number" inputmode="numeric" min="30" max="600" step="15" value="60"')}<label for="t_p">Priority</label><select id="t_p"><option>High</option><option selected>Medium</option><option>Low</option></select>${inp('t_d','Scheduled date',`type="date" min="${today()}" max="${S.p.examDate}" value="${V.day<today()?today():V.day}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="addok">Save task</button></div>`),
@@ -516,25 +501,3 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
  afterAuth().then(render)};
 
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-
-/* ---------- dynamic styles: clock timer & layout ---------- */
-(() => {
-  const css = `
-    body.lv{padding-bottom:440px}
-    .live{flex-direction:column;align-items:center;gap:6px;padding:18px 16px 14px;border-radius:28px;text-align:center}
-    .live .clk{width:min(54vw,210px);height:auto;display:block}
-    .live .ct{fill:none;stroke:currentColor;stroke-opacity:.16;stroke-width:10}
-    .live .cv{fill:none;stroke:var(--ac);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
-    .live .cv.brk{stroke:#5BE3B5}
-    .live text.t{fill:currentColor;font-size:31px;font-weight:800;text-anchor:middle;font-variant-numeric:tabular-nums;line-height:normal}
-    .live text.t.brk{fill:#5BE3B5}
-    .live small{max-width:100%}
-    .live .row{justify-content:center;gap:12px}
-    .live .row .pmb,.live .row .btn{margin-left:0}
-    .live .row .btn{min-width:130px}
-    @media(prefers-reduced-motion:reduce){.live .cv{transition:none}}
-  `;
-  const el = document.createElement('style');
-  el.textContent = css;
-  document.head.appendChild(el);
-})();
