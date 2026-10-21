@@ -100,3 +100,13 @@ textarea{width:100%;padding:10px 12px;border:1.5px solid var(--ln);border-radius
 .stl{width:40px;height:40px;border-radius:12px;color:#fff;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .bar.ov i{background:var(--er)}
 textarea{min-height:90px}
+/* ---- v9: clock-style study timer ---- */
+body.lv{padding-bottom:440px}
+.live{flex-direction:column;align-items:center;gap:6px;padding:18px 16px 14px;border-radius:28px;text-align:center}
+.live .clk{width:min(54vw,210px);height:auto;display:block}
+.live .ct{fill:none;stroke:currentColor;stroke-opacity:.16;stroke-width:10}
+.live .cv{fill:none;stroke:var(--ac);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear}.live .cv.brk{stroke:#5BE3B5}
+.live text.t{fill:currentColor;font-size:31px;font-weight:800;text-anchor:middle;font-variant-numeric:tabular-nums;line-height:normal}.live text.t.brk{fill:#5BE3B5}
+.live small{max-width:100%}
+.live .row{justify-content:center;gap:12px}.live .row .pmb,.live .row .btn{margin-left:0}.live .row .btn{min-width:130px}
+@media(prefers-reduced-motion:reduce){.live .cv{transition:none}}
