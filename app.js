@@ -183,7 +183,7 @@ function render0(){try{
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
  nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
- a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?`<div class="live" role="group" aria-label="Study timer"><div><div class="t${run.pomo&&run.pomo.ph==='b'?' brk':''}" id="tm">00:00:00</div><small>${run.pomo?(run.pomo.ph==='b'?'Break · ':'Focus · '):''}${rt?esc(rt.subject+': '+rt.topic):'General study'}${run.goal?' · '+hm(run.goal)+' goal':''}</small></div><button class="pmb" data-a="pomo" aria-pressed="${!!run.pomo}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button><button class="btn s" data-a="timer">Stop</button></div>`:'');tick()
+ a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?`<div class="live" role="group" aria-label="Study timer"><svg class="clk" viewBox="0 0 200 200" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${run.pomo&&run.pomo.ph==='b'?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${run.pomo&&run.pomo.ph==='b'?' brk':''}" id="tm" x="100" y="110">00:00:00</text></svg><small>${run.pomo?(run.pomo.ph==='b'?'Break · ':'Focus · '):''}${rt?esc(rt.subject+': '+rt.topic):'General study'}</small><div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!run.pomo}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button><button class="btn s" data-a="timer">Stop</button></div></div>`:'');tick()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
 /* ---------- sheet, toast, timer ---------- */
@@ -501,3 +501,13 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
  afterAuth().then(render)};
 
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+/* ---- v9: clock-style study timer ---- */
+body.lv{padding-bottom:440px}
+.live{flex-direction:column;align-items:center;gap:6px;padding:18px 16px 14px;border-radius:28px;text-align:center}
+.live .clk{width:min(54vw,210px);height:auto;display:block}
+.live .ct{fill:none;stroke:currentColor;stroke-opacity:.16;stroke-width:10}
+.live .cv{fill:none;stroke:var(--ac);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear}.live .cv.brk{stroke:#5BE3B5}
+.live text.t{fill:currentColor;font-size:31px;font-weight:800;text-anchor:middle;font-variant-numeric:tabular-nums;line-height:normal}.live text.t.brk{fill:#5BE3B5}
+.live small{max-width:100%}
+.live .row{justify-content:center;gap:12px}.live .row .pmb,.live .row .btn{margin-left:0}.live .row .btn{min-width:130px}
+@media(prefers-reduced-motion:reduce){.live .cv{transition:none}}
