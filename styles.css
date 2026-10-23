@@ -181,3 +181,9 @@ nav button{transition:color .2s}nav button:active svg{transform:scale(.88)}nav s
 @media(prefers-reduced-motion:reduce){.fx>*,.fx .bar i,.wz.in,.chk.pop,.cf,.pill,.live .clk{animation:none!important}.ring .v,.live,.live .cv,.day i{transition:none!important}}
 
 body.lv #ts{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}   /* keep toasts clear of the timer panel */
+
+/* ---- v10.1: study order step, collapsible toppers' strategies ---- */
+.orw{padding:10px 0;border-bottom:1px solid var(--ln)}.orw:last-of-type{border:0}.orw .seg{margin-top:6px}.orw .seg button{min-height:42px}
+.tops>summary{list-style:none;cursor:pointer;min-height:48px;padding-right:28px;position:relative}.tops>summary::-webkit-details-marker,.te>summary::-webkit-details-marker{display:none}
+.tops>summary::after{content:"\203A";position:absolute;right:4px;top:6px;font-size:26px;color:var(--mu);transition:transform .2s}.tops[open]>summary::after{transform:rotate(90deg)}
+.te{border-top:1px solid var(--ln);padding:2px 0}.te>summary{list-style:none;cursor:pointer;min-height:48px;padding:8px 0}.te[open]>summary{padding-bottom:0}.te dl{margin:8px 0}
