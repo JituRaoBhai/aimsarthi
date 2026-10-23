@@ -1,5 +1,5 @@
 'use strict';
-const VER='v8, 19 Oct 2026';
+const VER='v9, 23 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -14,11 +14,11 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
-const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[]}});
+const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[]}});
 const cleanCap=m=>{const o={},t=addD(today(),-7);if(m&&typeof m==='object')for(const k in m){const v=+m[k];if(okD(k)&&k>=t&&v>=.1&&v<=2)o[k]=v}return o};
 function hydrate(s){const o=Object.assign(fresh(),s||{});o.p=Object.assign(fresh().p,o.p);o.p.dayCap=cleanCap(o.p.dayCap);o.soc=Object.assign(fresh().soc,o.soc);o.ai=Object.assign(fresh().ai,o.ai);return o}
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false,unW=null,loadedUid=null,socT=null,pomoT=null,pomoKey='';
-let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',nav:[]};
+let V={tab:'home',day:today(),wk:0,step:0,err:'',cal:today().slice(0,7),tt:'',st:'',lx:'',nav:[],ob:{},tf:'',fx:true};
 const CL=()=>window.Cloud||{enabled:false,user:null};
 const lkey=()=>LK+(CL().user?':'+CL().user.uid:'');
 const byId=id=>S.tasks.find(t=>t.id===id);
@@ -82,24 +82,81 @@ async function boot(){
 
 function gen(p){return Engine.plan(p,EX[p.exam],STRATEGIES.concat(S.top),S.tasks)}
 
+/* ================= SETUP WIZARD (v9) =================
+   8 steps: Profile, Exam, Date, Time, Level, Syllabus (topic ticks), Resources, Review.
+   Topic answers are stored in S.p.tdone / S.p.tweak as 'Subject|Topic' keys. S.p.done / S.p.weak (whole subjects) are derived from them. */
+const WN=8,WS=['','Profile','Exam','Date','Time','Level','Syllabus','Resources','Review'];
+const WT=['','Create your profile','Choose your exam','Exam date and target','Daily time and commitments','Where you stand','Check your syllabus','Study resources','Review and build'];
+const $$=s=>[...document.querySelectorAll(s)];
+const vib=n=>{try{navigator.vibrate&&navigator.vibrate(n)}catch(e){}};
+const tkey=(s,t)=>s+'|'+t;
+const topicsOf=(x,s)=>{const d=((EX[x]||{}).t||{})[s],a=Array.isArray(d)?d:d&&d.topics?d.topics.map(t=>t[0]):[];return a.length?a:['Core concepts and MCQs']};
+const allTopics=x=>sum(EX[x].sub,s=>topicsOf(x,s).length);
+function subStat(s){const p=S.p,T=topicsOf(p.exam,s),td=p.tdone||[],tw=p.tweak||[];return{n:T.length,d:T.filter(t=>td.includes(tkey(s,t))).length,w:T.filter(t=>tw.includes(tkey(s,t))).length}}
+function syncSub(s){const p=S.p,st=subStat(s);p.done=(p.done||[]).filter(x=>x!==s);p.weak=(p.weak||[]).filter(x=>x!==s);if(st.d===st.n)p.done.push(s);else if(st.w*2>=st.n)p.weak.push(s)}
+function cleanTopics(){const p=S.p,ok=new Set();EX[p.exam].sub.forEach(s=>topicsOf(p.exam,s).forEach(t=>ok.add(tkey(s,t))));
+ p.tdone=(p.tdone||[]).filter(k=>ok.has(k));p.tweak=(p.tweak||[]).filter(k=>ok.has(k)&&!p.tdone.includes(k));EX[p.exam].sub.forEach(syncSub)}
+function migrateTopics(){const p=S.p;if(p.tmig||!EX[p.exam])return;p.tmig=1;p.tdone=p.tdone||[];p.tweak=p.tweak||[];   // answers saved by older versions were whole subjects
+ (p.done||[]).forEach(s=>topicsOf(p.exam,s).forEach(t=>{const k=tkey(s,t);if(!p.tdone.includes(k))p.tdone.push(k)}));
+ (p.weak||[]).forEach(s=>topicsOf(p.exam,s).forEach(t=>{const k=tkey(s,t);if(!p.tdone.includes(k)&&!p.tweak.includes(k))p.tweak.push(k)}))}
+
 function chk(s){const p=S.p;
  if(s===1){const n=(p.name||'').trim();return n&&n.length<=40?'':'Enter your name (up to 40 characters).'}
  if(s===2)return EX[p.exam]?'':'Choose an exam.';
  if(s===3){if(!okD(p.examDate))return'Enter a valid exam date.';const n=diff(today(),p.examDate);if(n<2)return'The exam date must be at least 2 days from today.';if(n>1100)return'The exam date must be within about 3 years.';const t=(p.target||'').trim();return t&&t.length<=80?'':'Enter a target score or rank (up to 80 characters).'}
  if(s===4){const h=+p.hours,w=+p.workHrs;if(!(h>=.5&&h<=16))return'Daily study hours must be between 0.5 and 16.';if(!(w>=0&&w<=16))return'Work hours must be between 0 and 16.';return h+w<=20?'':'Study plus work hours leave under 4 hours for sleep and meals. Please lower one.'}
  if(s===5)return p.level?'':'Choose your current level.';
- if(s===6)return(p.resOther||'').length>120?'Keep other resources under 120 characters.':'';
+ if(s===7)return(p.resOther||'').length>120?'Keep other resources under 120 characters.':'';
  return''}
+
+/* live hint under the fields: updated while typing, without re-rendering (keeps keyboard focus) */
+function wizHint(){const p=S.p,s=V.step;
+ if(s===3){if(!okD(p.examDate))return'Pick the date of your exam, or tap a shortcut above.';const n=diff(today(),p.examDate);if(n<2)return'<b class="er">The exam date must be at least 2 days from today.</b>';
+  return`<b>${n} days to go</b> (about ${Math.max(1,Math.round(n/7))} weeks). AceLife will build a <b>${esc(Engine.modeName(Engine.modeFor(n),p.level))}</b>.`}
+ if(s===4){const h=+p.hours||0,w=+p.workHrs||0,r=Math.max(0,24-h-w);
+  return`<div class="day" aria-hidden="true"><i class="su" style="width:${h/24*100}%"></i><i class="wo" style="width:${w/24*100}%"></i></div><p class="sm" style="margin:8px 0 0"><span class="lg su"></span>Study <b>${hm(h*60)}</b> <span class="lg wo"></span>Work <b>${hm(w*60)}</b> <span class="lg"></span>Rest, meals, sleep <b>${hm(r*60)}</b></p>${h+w>20?'<p class="er sm" style="margin:6px 0 0">That leaves under 4 hours for sleep and meals. Please lower one.</p>':h>=10?'<p class="sm mu" style="margin:6px 0 0">Long days are hard to keep up. Steady hours beat marathon days.</p>':''}`}
+ return''}
+function wizLive(){if(!S||S.p.onboarded||!V.step)return;const e=$('#lv');if(e)e.innerHTML=wizHint();const a=$('#o_h'),b=$('#o_w');if(a)a.textContent=hm((+S.p.hours||0)*60);if(b)b.textContent=hm((+S.p.workHrs||0)*60)}
+
+function subsHtml(){const p=S.p,x=p.exam,q=(V.tf||'').trim().toLowerCase();
+ return EX[x].sub.map(s=>{const T=topicsOf(x,s),st=subStat(s),sh=!q||s.toLowerCase().includes(q),L=T.filter(t=>sh||t.toLowerCase().includes(q));if(!L.length)return'';
+  const open=q?true:!!V.ob[s],full=st.d===st.n;
+  return`<details class="sj${full?' dn':''}" data-s="${esc(s)}"${open?' open':''}><summary><span class="sjn">${full?'<span class="sjk" aria-hidden="true">&#10003;</span>':''}${esc(s)}</span><span class="sjc">${st.d}/${st.n}${st.w?' &middot; '+st.w+' weak':''}</span><span class="bar g sjb" aria-hidden="true"><i style="width:${st.d/st.n*100}%"></i></span></summary>`
+   +`<div class="sja"><button type="button" class="btn o s" data-a="sall" data-s="${esc(s)}">${full?'Clear all':'Mark all done'}</button></div>`
+   +L.map(t=>{const k=tkey(s,t),d=(p.tdone||[]).includes(k),w=(p.tweak||[]).includes(k),a=`data-a="tt" data-s="${esc(s)}" data-t="${esc(t)}"`;
+    return`<div class="tp${d?' d':w?' w':''}"><span>${esc(t)}</span><button type="button" class="tb d" ${a} data-m="d" aria-pressed="${d}" aria-label="Completed: ${esc(t)}">&#10003;</button><button type="button" class="tb w" ${a} data-m="w" aria-pressed="${w}" aria-label="Needs improvement: ${esc(t)}">!</button></div>`}).join('')+'</details>'}).join('')||'<p class="mu">No subject or topic matches your search.</p>'}
+function subsSum(){const p=S.p,n=allTopics(p.exam),d=(p.tdone||[]).length,w=(p.tweak||[]).length;
+ return`<div class="stats" style="margin:0"><div><b>${d}</b><span>Completed</span></div><div><b>${w}</b><span>Need work</span></div><div><b>${Math.max(0,n-d)}</b><span>To study</span></div></div><div class="bar g" style="margin-top:8px" aria-hidden="true"><i style="width:${n?d/n*100:0}%"></i></div>`}
+function wzSubs(){const y=scrollY,f=document.activeElement&&document.activeElement.dataset?{...document.activeElement.dataset}:null;
+ const a=$('#subs'),b=$('#ssum');if(a)a.innerHTML=subsHtml();if(b)b.innerHTML=subsSum();scrollTo(0,y);
+ if(f&&f.a==='tt'){const e=$$('#subs [data-a=tt]').find(z=>z.dataset.s===f.s&&z.dataset.t===f.t&&z.dataset.m===f.m);if(e)e.focus({preventScroll:true})}}
+
+const XC=(k,v,on,t,d)=>`<button type="button" class="xc" data-a="pick" data-k="${k}" data-v="${esc(v)}" aria-pressed="${!!on}"><span class="xt"><b>${esc(t)}</b><span class="sm mu">${d}</span></span><span class="xk" aria-hidden="true">&#10003;</span></button>`;
+const LVD={Beginner:'Starting the syllabus from scratch, or only just begun.',Intermediate:'Covered most subjects once and building speed.',Advanced:'Revising and practising to sharpen your score.'};
+const DOWL=DOW;
+function review(){const p=S.p,n=diff(today(),p.examDate),E=EX[p.exam],d=(p.tdone||[]).length,w=(p.tweak||[]).length,tot=allTopics(p.exam);
+ const R=(st,l,v)=>`<div class="rv"><span class="mu">${l}</span><b>${v}</b><button type="button" class="lnk" data-a="goto" data-v="${st}" aria-label="Edit ${l}">Edit</button></div>`;
+ return`<div class="card rvc">${R(1,'Name',esc(p.name))}${R(2,'Exam',esc(E.n))}${R(3,'Exam date',esc(fD(p.examDate))+' &middot; '+n+' days')}${R(3,'Target',esc(p.target))}${R(4,'Study per day',hm((+p.hours)*60))}${R(4,'Work per day',hm((+p.workHrs)*60))}${R(4,'Weekly day off',p.off===''||p.off==null?'None':DOWL[+p.off])}${R(5,'Level',esc(p.level))}${R(6,'Syllabus',d+' of '+tot+' topics done'+(w?', '+w+' need work':''))}${R(7,'Resources',(p.res&&p.res.length?p.res.length+' selected':'None selected'))}</div>`
+ +`<p class="note"><b>What happens next.</b> AceLife schedules the ${Math.max(0,tot-d)} topics still to study, gives weak topics more time, and plans light revision for the ${d} you finished. You review the draft before anything is saved to your calendar.</p>`}
+
 function wiz(){const p=S.p,s=V.step;
- if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AceLife</h1><p class="lead">Your study guide from today to exam day. Build a realistic plan, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p><p class="note">Built first for NEET PG aspirants who are also doing an internship. Available exams: ${Object.values(EX).map(e=>e.n).join(', ')}. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button></section>`;
- const T=['','Create your profile','Choose your exam','Exam date and target','Daily time and commitments','Where you stand','Study resources'][s];let b='';
- if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in as <b>'+esc(CL().user.username)+'</b>. Your plan is saved to your account.':'Your plan is saved on this phone.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" value="${esc(p.name||'')}"`);
- if(s===2)b=`<div class="chips">${Object.keys(EX).map(k=>chip('pick','exam',k,p.exam===k,EX[k].n)).join('')}</div><p class="sm mu" style="margin-top:8px">Pick the exam you are preparing for.</p>`;
- if(s===3)b=inp('w_d','Exam date',`type="date" data-f="examDate" min="${addD(today(),2)}" max="${addD(today(),1100)}" value="${esc(p.examDate||'')}"`)+inp('w_t','Target score or rank',`data-f="target" maxlength="80" placeholder="For example: rank under 2,000" value="${esc(p.target||'')}"`)+'<p class="sm mu" style="margin-top:8px">Your target is for motivation. It does not change what is possible.</p>';
- if(s===4)b=inp('w_h','Hours per day you can study (0.5 to 16)',`type="number" inputmode="decimal" step="0.5" min="0.5" max="16" data-f="hours" value="${esc(p.hours)}"`)+inp('w_w','Internship or work hours per day',`type="number" inputmode="decimal" step="0.5" min="0" max="16" data-f="workHrs" value="${esc(p.workHrs)}"`)+`<label for="w_o">Weekly day off</label><select id="w_o" data-f="off"><option value="">No fixed day off</option>${DOW.map((d,i)=>`<option value="${i}" ${p.off===String(i)?'selected':''}>${d}</option>`).join('')}</select>`+inp('w_c','Commitment notes (optional)',`data-f="workNote" maxlength="120" placeholder="For example: night duty on Fridays" value="${esc(p.workNote||'')}"`);
- if(s===5)b=`<h3>Current level</h3><div class="chips" style="margin:8px 0">${['Beginner','Intermediate','Advanced'].map(l=>chip('pick','level',l,p.level===l)).join('')}</div><h3>Subjects completed</h3><div class="chips" style="margin:8px 0">${EX[p.exam].sub.map(x=>chip('tg','done',x,(p.done||[]).includes(x))).join('')}</div><h3>Subjects needing improvement</h3><div class="chips" style="margin:8px 0">${EX[p.exam].sub.map(x=>chip('tg','weak',x,(p.weak||[]).includes(x))).join('')}</div>`;
- if(s===6)b=`<div class="chips">${RES.map(x=>chip('tg','res',x,(p.res||[]).includes(x))).join('')}</div>`+inp('w_r','Other resources (optional)',`data-f="resOther" maxlength="120" value="${esc(p.resOther||'')}"`);
- return`<div class="bar" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="6" aria-valuenow="${s}"><i style="width:${s/6*100}%"></i></div><h1 style="margin-top:16px">${T}</h1>${b}<p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p><div class="row"><button class="btn o" data-a="back">Back</button><button class="btn" style="flex:1" data-a="next">${s<6?'Continue':'Build my plan'}</button></div>`}
+ if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AceLife</h1><p class="lead">Your study guide from today to exam day. Build a realistic plan, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p>`
+  +`<ul class="feat"><li><b>Plan</b><span>Topic-by-topic schedule that fits your hours</span></li><li><b>Track</b><span>Study timer, streak and weekly progress</span></li><li><b>Recover</b><span>Missed days are spread out, never piled up</span></li></ul>`
+  +`<p class="note">Built first for NEET PG aspirants who are also doing an internship. Available exams: ${Object.values(EX).map(e=>e.n).join(', ')}. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button><p class="sm" style="margin:10px 0 0;text-align:center;opacity:.8">Takes about 3 minutes</p></section>`;
+ const an=V.sa;V.sa=false;let b='';
+ if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in as <b>'+esc(CL().user.username)+'</b>. Your plan is saved to your account.':'Your plan is saved on this phone.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" enterkeyhint="next" value="${esc(p.name||'')}"`);
+ if(s===2)b=`<div class="xcs" role="group" aria-label="Exam">${Object.keys(EX).map(k=>XC('exam',k,p.exam===k,EX[k].n,EX[k].sub.length+' subjects &middot; '+allTopics(k)+' topics &middot; '+EX[k].mock+' min paper')).join('')}</div><p class="sm mu" style="margin-top:10px">Pick the exam you are preparing for. You can change it later from your plan.</p>`;
+ if(s===3)b=`<label for="w_d">Exam date</label><input id="w_d" type="date" data-f="examDate" min="${addD(today(),2)}" max="${addD(today(),1100)}" value="${esc(p.examDate||'')}"><div class="chips" style="margin:10px 0" role="group" aria-label="Date shortcuts">${[['1 month',30],['2 months',60],['3 months',90],['6 months',180],['1 year',365]].map(([l,n])=>`<button type="button" class="chip" data-a="qd" data-v="${n}" aria-pressed="${p.examDate===addD(today(),n)}">${l}</button>`).join('')}</div><div id="lv" class="note" aria-live="polite">${wizHint()}</div>`+inp('w_t','Target score or rank',`data-f="target" maxlength="80" placeholder="For example: rank under 2,000" value="${esc(p.target||'')}"`)+'<p class="sm mu" style="margin-top:8px">Your target is for motivation. It does not change what is possible.</p>';
+ if(s===4)b=`<div class="sl"><div class="row sp"><label for="w_h" style="margin:0">Study hours per day</label><output id="o_h" for="w_h">${hm((+p.hours||0)*60)}</output></div><input id="w_h" type="range" data-f="hours" min="0.5" max="16" step="0.5" value="${esc(p.hours)}"></div>`
+  +`<div class="sl"><div class="row sp"><label for="w_w" style="margin:0">Internship or work hours per day</label><output id="o_w" for="w_w">${hm((+p.workHrs||0)*60)}</output></div><input id="w_w" type="range" data-f="workHrs" min="0" max="16" step="0.5" value="${esc(p.workHrs)}"></div><div id="lv" aria-live="polite">${wizHint()}</div>`
+  +`<label for="w_o">Weekly day off</label><select id="w_o" data-f="off"><option value="">No fixed day off</option>${DOW.map((d,i)=>`<option value="${i}" ${p.off===String(i)?'selected':''}>${d}</option>`).join('')}</select>`+inp('w_c','Commitment notes (optional)',`data-f="workNote" maxlength="120" placeholder="For example: night duty on Fridays" value="${esc(p.workNote||'')}"`);
+ if(s===5)b=`<div class="xcs" role="group" aria-label="Current level">${['Beginner','Intermediate','Advanced'].map(l=>XC('level',l,p.level===l,l,LVD[l])).join('')}</div><p class="sm mu" style="margin-top:10px">Your level sets how much time each new topic gets.</p>`;
+ if(s===6)b=`<p class="sm mu" style="margin:0 0 10px">Open a subject and tick what you have finished. Use <b>!</b> for topics you find hard. Your plan skips finished topics and gives hard ones more time.</p><div class="legend sm"><span><i class="tb d on" aria-hidden="true">&#10003;</i> Completed</span><span><i class="tb w on" aria-hidden="true">!</i> Needs work</span></div><div id="ssum" class="card" style="margin:10px 0">${subsSum()}</div><label for="w_f" class="sr">Search subjects and topics</label><input id="w_f" type="search" data-g="tf" placeholder="Search a subject or topic" value="${esc(V.tf||'')}" autocomplete="off"><div id="subs" style="margin-top:10px">${subsHtml()}</div>`;
+ if(s===7)b=`<div class="chips">${RES.map(x=>chip('tg','res',x,(p.res||[]).includes(x))).join('')}</div>`+inp('w_r','Other resources (optional)',`data-f="resOther" maxlength="120" value="${esc(p.resOther||'')}"`);
+ if(s===8)b=review();
+ const dots=WS.slice(1).map((l,i)=>{const n=i+1;return n<s?`<button type="button" class="sg ok" data-a="goto" data-v="${n}" aria-label="Back to ${l}"></button>`:`<i class="sg${n===s?' now':''}" aria-hidden="true"></i>`}).join('');
+ return`<div class="wz${an?' in':''}"><header class="wzh"><span class="wzb"><span class="wzl" aria-hidden="true">A</span>AceLife</span><span class="sm mu">Step ${s} of ${WN} &middot; ${WS[s]}</span></header><div class="stp" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="${WN}" aria-valuenow="${s}">${dots}</div><h1 class="wzt" tabindex="-1">${WT[s]}</h1><div class="wzc">${b}</div><p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p></div>`
+  +`<div class="wzf"><button class="btn o" data-a="back">Back</button><button class="btn" style="flex:1" data-a="next">${s<WN?'Continue':'Build my plan'}</button></div>`}
 
 function cal(){const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(f.getDay()+6)%7;
  let c='MTWTFSS'.split('').map(x=>`<span class="wd" aria-hidden="true">${x}</span>`).join('')+'<span></span>'.repeat(off);
@@ -110,7 +167,7 @@ const logged=t=>sum(S.sessions.filter(x=>x.taskId===t.id),x=>x.mins);
 const med=a=>{a=a.slice().sort((x,y)=>x-y);const n=a.length;return n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0};
 const SYM={done:'&#10003;',partial:'&frac12;',incomplete:'&#10005;',todo:''},LAB={done:'done',partial:'partly done',incomplete:'not done',todo:'not started'};
 const trow=t=>`<div class="trow"><button class="chk ${t.status}" data-a="st" data-id="${t.id}" data-v="done" aria-pressed="${t.status==='done'}" aria-label="${esc(t.subject)}, ${LAB[t.status]}. Tap to mark done">${SYM[t.status]}</button><div class="m"><b>${esc(t.subject)}</b><span class="sm mu">${esc(t.topic)}</span> <span class="sm">${logged(t)?'Studied '+hm(logged(t))+' · ':''}<span class="pri${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+(t.type==='mock'?'mock test':'revision'):''}${t.history?' · moved':''}</span>${t.log?`<span class="sm" style="color:var(--ok)">${esc(logText(t))}</span>`:''}</div><button class="more" data-a="tm" data-id="${t.id}" aria-label="More options for ${esc(t.subject)}">&#8943;</button></div>`;
-function ring(p){const c=251.3;return`<svg class="ring" viewBox="0 0 96 96" role="img" aria-label="${p}% of the plan done"><circle class="t" cx="48" cy="48" r="40"/><circle class="v" cx="48" cy="48" r="40" stroke-dasharray="${c}" stroke-dashoffset="${(c*(1-p/100)).toFixed(1)}" transform="rotate(-90 48 48)"/><text x="48" y="48">${p}%</text></svg>`}
+function ring(p){const c=251.3,from=V.rp==null?0:V.rp;V.rp=p;return`<svg class="ring" viewBox="0 0 96 96" role="img" aria-label="${p}% of the plan done"><circle class="t" cx="48" cy="48" r="40"/><circle class="v" cx="48" cy="48" r="40" stroke-dasharray="${c}" stroke-dashoffset="${(c*(1-from/100)).toFixed(1)}" data-to="${(c*(1-p/100)).toFixed(1)}" transform="rotate(-90 48 48)"/><text x="48" y="48">${p}%</text></svg>`}
 function act(){const a=new Set(),m={};S.tasks.forEach(t=>{if(t.doneDate&&(t.status==='done'||t.status==='partial'))a.add(t.doneDate)});S.sessions.forEach(x=>m[x.day]=(m[x.day]||0)+x.mins);for(const k in m)if(m[k]>=20)a.add(k);return a}
 function dayMins(k){return sum(S.sessions.filter(x=>x.day===k),x=>x.mins)+(S.timer&&dk(new Date(S.timer.start))===k?Math.floor(stMs(S.timer)/6e4):0)}
 function home(){
@@ -118,7 +175,7 @@ function home(){
  let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
  const next=T.find(t=>t.status==='todo')||T.find(t=>t.status==='partial'),up=S.tasks.filter(t=>t.date>today()&&t.status!=='done').sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:P[x.pri]-P[y.pri]).slice(0,4);
  const wk=wkDays(0).map(d=>`<button class="${d===V.day?'sel':''}${d===today()?' now':''}" data-a="day" data-v="${d}" aria-pressed="${d===V.day}" aria-label="${fD(d)}"><span class="sm">${pd(d).toLocaleDateString(undefined,{weekday:'narrow'})}</span><b>${pd(d).getDate()}</b><i class="${S.tasks.some(t=>t.date===d)?'has':''}"></i></button>`).join('');
- return`<div class="hero"><div style="flex:1;min-width:0"><h1>Hi ${esc(S.p.name)}</h1><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done </p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
+ return`<div class="hero"><div style="flex:1;min-width:0"><h1>${greet()}, ${esc(S.p.name)}</h1><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done </p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
  +(M.length?`<div class="note" style="margin-bottom:14px"><b>${M.length} missed task${M.length>1?'s':''}.</b> <button class="btn s" data-a="tab" data-v="roadmap" style="margin-left:6px">Fix my plan</button></div>`:'')
  +`<div class="wk">${wk}</div>`
  +`<div class="row" style="margin:0 0 14px"><button class="btn o s" style="flex:1" data-a="rest">Rest</button><button class="btn o s" style="flex:1" data-a="share">Share today's progress</button></div>`
@@ -175,21 +232,35 @@ function render0(){try{
  if(!ready){a.innerHTML=loadView();nv.hidden=true;return}
  if(V.build){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=buildView();return}
  if(authOn()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authView();return}
- if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=wiz();return}
+ if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');const sa=V.sa;a.innerHTML=wiz();if(sa&&V.step){const h=$('.wzt');if(h)h.focus({preventScroll:true})}return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
  nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
- a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?`<div class="live" role="group" aria-label="Study timer"><svg class="clk" viewBox="0 0 200 200" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${run.pomo&&run.pomo.ph==='b'?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${run.pomo&&run.pomo.ph==='b'?' brk':''}" id="tm" x="100" y="110">00:00:00</text></svg><small>${run.pomo?(run.pomo.ph==='b'?'Break · ':'Focus · '):''}${rt?esc(rt.subject+': '+rt.topic):'General study'}</small><div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!run.pomo}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button><button class="btn s" data-a="timer">Stop</button></div></div>`:'');tick()
+ a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?liveHtml(run,rt):'');tick();postRender()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
 function sheet(h){$('#shb').innerHTML=h;$('#sh').classList.add('on');syncGuard();const i=$('#shb input,#shb button');if(i)i.focus()}
 function closeSheet(){$('#sh').classList.remove('on');syncGuard()}
 function toast(m){const e=$('#ts');e.textContent=m;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),2600)}
 function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
-function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S)return;
- let s=S.timer?Math.floor(stMs(S.timer)/1e3):0,pre='';
- const T=S.timer;if(T&&T.pomo)s=Math.max(0,(T.pomo.ph==='f'?25:5)*60-Math.floor((Date.now()-new Date(T.pomo.ps))/1e3));else if(T&&T.goal){s=T.goal*60-s;if(s<0){s=-s;pre='+'}}
- {const cv=$('#cv');if(cv&&T){const f=T.pomo?1-s/((T.pomo.ph==='f'?25:5)*60):(stMs(T)/1e3%3600)/3600;cv.setAttribute('stroke-dashoffset',(552.9*(1-Math.min(1,Math.max(0,f)))).toFixed(1))}}
- e.textContent=pre+pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);const t=$('#tm2');if(t)t.textContent=hm(dayMins(V.day))}
+/* ---- study timer: counts UP from 00:00:00 until the learner stops it; the colour theme changes with time studied ---- */
+const TH=[[0,'Warm-up','#4CC9F0','#0B3A5B'],[15,'Settling in','#2EE6A8','#0B4F4A'],[30,'Deep focus','#A58BFF','#2B1F6B'],[60,'In the zone','#FFC94A','#4A3200'],[90,'Flow state','#FF8A4C','#5E2208'],[120,'Unstoppable','#FF5DA2','#561041']];   // [from minute, stage name, ring colour, background colour]
+const thIdx=m=>{let i=0;TH.forEach((t,j)=>{if(m>=t[0])i=j});return i};
+const clk=s=>pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60),mmss=s=>pad(Math.floor(s/60))+':'+pad(s%60);
+function liveHtml(run,rt){const el=Math.floor(stMs(run)/1e3),h=TH[thIdx(el/60)],po=run.pomo,br=po&&po.ph==='b',reached=!!(run.goal&&run.fired);
+ return`<div class="live${V.fs?' full':''}" id="lvp" style="--tc:${h[2]};--tb:${h[3]}" role="group" aria-label="Study timer">`
+  +`<button type="button" class="lvx" data-a="fs" aria-expanded="${!!V.fs}" aria-label="${V.fs?'Minimise timer':'Open full-screen timer'}">${V.fs?'&#10005;':'&#10530;'}</button>`
+  +`<svg class="clk" viewBox="0 0 200 200" data-a="fs" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${br?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${br?' brk':''}" id="tm" x="100" y="110">${clk(el)}</text></svg>`
+  +`<span class="stg" id="tl"></span><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}</small>`
+  +(run.goal?`<span class="gl${reached?' ok':''}">${reached?'&#10003; Goal reached ('+hm(run.goal)+'). Keep going or stop.':'Goal '+hm(run.goal)}</span>`:'')
+  +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button>${reached&&rt?'<button class="btn s ok" data-a="tudone">Done &amp; stop</button>':''}<button class="btn s" data-a="timer">Stop</button></div></div>`}
+function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S||!S.timer)return;
+ const T=S.timer,el=Math.floor(stMs(T)/1e3),po=T.pomo,L=po?(po.ph==='f'?25:5)*60:0,left=po?Math.max(0,L-Math.floor((Date.now()-new Date(po.ps))/1e3)):0;
+ e.textContent=clk(el);
+ const f=po?1-left/L:T.goal?el/(T.goal*60):(el%3600)/3600,cv=$('#cv');if(cv)cv.setAttribute('stroke-dashoffset',(552.9*(1-Math.min(1,Math.max(0,f)))).toFixed(1));
+ const i=thIdx(el/60),h=TH[i],p=$('#lvp');if(p){p.style.setProperty('--tc',h[2]);p.style.setProperty('--tb',h[3])}
+ const tl=$('#tl');if(tl)tl.textContent=po?(po.ph==='b'?'Break · '+mmss(left)+' left':h[1]+' · break in '+mmss(left)):h[1]+' · '+(i<TH.length-1?'next stage at '+TH[i+1][0]+' min':'keep it up');
+ if(V.thI===undefined)V.thI=i;else if(i>V.thI){V.thI=i;toast(h[1]+': '+h[0]+' minutes of focus');vib([80,60,80])}else V.thI=i}
+let wl=null;async function wake(on){try{if(on&&navigator.wakeLock&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}else if(!on&&wl){const w=wl;wl=null;await w.release()}}catch(e){}}
 
 function bestDays(m,x,t){const e=addD(S.p.examDate,-1),r=[];
  for(let i=0;i<14;i++){const k=addD(today(),i);if(k>e)break;if(String(pd(k).getDay())===S.p.off)continue;
@@ -207,12 +278,17 @@ function rsp(){const m=+$('#r_m').value,k=$('#r_d').value,e=$('#rp');if(!e)retur
  else h+='This fits your daily limit.';e.innerHTML=h}
 
 const A={
- tab:d=>{if(d.v!==V.tab){if(d.v==='home')V.nav=[];else V.nav.push(V.tab);V.tab=d.v}scrollTo(0,0);render()},
- next:()=>{const e=chk(V.step);if(e){V.err=e;render();return}V.err='';
-  if(V.step<6){V.step++;save();render();scrollTo(0,0)}
-  else{S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;S.p.onboarded=true;buildRoadmap()}},
- back:()=>{V.err='';V.step=Math.max(0,V.step-1);render()},
- pick:d=>{if(d.k==='exam'&&S.p.exam!==d.v){S.p.done=[];S.p.weak=[]}S.p[d.k]=d.v;render()},
+ tab:d=>{if(d.v!==V.tab){if(d.v==='home')V.nav=[];else V.nav.push(V.tab);V.tab=d.v;V.fx=true;V.rp=0}vib(6);scrollTo(0,0);render()},
+ next:()=>{const e=chk(V.step);if(e){V.err=e;vib(40);render();return}V.err='';
+  if(V.step<WN){V.step++;V.sa=true;if(V.step===6){migrateTopics();V.tf=''}save();render();scrollTo(0,0)}
+  else{for(let i=1;i<WN;i++){const m=chk(i);if(m){V.step=i;V.err=m;V.sa=true;render();scrollTo(0,0);return}}
+   S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;cleanTopics();S.p.onboarded=true;buildRoadmap()}},
+ back:()=>{V.err='';V.step=Math.max(0,V.step-1);V.sa=true;render();scrollTo(0,0)},
+ goto:d=>{V.err='';V.step=+d.v;V.sa=true;if(V.step===6){migrateTopics();V.tf=''}render();scrollTo(0,0)},
+ qd:d=>{S.p.examDate=addD(today(),+d.v);vib(8);render()},
+ pick:d=>{if(d.k==='exam'&&S.p.exam!==d.v){S.p.done=[];S.p.weak=[];S.p.tdone=[];S.p.tweak=[]}S.p[d.k]=d.v;vib(8);render()},
+ tt:d=>{const p=S.p,k=tkey(d.s,d.t),a=d.m==='d'?'tdone':'tweak',o=d.m==='d'?'tweak':'tdone';p[a]=p[a]||[];p[o]=(p[o]||[]).filter(z=>z!==k);const i=p[a].indexOf(k);i<0?p[a].push(k):p[a].splice(i,1);syncSub(d.s);vib(8);wzSubs();save()},
+ sall:d=>{const p=S.p,T=topicsOf(p.exam,d.s),full=subStat(d.s).d===T.length,has=k=>T.some(t=>tkey(d.s,t)===k);p.tdone=(p.tdone||[]).filter(k=>!has(k));p.tweak=(p.tweak||[]).filter(k=>!has(k));if(!full)T.forEach(t=>p.tdone.push(tkey(d.s,t)));syncSub(d.s);vib(12);wzSubs();save()},
  tg:d=>{const a=S.p[d.k]=S.p[d.k]||[],i=a.indexOf(d.v);i<0?a.push(d.v):a.splice(i,1);
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
  redo:()=>{S.p.onboarded=false;V.step=2;save();render()},
@@ -220,7 +296,8 @@ const A={
  accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted')},
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
- st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render();if(t.status==='done')A.lg({id:t.id})},
+ st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render();vib(12);
+  if(t.status==='done'){const b=$(`.chk[data-id="${t.id}"]`);if(b){b.classList.add('pop');burst(b)}const T=tasksOn(today());if(t.date===today()&&T.every(z=>z.status==='done'))toast('All of today\'s tasks are done. Great work!');A.lg({id:t.id})}},
  x:closeSheet,
  remon:async()=>{if(!window.Notification||!navigator.serviceWorker){toast('This browser cannot show notifications.');return}
   if(await Notification.requestPermission()!=='granted'){toast('Notifications are blocked. Allow them in your browser settings.');return}
@@ -233,7 +310,7 @@ const A={
   if(S.timer)A.timer();
   const t=d.id?byId(d.id):null,g=t?Math.max(30,Math.round((t.mins-logged(t))/15)*15):0;
   unlockAudio();const n0=new Date().toISOString();
-  S.timer={start:n0,taskId:d.id||'',goal:g,brk:0,pomo:S.p.pomo?{ph:'f',ps:n0}:null};
+  S.timer={start:n0,taskId:d.id||'',goal:g,brk:0,pomo:S.p.pomo?{ph:'f',ps:n0}:null};V.thI=undefined;
   startTick();armAlarm();closeSheet();save();render();
   toast(g?'Timer started. You will be alerted after '+hm(g)+'.':'Timer started');
   if(g&&window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){
@@ -251,7 +328,7 @@ const A={
  delok:d=>{S.tasks=S.tasks.filter(t=>t.id!==d.id);closeSheet();save();render();toast('Task deleted')},
  timer:()=>{if(S.timer){pomoStep(1);const s=new Date(S.timer.start),m=Math.min(720,Math.round(stMs(S.timer)/6e4));
    if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
-   S.timer=null;clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
+   S.timer=null;V.thI=undefined;V.fs=false;wake(false);clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
  rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r,0,t)[0]||addD(today(),1);V.rs=t.id;
   sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (30 to 600, in steps of 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
  pickd:d=>{$('#r_d').value=d.v;rsp()},fit:d=>{$('#r_m').value=d.v;rsp()},
@@ -278,8 +355,9 @@ const A={
  resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()}
 };
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset);else if(e.target.id==='sh')closeSheet()});
-document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S)S.p[f]=t.value;if(g==='rs')rsp();if(g==='tt')V.tt=t.value});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S){S.p[f]=t.value;wizLive()}if(g==='rs')rsp();if(g==='tt')V.tt=t.value;if(g==='tf'){V.tf=t.value;wzSubs()}});
+document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('sj')&&!V.tf)V.ob[d.dataset.s]=d.open},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(V.fs&&!sheetOpen()){V.fs=false;wake(false);render();return}closeSheet()}if(e.key==='Enter'&&S&&ready&&!S.p.onboarded&&V.step>0&&e.target.tagName==='INPUT'&&!e.target.dataset.g&&e.target.type!=='range'){e.preventDefault();A.next()}});
 
 let guardOn=false,skipPop=false;
 const sheetOpen=()=>$('#sh').classList.contains('on');
@@ -330,15 +408,14 @@ function alertNow(T){const t=T.taskId?byId(T.taskId):null,txt=t?t.subject+': '+t
  try{navigator.vibrate&&navigator.vibrate([300,150,300,150,500])}catch(e){}
  beep();
  if(window.Notification&&Notification.permission==='granted'&&navigator.serviceWorker)navigator.serviceWorker.ready.then(r=>r.showNotification('Time is up',{body:txt+'. '+hm(T.goal)+' goal reached. Open the app to mark it done.',tag:'timer',renotify:true,requireInteraction:true,vibrate:[300,150,300,150,500],icon:'icon-192.png',badge:'icon-192.png'})).catch(()=>{})}
-function timeUp(){const T=S.timer,t=T.taskId?byId(T.taskId):null;
- sheet(`<h2>Time is up</h2><p>${t?esc(t.subject)+': '+esc(t.topic):'Your study session'}<br><span class="sm mu">${hm(T.goal)} goal reached.</span></p><div class="stack"><button class="btn" data-a="tudone">${t?'Mark done and stop':'Stop the timer'}</button><button class="btn o" data-a="tumore">Study 15 more minutes</button><button class="btn o" data-a="timer">Stop timer only</button></div>`)}
 function checkAlarm(){const T=S&&S.timer;if(!T||!T.goal)return;if(stMs(T)/6e4<T.goal)return;
  if(!T.fired){T.fired=true;save();alertNow(T)}
- if(!T.ack&&document.visibilityState==='visible'){T.ack=true;save();timeUp()}}
+ if(!T.ack&&document.visibilityState==='visible'){T.ack=true;save();toast('Goal reached: '+hm(T.goal)+'. Keep going or stop when you like.');render()}}
 A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();save();render();A.lg({id:t.id})}};
 A.tumore=()=>{if(!S.timer)return;S.timer.goal+=15;S.timer.fired=false;S.timer.ack=false;closeSheet();armAlarm();save();render()};
 A.offline=()=>skipNow();
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S&&S.timer){armAlarm();checkAlarm();render()}});
+A.fs=()=>{if(!S.timer)return;V.fs=!V.fs;wake(V.fs);vib(10);render()};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S&&S.timer){armAlarm();checkAlarm();if(V.fs)wake(true);render()}});
 addEventListener('error',e=>{if(Date.now()-errAt>1e4){errAt=Date.now();try{toast('Something went wrong. Your data is safe.')}catch(x){}}console.error(e.error||e.message)});
 addEventListener('unhandledrejection',e=>console.error(e.reason));
 const BSTEPS=['Reading your answers','Ordering subjects, foundation first','Fitting topics into your hours','Balancing priorities and revision','Placing mock tests and checking every day fits'];
@@ -494,5 +571,20 @@ document.addEventListener('visibilitychange',()=>{if(!S||!S.soc)return;const R=S
 window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;const id=u?u.uid:null;if(id===loadedUid)return;
  if(!id){loadedUid=null;if(unW){unW();unW=null}S=fresh();V.tab='home';render();return}
  afterAuth().then(render)};
+
+/* ---- v9 interactivity: greeting, confetti, entrance animation, ring sweep, swipe between days ---- */
+const greet=()=>{const h=new Date().getHours();return h<5?'Hi':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Good night'};
+function postRender(){const a=$('#app');if(V.fx){V.fx=false;a.classList.remove('fx');void a.offsetWidth;a.classList.add('fx')}
+ requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.ring .v').forEach(e=>{e.style.strokeDashoffset=e.dataset.to})))}
+function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+ const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,C=['#FFC94A','#5BE3B5','#93A0FF','#FF7A6B','#4CC9F0'];
+ for(let i=0;i<18;i++){const e=document.createElement('i');e.className='cf';e.style.cssText='left:'+cx+'px;top:'+cy+'px;background:'+C[i%5];document.body.appendChild(e);
+  const a=Math.PI*2*i/18+Math.random()*.4,d=44+Math.random()*56;
+  e.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate('+(Math.cos(a)*d)+'px,'+(Math.sin(a)*d+34)+'px) rotate('+Math.round(Math.random()*540)+'deg) scale(.4)',opacity:0}],{duration:600+Math.random()*350,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>e.remove()}}
+let tx=0,ty=0;
+document.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY},{passive:true});
+document.addEventListener('touchend',e=>{if(!S||!ready||!S.p.onboarded||V.tab!=='home'||sheetOpen()||!e.target.closest('.wk,.trow'))return;
+ const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*.6)return;
+ V.day=addD(V.day,dx<0?1:-1);vib(8);render()},{passive:true});
 
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

@@ -105,7 +105,7 @@ const Engine = (() => {
   const t0 = today(), end = addD(p.examDate, -1), H = Math.max(1, diff(t0, end) + 1), E = Math.min(H, c.emit), mode = modeFor(H), lv = LV[p.level] || 'i';
   const cap = Math.round(+p.hours * 60), pl = Math.min(cap, Math.max(30, Math.floor(cap * .85 / 15) * 15)), nb = Math.max(1, Math.round(pl / 75)), bl = clamp(Math.round(pl / nb / 15) * 15, 30, 90);   // every block is 30 minutes or more, in steps of 15
   const DC = p.dayCap || {}, cof = d => Math.min(1080, Math.round(cap * (DC[d] >= .1 && DC[d] <= 2 ? DC[d] : 1))), plOf = d => { const c = cof(d); return Math.min(c, Math.max(30, Math.floor(c * .85 / 15) * 15)) };   // each day's minutes = daily hours x its Heavy Duty (0.3) / Normal (1) / Full Day (1.4) factor
-  const weak = p.weak || [], done = p.done || [], steps = [2, 7, 21].slice(0, clamp(Math.round(prm.revCycles) + 1, 1, 3));
+  const weak = p.weak || [], done = p.done || [], tdone = new Set(p.tdone || []), tweak = new Set(p.tweak || []), steps = [2, 7, 21].slice(0, clamp(Math.round(prm.revCycles) + 1, 1, 3));
   const revOf = d => Math.round(plOf(d) * clamp(.1 + .05 * prm.revCycles, .15, .4) / 15) * 15, rb = clamp(Math.round(bl * .5 / 15) * 15, 30, 45);
   const mockDays = [[], [6], [3, 6], [1, 3, 5]][clamp(Math.round(prm.mockWk), 0, 3)], mlenOf = d => Math.floor(plOf(d) * .7 / 15) * 15, fm = Math.ceil(ex.mock / 15) * 15;
   
@@ -118,13 +118,15 @@ const Engine = (() => {
   
   const done0 = {}; (existing || []).forEach(t => { if (t.tk && (t.status === 'done' || t.status === 'partial')) done0[t.tk] = (done0[t.tk] || 0) + doneMin(t) });
   const M = {}; ex.sub.forEach(s => M[s] = meta(p.exam, ex, s));
-  const w = s => Math.max(.1, M[s].p / 100) * (weak.includes(s) ? 1.5 : 1) * (L.weights[s] || 1);
-  const subs = ex.sub.filter(s => !done.includes(s)), items = []; let demand = 0;   // 2. demand
-  const wt = (s, t) => (M[s].p / 100) * (t.p / 100) * (weak.includes(s) ? 1.5 : 1) * (L.weights[s] || 1), tw = Math.max(1e-4, sum0(subs, s => M[s].topics.reduce((a, t) => a + wt(s, t), 0)));   // no fixed topic times: each topic gets a share of the study time you have
+  const isW = (s, t) => weak.includes(s) || tweak.has(s + '|' + t.n), isD = (s, t) => tdone.has(s + '|' + t.n);   // topic-level choices from the setup syllabus step
+  const w = s => Math.max(.1, M[s].p / 100) * (weak.includes(s) ? 1.5 : M[s].topics.some(t => tweak.has(s + '|' + t.n)) ? 1.25 : 1) * (L.weights[s] || 1);
+  const subs = ex.sub.filter(s => !done.includes(s) && M[s].topics.some(t => !isD(s, t))), items = []; let demand = 0;   // 2. demand
+  const wt = (s, t) => (M[s].p / 100) * (t.p / 100) * (isW(s, t) ? 1.5 : 1) * (L.weights[s] || 1), tw = Math.max(1e-4, sum0(subs, s => M[s].topics.reduce((a, t) => a + (isD(s, t) ? 0 : wt(s, t)), 0)));   // no fixed topic times: each topic gets a share of the study time you have
   
   subs.forEach(s => M[s].topics.forEach(t => {
+   if (isD(s, t)) return;                                                     // topic already finished: nothing new to schedule
    const tk = s + '|' + t.n, tot = Math.max(30, Math.round(supply * wt(s, t) / tw / 15) * 15), rem = Math.max(0, Math.round((tot - (done0[tk] || 0)) / 15) * 15); if (rem < 30) return;
-   items.push({ s, t, tk, tot, rem, sc: (M[s].p / 100) * (t.p / 100) * (weak.includes(s) ? 1.5 : 1) * (L.weights[s] || 1), o: M[s].order, own: true }); demand += rem
+   items.push({ s, t, tk, tot, rem, sc: wt(s, t), o: M[s].order, own: true }); demand += rem
   }));
   
   const kept = new Set(), skipped = []; let left = supply;                       // 3. keep by priority
@@ -138,8 +140,8 @@ const Engine = (() => {
   };
   
   const prac = subs.length ? subs : ex.sub, pcr = {}, ptw = prac.reduce((a, s) => a + w(s), 0), ppick = () => { let b = prac[0]; prac.forEach(s => pcr[s] = (pcr[s] || 0) + w(s)); prac.forEach(s => { if (pcr[s] > pcr[b]) b = s }); pcr[b] -= ptw; return b };
-  const maint = []; done.forEach(s => M[s] && M[s].topics.forEach(t => maint.push({ s, tp: t.n }))); let mi = 0;
-  const lab = (s, t) => weak.includes(s) || M[s].p >= 70 || t.p >= 70 ? 'High' : Math.max(M[s].p, t.p) < 30 ? 'Low' : 'Medium';
+  const maint = []; ex.sub.forEach(s => M[s].topics.forEach(t => { if (done.includes(s) || isD(s, t)) maint.push({ s, tp: t.n }) })); let mi = 0;   // finished subjects AND finished topics get light revision
+  const lab = (s, t) => isW(s, t) || M[s].p >= 70 || t.p >= 70 ? 'High' : Math.max(M[s].p, t.p) < 30 ? 'Low' : 'Medium';
   const rv = [], out = [], mk = (date, subject, topic, mins, pri, type, why, tk) => { const t = { id: uid(), subject, topic, mins, pri, date, type, why, status: 'todo', gen: true }; if (tk) t.tk = tk; out.push(t); return t };
   
   for (const D of cal) {
