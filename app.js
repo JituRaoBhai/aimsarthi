@@ -1,5 +1,5 @@
 'use strict';
-const VER='v11, 24 Oct 2026';
+const VER='v12, 25 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -14,7 +14,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
-const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[],use:null},tests:[]});
+const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[],use:null},tests:[],qp:{}});
 const cleanCap=m=>{const o={},t=addD(today(),-7);if(m&&typeof m==='object')for(const k in m){const v=+m[k];if(okD(k)&&k>=t&&v>=.1&&v<=2)o[k]=v}return o};
 function hydrate(s){const o=Object.assign(fresh(),s||{});o.p=Object.assign(fresh().p,o.p);o.p.dayCap=cleanCap(o.p.dayCap);o.soc=Object.assign(fresh().soc,o.soc);o.ai=Object.assign(fresh().ai,o.ai);return o}
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false,unW=null,loadedUid=null,socT=null,pomoT=null,pomoKey='';
@@ -76,7 +76,8 @@ async function boot(){
  V.lm='Connecting';render();try{await wait(window.cloudReady,6000,true)}catch(e){}
  V.lm='Loading your plan';render();
  await loadState();ready=true;clearTimeout(slowT);V.slow=false;
- if(S.timer){startTick();armAlarm()}
+ if(S.timer){startTick();armAlarm();if(window.Float&&Float.arm)Float.arm()}
+ try{const q=new URLSearchParams(location.search).get('t');if(q){history.replaceState(null,'',location.pathname);setTimeout(()=>tAct(q),300)}}catch(e){}
  setInterval(chkRem,6e4);setInterval(retryPull,6e4);addEventListener('online',()=>{retryPull();if(typeof flushFb==='function')flushFb()});
  pushMeta();if(typeof flushFb==='function')flushFb();render();if(S.soc.run&&S.soc.run.left)socBack()}
 
@@ -189,6 +190,13 @@ const trow=t=>`<div class="trow"><button class="chk ${t.status}" data-a="st" dat
 function ring(p){const c=251.3,from=V.rp==null?0:V.rp;V.rp=p;return`<svg class="ring" viewBox="0 0 96 96" role="img" aria-label="${p}% of the plan done"><circle class="t" cx="48" cy="48" r="40"/><circle class="v" cx="48" cy="48" r="40" stroke-dasharray="${c}" stroke-dashoffset="${(c*(1-from/100)).toFixed(1)}" data-to="${(c*(1-p/100)).toFixed(1)}" transform="rotate(-90 48 48)"/><text x="48" y="48">${p}%</text></svg>`}
 function act(){const a=new Set(),m={};S.tasks.forEach(t=>{if(t.doneDate&&(t.status==='done'||t.status==='partial'))a.add(t.doneDate)});S.sessions.forEach(x=>m[x.day]=(m[x.day]||0)+x.mins);for(const k in m)if(m[k]>=20)a.add(k);return a}
 function dayMins(k){return sum(S.sessions.filter(x=>x.day===k),x=>x.mins)+(S.timer&&dk(new Date(S.timer.start))===k?Math.floor(stMs(S.timer)/6e4):0)}
+const tmf=x=>new Date(x).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const totalMins=()=>sum(S.sessions,x=>x.mins)+(S.timer?Math.floor(stMs(S.timer)/6e4):0);
+function sessCard(k){const L=S.sessions.filter(x=>x.day===k).sort((a,b)=>a.start<b.start?-1:1),run=S.timer&&dk(new Date(S.timer.start))===k?S.timer:null,w=sum(wkDays(0),dayMins);
+ return`<section class="card sess"><div class="row sp"><h2 style="margin:0">Study sessions</h2><span class="sm mu">${k===today()?'Today':fD(k)}</span></div>`
+ +`<div class="stats" style="margin-top:10px"><div><b>${hm(dayMins(k))}</b><span>${k===today()?'Today':'This day'}</span></div><div><b>${hm(w)}</b><span>This week</span></div><div><b>${hm(totalMins())}</b><span>All time</span></div></div>`
+ +(L.length||run?L.map((x,i)=>{const t=x.taskId?byId(x.taskId):null;return`<p class="row sp srow"><span><b>Session ${i+1}: ${hm(x.mins)}</b><br><span class="sm mu">${tmf(x.start)} to ${tmf(x.end)}${t?' · '+esc(t.subject):''}</span></span><button class="more" data-a="sdel" data-id="${x.id}" aria-label="Delete session ${i+1}">&times;</button></p>`}).join('')
+  +(run?`<p class="row sp srow"><span><b>Session ${L.length+1}: ${hm(Math.floor(stMs(run)/6e4))}</b> <span class="tag ok">${run.pz?'paused':'running'}</span><br><span class="sm mu">Started ${tmf(run.start)}</span></span></p>`:''):'<p class="mu sm" style="margin:6px 0 0">No sessions yet. Start the timer and every session you finish is listed here. Pause it any time you need a rest.</p>')+`</section>`}
 function home(){
  const k=V.day,T=tasksOn(k),est=sum(T,t=>t.mins),dm=sum(T,doneMin),pc=est?Math.round(dm/est*100):0,n=diff(today(),S.p.examDate),M=miss(),a=act(),nd=T.filter(t=>t.status==='done').length;
  let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
@@ -200,7 +208,7 @@ function home(){
  +`<div class="row" style="margin:0 0 14px"><button class="btn o s" style="flex:1" data-a="rest">Rest</button><button class="btn o s" style="flex:1" data-a="share">Share today's progress</button></div>`
  +(next&&k===today()&&!S.timer?`<section class="card next"><p class="sm mu" style="margin:0">Up next</p><h2 style="margin:2px 0">${esc(next.subject)}</h2><p style="margin:0">${esc(next.topic)}</p><button class="btn" data-a="go" data-id="${next.id}">Start studying</button></section>`:'')
  +`<section class="card"><div class="row sp"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn o s" data-a="add">Add task</button></div>${capRow(k)}${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done, then note how you studied. The three dots have more options. Times are guides: a little more or less is fine.</p></section>`
- +`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
+ +sessCard(k)+`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
  +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}:${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 function planCard(d){const sm=d?d.summary:S.p.summary,m=d?d.mode:S.p.planMode;if(!sm)return'';
@@ -223,14 +231,16 @@ function planBody(){
   +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
  return h}
 function roadmap(){const c=!S.draft&&miss().length?recover():'',k=coachCard(),b=planBody();return c||k?b.replace('</h1>',()=>'</h1>'+k+c):b}
-const dataCard=()=>`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Saved to your account and on this phone.':'Saved on this phone.'}</p><div class="row" style="flex-wrap:wrap"><button class="btn o s" data-a="bkx">Export backup (.json)</button><button class="btn o s" data-a="bki">Import backup</button><button class="btn o s" data-a="reset">Start over</button></div><input type="file" id="bk" accept="application/json,.json" hidden></section>`;
+const dataCard=()=>`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Saved to your account and on this phone.':'Saved on this phone.'} A backup file holds your plan, tasks, study sessions and settings.</p><div class="stack"><button class="btn o" data-a="bkx">Export backup (.json)</button><button class="btn o" data-a="bki">Import backup (.json)</button><button class="btn o" data-a="csvx">Download study sessions (.csv)</button><button class="btn o dng" data-a="reset">Erase everything</button></div><input type="file" id="bk" accept="application/json,.json" hidden></section>`;
 function recover(){
  const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1));
  if(!M.length)return`<h1>Recover</h1><div class="card"><h2>Nothing missed</h2><p class="mu">Unfinished tasks from past days appear here. Nothing is moved or deleted unless you accept it.</p></div>`;
  const tot=sum(M,t=>t.mins),c=cap(today()),free=sum([1,2,3,4,5,6,7].map(i=>addD(today(),i)),k=>Math.max(0,cap(k)-load(k)));
  return`<h2 style="margin:18px 0 8px">Catch up</h2><section class="card"><h2>Remaining workload</h2><div class="stats"><div><b>${hm(tot)}</b><span>Missed</span></div><div><b>${hm(free)}</b><span>Free, next 7 days</span></div><div><b>${hm(c)}</b><span>Daily limit</span></div></div><p class="sm">Putting all ${hm(tot)} on tomorrow would make it ${hm(load(addD(today(),1))+tot)}, above your ${hm(cap(addD(today(),1)))} limit. So we spread the work out instead. You approve every change.</p><button class="btn w" data-a="sug">Suggest a gentle plan</button></section>`
  +M.map(t=>`<article class="card tk ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<p class="sm mu" style="margin:0 0 8px">Planned ${fD(t.date)} · ${hm(t.mins)} · ${t.status==='partial'?'partly done':'not done'}</p><div class="row"><button class="btn s" data-a="rs" data-id="${t.id}">Reschedule</button><button class="btn o s" data-a="skip" data-id="${t.id}">Dismiss</button></div></article>`).join('')}
-function progress(){
+function progress(){const t=V.pt==='tests'&&typeof testsView==='function';
+ return`<div class="seg" role="tablist" aria-label="Progress sections"><button role="tab" aria-selected="${!t}" data-a="pt" data-v="overview">Overview</button><button role="tab" aria-selected="${t}" data-a="pt" data-v="tests">Tests</button></div>`+(t?`<h1>Topic tests</h1>`+testsView():progressMain())}
+function progressMain(){
  const D=wkDays(V.wk),T=S.tasks.filter(t=>D.includes(t.date)),pl=sum(T,t=>t.mins),cp=sum(T,doneMin),a=act(),el=D.filter(k=>k<=today()),ac=el.filter(k=>a.has(k)).length;
  const per=D.map(k=>{const x=T.filter(t=>t.date===k);return[sum(x,t=>t.mins),sum(x,doneMin)]}),mx=Math.max(60,...per.map(x=>x[0])),out=T.filter(t=>t.status!=='done'),SB={};
  S.tasks.forEach(t=>{const o=SB[t.subject]||(SB[t.subject]={p:0,c:0});o.p+=t.mins;o.c+=doneMin(t)});
@@ -238,13 +248,21 @@ function progress(){
  +`<section class="card" style="margin-top:12px"><div class="stats"><div><b>${hm(pl)}</b><span>Planned</span></div><div><b>${hm(cp)}</b><span>Completed</span></div><div><b>${hm(sum(S.sessions.filter(s=>D.includes(s.day)),s=>s.mins))}</b><span>Timed</span></div></div><div class="chart" role="img" aria-label="Planned versus completed study for each day, Monday to Sunday">${per.map((x,i)=>`<div class="col"><div class="bars"><i class="pl" style="height:${x[0]/mx*100}%"></i><i class="cp" style="height:${x[1]/mx*100}%"></i></div><span class="sm">${'MTWTFSS'[i]}</span></div>`).join('')}</div><p class="sm mu" style="margin:6px 0 0">Light bars: planned. Dark bars: completed (partial counts as half).</p></section>`
  +`<section class="card"><h2>Tasks and consistency</h2><p>${T.filter(t=>t.status==='done').length} of ${T.length} tasks completed. ${out.length} outstanding, ${out.filter(t=>t.date<today()).length} of them already past.</p><p>${el.length?ac+' of '+el.length+' days active this week.':'This week has not started yet.'}</p><button class="btn o s" data-a="share">Share today's progress</button></section>`
  +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
+const TABS=['home','roadmap','progress','library','profile'];
+function profile(){const p=S.p,ex=EX[p.exam]||{n:''},a=act();let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
+ const nT=(p.tdone||[]).length,nW=(p.tweak||[]).length,rows=[[1,'Name',p.name||'-'],[2,'Exam',ex.n],[3,'Exam date and target',(p.examDate?fD(p.examDate):'-')+(p.target?' · '+p.target:'')],[4,'Daily study time',hm((+p.hours||0)*60)+(+p.workHrs?' · work '+hm(+p.workHrs*60):'')],[5,'Level',p.level||'-'],[6,'Syllabus',nT+' topics done, '+nW+' weak'],[7,'Study order',p.ordOn?'Your own order':'Automatic'],[8,'Resources',(p.res||[]).join(', ')||'-']];
+ return`<h1>Profile</h1><section class="card pf"><span class="av" aria-hidden="true">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</span><div style="min-width:0"><h2 style="margin:0">${esc(p.name||'Student')}</h2><p class="sm mu" style="margin:2px 0 6px">${esc(ex.n)}</p><span class="pill">${st}-day streak</span> <span class="pill">${hm(totalMins())} studied</span></div></section>`
+ +accountCard()
+ +`<section class="card"><h2>Your answers</h2><p class="sm mu">Change anything you told us at set-up. Your plan is rebuilt from the new answers and nothing is applied until you accept it. The back button cancels.</p>${rows.map(r=>`<div class="row sp ans"><span style="min-width:0"><b>${r[1]}</b><br><span class="sm mu">${esc(r[2])}</span></span><button class="btn o s" data-a="redo" data-v="${r[0]}" aria-label="Edit ${r[1]}">Edit</button></div>`).join('')}</section>`
+ +(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+dataCard()
+ +`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
- return accountCard()+remCard()+socCard()+aiCard()+(typeof testCard==='function'?testCard():'')+`<h1>Strategy library</h1>`
+ return socCard()+aiCard()+(typeof testsView==='function'&&qbOn()?`<section class="card"><div class="row sp"><span><b>Topic tests</b><br><span class="sm mu">Now in Progress, with your scores</span></span><button class="btn s" data-a="pt" data-v="tests">Open</button></div></section>`:'')+`<h1>Strategy library</h1>`
  +`<details class="card tops" data-k="tops"${V.lo.tops?' open':''}><summary><b>Toppers' strategies</b><br><span class="sm mu">${E.length?E.length+' for '+esc(EX[x].n)+'. Tap to view':'None yet for '+esc(EX[x].n)}</span></summary><label class="sr" for="lx_s">Exam</label><select id="lx_s" data-g="lx" style="margin:10px 0">${Object.keys(EX).map(k=>`<option value="${k}"${x===k?' selected':''}>${esc(EX[k].n)}</option>`).join('')}</select><p class="sm mu">Every entry shows where it comes from. Nothing here is made up.</p>`
  +(E.length?E.map(e=>`<details class="te" data-k="e_${esc(String(e.id))}"${V.lo['e_'+e.id]?' open':''}><summary><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${(e.fixed?e.verified:e.checked)?'ok':''}">${e.fixed?(e.verified?'Verified source':'Source supplied, not verified'):(e.checked?'Source checked by you':'Source not yet checked')}</span></summary><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl>${e.fixed?'':`<div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div>`}</details>`).join(''):`<p class="mu">Toppers' strategies for ${EX[x].n} will appear here soon.</p>`)+'</details>'
- +`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`+dataCard()}
-const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
+ +`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`}
+const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
 function render(){render0();try{syncGuard()}catch(e){}}
 function render0(){try{
  const a=$('#app'),nv=$('#nv');
@@ -253,8 +271,8 @@ function render0(){try{
  if(authOn()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authView();return}
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');const sa=V.sa;a.innerHTML=wiz();if(sa&&V.step){const h=$('.wzt');if(h)h.focus({preventScroll:true})}return}
  const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);document.body.classList.toggle('lvm',!!(run&&V.mn&&!V.fs));
- nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
- a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?liveHtml(run,rt):'');tick();postRender()
+ nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library'],['profile','Profile']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
+ a.innerHTML=(typeof topBar==='function'?topBar():'')+({home,roadmap,recover,progress,library,profile}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?liveHtml(run,rt):'');tick();postRender()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
 function sheet(h){$('#shb').innerHTML=h;$('#sh').classList.add('on');syncGuard();const i=$('#shb input,#shb button');if(i)i.focus()}
@@ -265,21 +283,20 @@ function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 const TH=[[0,'Warm-up','#4CC9F0','#0B3A5B'],[15,'Settling in','#2EE6A8','#0B4F4A'],[30,'Deep focus','#A58BFF','#2B1F6B'],[60,'In the zone','#FFC94A','#4A3200'],[90,'Flow state','#FF8A4C','#5E2208'],[120,'Unstoppable','#FF5DA2','#561041']];   // [from minute, stage name, ring colour, background colour]
 const thIdx=m=>{let i=0;TH.forEach((t,j)=>{if(m>=t[0])i=j});return i};
 const clk=s=>pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60),mmss=s=>pad(Math.floor(s/60))+':'+pad(s%60);
-function liveHtml(run,rt){const el=Math.floor(stMs(run)/1e3),h=TH[thIdx(el/60)],po=run.pomo,br=po&&po.ph==='b',reached=!!(run.goal&&run.fired),tp=typeof tpStyle==='function'?tpStyle():'';
- if(V.mn&&!V.fs)return`<div class="live mini" id="lvp" data-a="mini" role="button" tabindex="0" aria-label="Study timer running. Tap to open it." style="--tc:${h[2]};--tb:${h[3]};${tp}"><i class="md" aria-hidden="true"></i><span class="mt" id="tm">${clk(el)}</span></div>`;
- return`<div class="live${V.fs?' full':''}" id="lvp" style="--tc:${h[2]};--tb:${h[3]};${V.fs?'':tp}" role="group" aria-label="Study timer">`
+function liveHtml(run,rt){const el=Math.floor(stMs(run)/1e3),h=TH[thIdx(el/60)],po=run.pomo,pz=!!run.pz,br=po&&po.ph==='b'&&!pz,tp=typeof tpStyle==='function'?tpStyle():'';
+ if(V.mn&&!V.fs)return`<div class="live mini${pz?' pz':''}" id="lvp" data-a="mini" role="button" tabindex="0" aria-label="Study timer ${pz?'paused':'running'}. Tap to open it." style="--tc:${h[2]};--tb:${h[3]};${tp}"><i class="md" aria-hidden="true"></i><span class="mt" id="tm">${clk(el)}</span>${pz?'<b class="pzt">Paused</b>':''}</div>`;
+ return`<div class="live${V.fs?' full':''}${pz?' pz':''}" id="lvp" style="--tc:${h[2]};--tb:${h[3]};${V.fs?'':tp}" role="group" aria-label="Study timer">`
   +`<button type="button" class="lvx" data-a="fs" aria-expanded="${!!V.fs}" aria-label="${V.fs?'Minimise timer':'Open full-screen timer'}">${V.fs?'&#10005;':'&#10530;'}</button>`
   +(V.fs?'':`<button type="button" class="lvx lvm" data-a="mini" aria-label="Shrink the timer to a small pill">&#8211;</button>`)
   +`<svg class="clk" viewBox="0 0 200 200" data-a="fs" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${br?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${br?' brk':''}" id="tm" x="100" y="110">${clk(el)}</text></svg>`
   +`<span class="stg" id="tl"></span><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}</small>`
-  +(run.goal?`<span class="gl${reached?' ok':''}">${reached?'&#10003; Goal reached ('+hm(run.goal)+'). Keep going or stop.':'Goal '+hm(run.goal)}</span>`:'')
-  +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button>${window.Float&&Float.ok()?'<button class="pmb" data-a="float" aria-label="Float the timer outside the app">Float</button>':''}${reached&&rt?'<button class="btn s ok" data-a="tudone">Done &amp; stop</button>':''}<button class="btn s" data-a="timer">Stop</button></div></div>`}
+  +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}"${pz?' disabled':''} aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button>${window.Float&&Float.ok()?'<button class="pmb" data-a="float" aria-label="Float the timer outside the app">Float</button>':''}<button class="btn s pzb" data-a="pause">${pz?'Resume':'Pause'}</button><button class="btn s" data-a="timer">Stop</button></div></div>`}
 function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S||!S.timer)return;
  const T=S.timer,el=Math.floor(stMs(T)/1e3),po=T.pomo,L=po?(po.ph==='f'?25:5)*60:0,left=po?Math.max(0,L-Math.floor((Date.now()-new Date(po.ps))/1e3)):0;
  e.textContent=clk(el);
  const f=po?1-left/L:T.goal?el/(T.goal*60):(el%3600)/3600,cv=$('#cv');if(cv)cv.setAttribute('stroke-dashoffset',(552.9*(1-Math.min(1,Math.max(0,f)))).toFixed(1));
  const i=thIdx(el/60),h=TH[i],p=$('#lvp');if(p){p.style.setProperty('--tc',h[2]);p.style.setProperty('--tb',h[3])}
- const tl=$('#tl');if(tl)tl.textContent=po?(po.ph==='b'?'Break · '+mmss(left)+' left':h[1]+' · break in '+mmss(left)):h[1]+' · '+(i<TH.length-1?'next stage at '+TH[i+1][0]+' min':'keep it up');
+ const tl=$('#tl');if(tl)tl.textContent=T.pz?'Paused. Tap Resume when you are ready':po?(po.ph==='b'?'Break · '+mmss(left)+' left':h[1]+' · break in '+mmss(left)):h[1]+' · '+(i<TH.length-1?'next stage at '+TH[i+1][0]+' min':'keep it up');
  if(V.thI===undefined)V.thI=i;else if(i>V.thI){V.thI=i;toast(h[1]+': '+h[0]+' minutes of focus');vib([80,60,80])}else V.thI=i}
 let wl=null;async function wake(on){try{if(on&&navigator.wakeLock&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}else if(!on&&wl){const w=wl;wl=null;await w.release()}}catch(e){}}
 
@@ -317,9 +334,9 @@ const A={
  sall:d=>{const p=S.p,T=topicsOf(p.exam,d.s),full=subStat(d.s).d===T.length,has=k=>T.some(t=>tkey(d.s,t)===k);p.tdone=(p.tdone||[]).filter(k=>!has(k));p.tweak=(p.tweak||[]).filter(k=>!has(k));if(!full)T.forEach(t=>p.tdone.push(tkey(d.s,t)));syncSub(d.s);vib(12);wzSubs();save()},
  tg:d=>{const a=S.p[d.k]=S.p[d.k]||[],i=a.indexOf(d.v);i<0?a.push(d.v):a.splice(i,1);
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
- redo:()=>{S.p.onboarded=false;V.step=2;save();render()},
+ redo:d=>{S.p.onboarded=false;V.step=Math.min(WN,Math.max(1,+(d&&d.v)||2));save();render()},
  regen:()=>buildRoadmap(),
- accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted')},
+ accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted');if(window.Perms)setTimeout(Perms.first,900)},
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
  st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render();vib(12);
@@ -336,10 +353,11 @@ const A={
   if(S.timer)A.timer();
   const t=d.id?byId(d.id):null,g=t?Math.max(30,Math.round((t.mins-logged(t))/15)*15):0;
   unlockAudio();const n0=new Date().toISOString();
-  S.timer={start:n0,taskId:d.id||'',goal:g,brk:0,pomo:S.p.pomo?{ph:'f',ps:n0}:null};V.thI=undefined;
-  startTick();armAlarm();closeSheet();save();render();
-  toast(g?'Timer started. You will be alerted after '+hm(g)+'.':'Timer started');
-  if(g&&window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){
+  S.timer={start:n0,taskId:d.id||'',goal:0,brk:0,pt:0,pz:null,pomo:S.p.pomo?{ph:'f',ps:n0}:null};V.thI=undefined;
+  startTick();closeSheet();save();render();
+  if(window.Float&&Float.arm)Float.arm();   // needs this tap, so it is armed here
+  toast('Timer started. It runs until you stop it.');
+  if(window.Notification&&Notification.permission==='default'&&!S.rem.askedTimer){
    S.rem.askedTimer=true;save();try{await Notification.requestPermission()}catch(e){}
   }
  },
@@ -352,9 +370,9 @@ const A={
   S.tasks.push({id:uid(),subject:s,topic:t,mins:m,pri:$('#t_p').value,date:d,type:'study',status:'todo'});closeSheet();save();render();toast('Task added')},
  del:d=>sheet(`<h2>Delete this task?</h2><p>${esc(byId(d.id).subject)}: ${esc(byId(d.id).topic)}. This cannot be undone.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep it</button><button class="btn" style="flex:1" data-a="delok" data-id="${d.id}">Delete</button></div>`),
  delok:d=>{S.tasks=S.tasks.filter(t=>t.id!==d.id);closeSheet();save();render();toast('Task deleted')},
- timer:()=>{if(S.timer){pomoStep(1);const s=new Date(S.timer.start),m=Math.min(720,Math.round(stMs(S.timer)/6e4));
+ timer:()=>{if(S.timer){pomoStep(1);const s=new Date(S.timer.start),m=Math.min(1440,Math.round(stMs(S.timer)/6e4));
    if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
-   S.timer=null;V.thI=undefined;V.fs=false;wake(false);if(window.Float)Float.stopped();clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
+   S.timer=null;V.thI=undefined;V.fs=false;wake(false);if(window.Float)Float.stopped();clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt,goal:0,pt:0,pz:null};startTick()}save();render()},
  rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r,0,t)[0]||addD(today(),1);V.rs=t.id;
   sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (30 to 600, in steps of 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
  pickd:d=>{$('#r_d').value=d.v;rsp()},fit:d=>{$('#r_m').value=d.v;rsp()},
@@ -440,6 +458,18 @@ function checkAlarm(){const T=S&&S.timer;if(!T||!T.goal)return;if(stMs(T)/6e4<T.
 A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();save();render();A.lg({id:t.id})}};
 A.tumore=()=>{if(!S.timer)return;S.timer.goal+=15;S.timer.fired=false;S.timer.ack=false;closeSheet();armAlarm();save();render()};
 A.offline=()=>skipNow();
+function tAct(x){if(!S||!S.timer)return;if(x==='stop')A.timer();else if(x==='pause'&&!S.timer.pz)A.pause();else if(x==='resume'&&S.timer.pz)A.pause()}
+if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('message',e=>{const m=e.data;if(m&&m.type==='timer')tAct(m.act)})}
+A.pause=()=>{const T=S&&S.timer;if(!T)return;
+ if(T.pz){const w=Math.max(0,Date.now()-new Date(T.pz).getTime());T.pt=(T.pt||0)+w;if(T.pomo)T.pomo.ps=new Date(new Date(T.pomo.ps).getTime()+w).toISOString();T.pz=null;pomoKey='';toast('Resumed')}
+ else{pomoStep(1);T.pz=new Date().toISOString();toast('Paused. Rest well, then tap Resume.')}
+ vib(10);save();render();if(window.Float&&Float.sync)Float.sync()};
+A.resume=()=>{if(S&&S.timer&&S.timer.pz)A.pause()};
+A.sdel=d=>{const x=S.sessions.find(y=>y.id===d.id);if(!x)return;sheet(`<h2>Delete this session?</h2><p>${hm(x.mins)} on ${fD(x.day)}. This changes your totals and streak.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep it</button><button class="btn" style="flex:1" data-a="sdelok" data-id="${x.id}">Delete</button></div>`)};
+A.sdelok=d=>{S.sessions=S.sessions.filter(y=>y.id!==d.id);closeSheet();save();render();toast('Session deleted')};
+A.csvx=()=>{const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',r=[['date','start','end','minutes','subject','topic']];
+ S.sessions.slice().sort((a,b)=>a.start<b.start?-1:1).forEach(x=>{const t=x.taskId?byId(x.taskId):null;r.push([x.day,x.start,x.end,x.mins,t?t.subject:'',t?t.topic:''])});
+ dl('acelife-sessions-'+today()+'.csv','\ufeff'+r.map(a=>a.map(q).join(',')).join('\r\n'),'text/csv');toast('Sessions downloaded')};
 A.fs=()=>{if(!S.timer||Date.now()-(V.dg||0)<350)return;V.fs=!V.fs;wake(V.fs);vib(10);render()};
 A.mini=()=>{if(!S.timer||Date.now()-(V.dg||0)<350)return;V.mn=!V.mn;V.fs=false;vib(8);render()};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S&&S.timer){armAlarm();checkAlarm();if(V.fs)wake(true);render()}});
@@ -475,17 +505,17 @@ const capRow=k=>{if(k<today())return'';const m=(S.p.dayCap||{})[k]||1,c=cap(k),l
 A.dcap=d=>{const m=+d.v,k=V.day;S.p.dayCap=S.p.dayCap||{};if(m===1)delete S.p.dayCap[k];else S.p.dayCap[k]=m;save();render()};
 function dl(name,data,type){const b=data instanceof Blob?data:new Blob([data],{type:type||'text/plain'}),a=document.createElement('a');
  a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
-const stMs=T=>{const n=Date.now();return n-new Date(T.start)-(T.brk||0)-(T.pomo&&T.pomo.ph==='b'?Math.min(n-new Date(T.pomo.ps),3e5):0)};
+const stMs=T=>{const n=T.pz?new Date(T.pz).getTime():Date.now();return n-new Date(T.start)-(T.pt||0)-(T.brk||0)-(T.pomo&&T.pomo.ph==='b'?Math.min(n-new Date(T.pomo.ps),3e5):0)};   // T.pz = when it was paused (if paused now), T.pt = total paused time so far
 function pomoAlert(ph){const b=ph==='b',tt=b?'Break time: 5 minutes':'Back to focus: 25 minutes',bd=b?'Stand up, drink water, rest your eyes.':'Break is over. Start the next focus block.';
  try{navigator.vibrate&&navigator.vibrate(b?[300,150,300]:[500])}catch(e){}beep();toast(tt);
  if(window.Notification&&Notification.permission==='granted'&&navigator.serviceWorker)navigator.serviceWorker.ready.then(r=>r.showNotification(tt,{body:bd,tag:'pomo',renotify:true,vibrate:[300,150,300],icon:'icon-192.png',badge:'icon-192.png'})).catch(()=>{})}
-function pomoStep(q){const T=S&&S.timer,P=T&&T.pomo;if(!P)return false;let ch=false,i=0;const n=Date.now();
+function pomoStep(q){const T=S&&S.timer,P=T&&T.pomo;if(!P||T.pz)return false;let ch=false,i=0;const n=Date.now();
  while(i++<200){const d=(P.ph==='f'?25:5)*6e4,e=new Date(P.ps).getTime()+d;if(isNaN(e)){P.ps=new Date().toISOString();break}if(e>n)break;
   if(P.ph==='b')T.brk=(T.brk||0)+d;P.ph=P.ph==='f'?'b':'f';P.ps=new Date(e).toISOString();ch=true}
  if(ch){save();armAlarm();if(!q)pomoAlert(P.ph)}
  if(pomoKey!==P.ps){pomoKey=P.ps;clearTimeout(pomoT);pomoT=setTimeout(tick,Math.max(500,new Date(P.ps).getTime()+(P.ph==='f'?25:5)*6e4-n)+60)}
  return ch}
-A.pomo=async()=>{const T=S.timer;if(!T)return;unlockAudio();pomoStep(1);
+A.pomo=async()=>{const T=S.timer;if(!T||T.pz)return;unlockAudio();pomoStep(1);
  if(T.pomo){if(T.pomo.ph==='b')T.brk=(T.brk||0)+Math.min(Date.now()-new Date(T.pomo.ps),3e5);T.pomo=null;S.p.pomo=false;pomoKey='';clearTimeout(pomoT)}
  else{T.pomo={ph:'f',ps:new Date().toISOString()};S.p.pomo=true}
  armAlarm();save();render();toast(T.pomo?'Pomodoro on: 25 minutes focus, 5 minutes break':'Pomodoro off');
@@ -496,9 +526,9 @@ A.bki=()=>{const f=$('#bk');if(f){f.value='';f.click()}};
 function okBk(o){if(!o||typeof o!=='object'||Array.isArray(o)||!o.p||typeof o.p!=='object'||!Array.isArray(o.tasks)||!Array.isArray(o.sessions))return'This is not an AceLife backup. It needs a profile, tasks and sessions.';
  if(o.p.exam&&!EX[o.p.exam])return'This backup is for an exam this version does not have.';
  const s=v=>typeof v==='string',tasks=o.tasks.filter(t=>t&&s(t.id)&&s(t.subject)&&s(t.topic)&&okD(t.date)&&t.mins>0&&t.mins<=600&&['todo','done','partial','incomplete'].includes(t.status)&&['High','Medium','Low'].includes(t.pri)&&['study','revision','mock'].includes(t.type));
- const ses=o.sessions.filter(x=>x&&s(x.id)&&s(x.start)&&!isNaN(new Date(x.start))&&okD(x.day)&&x.mins>0&&x.mins<=720);
+ const ses=o.sessions.filter(x=>x&&s(x.id)&&s(x.start)&&!isNaN(new Date(x.start))&&okD(x.day)&&x.mins>0&&x.mins<=1440);
  if(o.tasks.length&&!tasks.length)return'No valid tasks were found in this file.';
- const h=hydrate(Object.assign({},o,{tasks,sessions:ses,top:Array.isArray(o.top)?o.top.filter(x=>x&&s(x.id)):[],days:Array.isArray(o.days)?o.days.filter(okD):[],draft:o.draft&&Array.isArray(o.draft.tasks)?o.draft:null,
+ const h=hydrate(Object.assign({},o,{tasks,sessions:ses,top:Array.isArray(o.top)?o.top.filter(x=>x&&s(x.id)):[],tests:Array.isArray(o.tests)?o.tests.filter(x=>x&&s(x.key)&&x.n>0&&x.c>=0&&x.c<=x.n&&s(x.at)).slice(-300):[],qp:o.qp&&typeof o.qp==='object'&&!Array.isArray(o.qp)?o.qp:{},days:Array.isArray(o.days)?o.days.filter(okD):[],draft:o.draft&&Array.isArray(o.draft.tasks)?o.draft:null,
   ai:{hist:o.ai&&Array.isArray(o.ai.hist)?o.ai.hist.filter(x=>x&&s(x.id)&&['quiz','split','coach'].includes(x.k)&&(x.k!=='quiz'||Number.isFinite(x.score))).slice(-60):[]}}));
  if(!(+h.p.hours>=.5&&+h.p.hours<=16))h.p.hours=4;h.timer=null;h.soc.run=null;return h}
 document.addEventListener('change',async e=>{if(e.target.id!=='bk')return;const f=e.target.files[0];if(!f)return;
@@ -601,17 +631,19 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
 
 /* ---- v9 interactivity: greeting, confetti, entrance animation, ring sweep, swipe between days ---- */
 const greet=()=>{const h=new Date().getHours();return h<5?'Hi':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Good night'};
-function postRender(){const a=$('#app');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(V.fx){V.fx=false;a.classList.remove('fx');void a.offsetWidth;a.classList.add('fx')}
+function postRender(){const a=$('#app');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(V.fx){V.fx=false;a.classList.remove('fx','sl','sr');if(V.sw){a.classList.add(V.sw==='l'?'sl':'sr');V.sw=''}void a.offsetWidth;a.classList.add('fx')}
  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.ring .v').forEach(e=>{e.style.strokeDashoffset=e.dataset.to})))}
 function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,C=['#FFC94A','#5BE3B5','#93A0FF','#FF7A6B','#4CC9F0'];
  for(let i=0;i<18;i++){const e=document.createElement('i');e.className='cf';e.style.cssText='left:'+cx+'px;top:'+cy+'px;background:'+C[i%5];document.body.appendChild(e);
   const a=Math.PI*2*i/18+Math.random()*.4,d=44+Math.random()*56;
   e.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate('+(Math.cos(a)*d)+'px,'+(Math.sin(a)*d+34)+'px) rotate('+Math.round(Math.random()*540)+'deg) scale(.4)',opacity:0}],{duration:600+Math.random()*350,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>e.remove()}}
-let tx=0,ty=0;
-document.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY},{passive:true});
-document.addEventListener('touchend',e=>{if(!S||!ready||!S.p.onboarded||V.tab!=='home'||sheetOpen()||!e.target.closest('.wk,.trow'))return;
- const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*.6)return;
- V.day=addD(V.day,dx<0?1:-1);vib(8);render()},{passive:true});
-
+let tx=0,ty=0,t0=0,tOK=false;
+document.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY;t0=Date.now();
+ tOK=e.touches.length===1&&tx>24&&tx<innerWidth-24&&!(e.target.closest&&e.target.closest('input,textarea,select,.live,.chart,.cal,pre,table,[data-noswipe]'))},{passive:true});
+document.addEventListener('touchend',e=>{if(!tOK)return;tOK=false;if(!S||!ready||!S.p.onboarded||V.build||sheetOpen()||(authOn()&&!CL().user))return;
+ const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*.6||Date.now()-t0>800)return;
+ if(V.tab==='home'&&e.target.closest&&e.target.closest('.wk')){V.day=addD(V.day,dx<0?1:-1);vib(8);render();return}   // the week strip still moves the day
+ const i=TABS.indexOf(V.tab==='recover'?'roadmap':V.tab),j=i+(dx<0?1:-1);if(i<0||j<0||j>=TABS.length)return;
+ V.sw=dx<0?'l':'r';A.tab({v:TABS[j]})},{passive:true});
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

@@ -22,6 +22,12 @@ service cloud.firestore {
     }
     // Daily AI call counter, written only by the Cloud Function (it bypasses rules).
     match /aiUsage/{id} { allow read, write: if false; }
+    // "Studying now" signal. Each person can only write their own timestamp. Nobody can read it from the app; the /api/live function only counts recent ones.
+    match /presence/{uid} {
+      allow create, update: if isOwner(uid) && request.resource.data.keys().hasOnly(['t']) && request.resource.data.t == request.time;
+      allow delete: if isOwner(uid);
+      allow read: if false;
+    }
     // Old location of the plan. Kept so existing accounts can be read once and moved to users/{uid}/data/state.
     match /states/{uid} {
       allow read: if isOwner(uid);

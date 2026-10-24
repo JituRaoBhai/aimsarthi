@@ -30,6 +30,8 @@ else(async()=>{try{
  Cloud.saveState=async S=>{await F.setDoc(sref(),{json:JSON.stringify(S),updatedAt:F.serverTimestamp(),v:8})};
  Cloud.watch=cb=>F.onSnapshot(sref(),s=>{if(!s.exists()||s.metadata.hasPendingWrites)return;try{cb(JSON.parse(s.data().json))}catch(e){}},()=>{});
  Cloud.token=()=>auth.currentUser.getIdToken();
+ Cloud.beat=async()=>{await F.setDoc(F.doc(db,'presence',auth.currentUser.uid),{t:F.serverTimestamp()})};   // "I am studying now" signal; the number of recent signals is the live count
+ Cloud.unbeat=async()=>{await F.deleteDoc(F.doc(db,'presence',auth.currentUser.uid))};
  Cloud.sendFeedback=async f=>{await F.addDoc(F.collection(db,'feedback'),{...f,uid:auth.currentUser.uid,username:Cloud.user.username,status:'new',createdAt:F.serverTimestamp()})};
  Cloud.loadStrategies=async()=>{const s=await F.getDocs(F.collection(db,'strategies'));return s.docs.map(d=>({id:d.id,...d.data()}))};
 }catch(e){console.error('Firebase could not start',e);Cloud.enabled=false}

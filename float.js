@@ -22,37 +22,60 @@
  document.addEventListener('click',e=>{if(Date.now()-(V.dg||0)<350&&e.target.closest&&e.target.closest('.live')){e.stopImmediatePropagation();e.preventDefault()}},true);   // a drag must not count as a tap
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='lvp'&&e.target.classList.contains('mini')){e.preventDefault();A.mini()}});
 
- /* ---- outside the app ---- */
+
+ /* ---- outside the app ----
+   Armed when you start the timer (that tap is what lets the browser start a tiny hidden video). While armed:
+   - Chrome can float the timer by itself when you switch to another app (browser feature, not available everywhere);
+   - Android may show media controls with Pause/Stop;
+   - a notification with Pause and Stop buttons shows while the app is in the background.
+   If the app is fully closed, the timer keeps counting from its start time and is right again when you open it. */
  const NT='timer-live',stage=el=>TH[thIdx(el/60)];
- const Float={w:null,v:null,iv:0,nv:0,
+ const Float={w:null,v:null,iv:0,nv:0,a:null,
   ok:()=>!!(window.documentPictureInPicture||(document.pictureInPictureEnabled&&window.HTMLVideoElement&&HTMLVideoElement.prototype.requestPictureInPicture)),
+  frame(x){const T=S&&S.timer;if(!T)return;const el=Math.floor(stMs(T)/1e3),g=stage(el),t=T.taskId&&byId(T.taskId);
+   x.fillStyle=g[3];x.fillRect(0,0,480,270);x.textAlign='center';x.fillStyle=T.pz?'#ffd36b':g[2];x.font='700 30px system-ui,sans-serif';x.fillText(T.pz?'Paused':g[1],240,70);
+   x.fillStyle='#fff';x.font='800 104px system-ui,sans-serif';x.fillText(clk(el),240,175);x.font='400 24px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.8)';x.fillText((t?t.subject:'General study').slice(0,34),240,225)},
+  async arm(){if(Float.a||!S||!S.timer||!window.HTMLCanvasElement||!HTMLCanvasElement.prototype.captureStream)return;
+   const c=document.createElement('canvas');c.width=480;c.height=270;const x=c.getContext('2d'),v=document.createElement('video');v.muted=true;v.playsInline=true;
+   v.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none';document.body.appendChild(v);
+   const a=Float.a={v,iv:0,mi:0};Float.frame(x);
+   try{v.srcObject=c.captureStream(5);await v.play()}catch(e){v.remove();Float.a=null;return}   // no tap yet: will try again on the next tap
+   a.iv=setInterval(()=>{if(!S||!S.timer){Float.disarm();return}Float.frame(x)},1000);
+   v.addEventListener('pause',()=>{if(Float.a===a&&S&&S.timer)v.play().catch(()=>{})});
+   Float.ms()},
+  ms(){if(!('mediaSession' in navigator))return;const ms=navigator.mediaSession,T=S&&S.timer;if(!T)return;
+   try{const el=Math.floor(stMs(T)/1e3),t=T.taskId&&byId(T.taskId);
+    ms.metadata=new MediaMetadata({title:(T.pz?'Paused ':'Studying ')+hm(el/60),artist:t?t.subject:'AceLife study timer',album:'AceLife',artwork:[{src:'icon-512.png',sizes:'512x512',type:'image/png'}]});
+    ms.playbackState=T.pz?'paused':'playing';
+    ms.setActionHandler('pause',()=>{if(S.timer&&!S.timer.pz)A.pause()});ms.setActionHandler('play',()=>{if(S.timer&&S.timer.pz)A.pause()});
+    ms.setActionHandler('stop',()=>{if(S.timer)A.timer()});
+    ms.setActionHandler('enterpictureinpicture',()=>{if(S&&S.timer)Float.open()})}catch(e){}},
+  disarm(){const a=Float.a;if(a){clearInterval(a.iv);a.v.remove()}Float.a=null;try{navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState='none'}catch(e){}},
+  sync(){Float.ms();if(document.visibilityState==='hidden')Float.note()},
   async open(){if(!S||!S.timer)return;if(Float.w||Float.v){Float.close();return}
    if(window.Notification&&Notification.permission==='default')try{await Notification.requestPermission()}catch(e){}
    if(window.documentPictureInPicture){try{await Float.doc();return}catch(e){}}
    try{await Float.vid()}catch(e){toast('The floating timer is not available in this browser. A notification will show your time when you leave the app.')}},
-  async doc(){const w=await documentPictureInPicture.requestWindow({width:280,height:170}),h=w.document;Float.w=w;
-   h.head.insertAdjacentHTML('beforeend','<style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:system-ui,sans-serif;color:#fff;background:#0B3A5B;transition:background-color 1.5s}#t{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums}#s{font-weight:700;font-size:14px}button{min-height:36px;padding:0 18px;border:0;border-radius:10px;background:#FF7A6B;font-weight:700;cursor:pointer}</style>');
-   h.body.innerHTML='<div id="s"></div><div id="t">00:00:00</div><button id="x">Stop</button>';
-   h.getElementById('x').onclick=()=>{w.close();A.timer()};
-   const up=()=>{const T=S&&S.timer;if(!T){w.close();return}const el=Math.floor(stMs(T)/1e3),g=stage(el);h.body.style.backgroundColor=g[3];h.getElementById('t').textContent=clk(el);const s=h.getElementById('s');s.textContent=g[1];s.style.color=g[2]};
+  async doc(){const w=await documentPictureInPicture.requestWindow({width:280,height:190}),h=w.document;Float.w=w;
+   h.head.insertAdjacentHTML('beforeend','<style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:system-ui,sans-serif;color:#fff;background:#0B3A5B;transition:background-color 1.5s}#t{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums}#s{font-weight:700;font-size:14px}.r{display:flex;gap:8px}button{min-height:36px;padding:0 16px;border:0;border-radius:10px;background:#FF7A6B;font-weight:700;cursor:pointer}#p{background:#fff}</style>');
+   h.body.innerHTML='<div id="s"></div><div id="t">00:00:00</div><div class="r"><button id="p">Pause</button><button id="x">Stop</button></div>';
+   h.getElementById('x').onclick=()=>{w.close();A.timer()};h.getElementById('p').onclick=()=>A.pause();
+   const up=()=>{const T=S&&S.timer;if(!T){w.close();return}const el=Math.floor(stMs(T)/1e3),g=stage(el);h.body.style.backgroundColor=g[3];h.getElementById('t').textContent=clk(el);const s=h.getElementById('s');s.textContent=T.pz?'Paused':g[1];s.style.color=g[2];h.getElementById('p').textContent=T.pz?'Resume':'Pause'};
    up();Float.iv=setInterval(up,1000);w.addEventListener('pagehide',Float.clean)},
-  async vid(){const c=document.createElement('canvas');c.width=480;c.height=270;const x=c.getContext('2d'),v=document.createElement('video');v.muted=true;v.playsInline=true;
-   v.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none';document.body.appendChild(v);
-   const draw=()=>{const T=S&&S.timer;if(!T){Float.close();return}const el=Math.floor(stMs(T)/1e3),g=stage(el),t=T.taskId&&byId(T.taskId);
-    x.fillStyle=g[3];x.fillRect(0,0,480,270);x.textAlign='center';x.fillStyle=g[2];x.font='700 30px system-ui,sans-serif';x.fillText(g[1],240,70);
-    x.fillStyle='#fff';x.font='800 104px system-ui,sans-serif';x.fillText(clk(el),240,175);x.font='400 24px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.8)';x.fillText((t?t.subject:'General study').slice(0,34),240,225)};
-   draw();v.srcObject=c.captureStream(5);await v.play();await v.requestPictureInPicture();Float.v=v;Float.iv=setInterval(draw,1000);v.addEventListener('leavepictureinpicture',Float.clean)},
-  clean(){clearInterval(Float.iv);if(Float.v)Float.v.remove();Float.w=Float.v=null},
+  async vid(){await Float.arm();const a=Float.a;if(!a)throw new Error('no video');await a.v.requestPictureInPicture();Float.v=a.v;a.v.addEventListener('leavepictureinpicture',Float.clean,{once:true})},
+  clean(){clearInterval(Float.iv);Float.w=Float.v=null},
   close(){const w=Float.w;Float.clean();try{if(w)w.close()}catch(e){}try{if(document.pictureInPictureElement)document.exitPictureInPicture().catch(()=>{})}catch(e){}},
   async note(){if(!S||!S.timer||!window.Notification||Notification.permission!=='granted'||!navigator.serviceWorker)return;
-   try{const r=await navigator.serviceWorker.ready,T=S.timer,el=Math.floor(stMs(T)/1e3),t=T.taskId&&byId(T.taskId);
-    await r.showNotification('Timer running: '+hm(el/60)+' studied',{body:(t?t.subject+': '+t.topic:'General study')+'\nStarted '+new Date(T.start).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'. Tap to go back to AceLife.',tag:NT,renotify:false,silent:true,requireInteraction:true,icon:'icon-192.png',badge:'icon-192.png'})}catch(e){}},
+   try{const r=await navigator.serviceWorker.ready,T=S.timer,el=Math.floor(stMs(T)/1e3),t=T.taskId&&byId(T.taskId),st=new Date(T.start).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    await r.showNotification((T.pz?'Paused: ':'Studying: ')+hm(el/60),{body:(t?t.subject+': '+t.topic:'General study')+'\nStarted '+st+(T.pz?'. Tap Resume to continue.':'. Still counting even if the app is closed.'),tag:NT,renotify:false,silent:true,requireInteraction:true,timestamp:new Date(T.start).getTime(),icon:'icon-192.png',badge:'icon-192.png',
+     actions:[{action:T.pz?'resume':'pause',title:T.pz?'Resume':'Pause'},{action:'stop',title:'Stop'}]})}catch(e){}},
   async clear(){try{const r=await navigator.serviceWorker.ready,L=await r.getNotifications({tag:NT});L.forEach(n=>n.close())}catch(e){}},
-  stopped(){Float.close();clearInterval(Float.nv);Float.clear()}};
+  stopped(){Float.close();Float.disarm();clearInterval(Float.nv);Float.clear()}};
  window.Float=Float;
  document.addEventListener('visibilitychange',()=>{if(!S||!S.timer)return;
   if(document.visibilityState==='hidden'){Float.note();clearInterval(Float.nv);Float.nv=setInterval(Float.note,6e4)}
-  else{clearInterval(Float.nv);Float.clear()}});
- try{navigator.mediaSession.setActionHandler('enterpictureinpicture',()=>{if(S&&S.timer)Float.open()})}catch(e){}   // lets supporting browsers float it automatically when you switch away
+  else{clearInterval(Float.nv);Float.clear();Float.ms()}});
+ document.addEventListener('pointerdown',()=>{if(S&&S.timer&&!Float.a)Float.arm()},{passive:true});   // after the app is reopened, the next tap re-arms it
+ setInterval(()=>{if(S&&S.timer&&Float.a)Float.ms()},15e3);
  Object.assign(A,{float:()=>Float.open()});
 })();
