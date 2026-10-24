@@ -1,7 +1,7 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "firestore.rules", "**/.*", "**/node_modules/**", "functions/**", "*.txt", "*.md"],
+    "ignore": ["firebase.json", "firestore.rules", "**/.*", "**/node_modules/**", "functions/**", "tools/**", "*.txt", "*.md", "*.csv"],
     "rewrites": [
       { "source": "/api/ai", "function": { "functionId": "ai", "region": "us-central1" } }
     ],

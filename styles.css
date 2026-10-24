@@ -167,7 +167,7 @@ input[type=range]{padding:0;min-height:36px;border:0;background:none;accent-colo
 .live.full .clk{width:min(78vw,52vh,360px)}.live.full small{font-size:18px;max-width:90vw}.live.full .stg{font-size:20px}
 
 /* ---- v10: interactivity ---- */
-.fx>*{animation:rise .4s cubic-bezier(.2,.7,.3,1) both}
+.fx>*:not(.live){animation:rise .4s cubic-bezier(.2,.7,.3,1) both}
 .fx>*:nth-child(2){animation-delay:.04s}.fx>*:nth-child(3){animation-delay:.08s}.fx>*:nth-child(4){animation-delay:.12s}.fx>*:nth-child(5){animation-delay:.16s}.fx>*:nth-child(6){animation-delay:.2s}.fx>*:nth-child(n+7){animation-delay:.24s}
 @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .fx .bar i{animation:grow .8s cubic-bezier(.2,.7,.3,1) both}@keyframes grow{from{width:0}}
@@ -187,3 +187,14 @@ body.lv #ts{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}   /* keep
 .tops>summary{list-style:none;cursor:pointer;min-height:48px;padding-right:28px;position:relative}.tops>summary::-webkit-details-marker,.te>summary::-webkit-details-marker{display:none}
 .tops>summary::after{content:"\203A";position:absolute;right:4px;top:6px;font-size:26px;color:var(--mu);transition:transform .2s}.tops[open]>summary::after{transform:rotate(90deg)}
 .te{border-top:1px solid var(--ln);padding:2px 0}.te>summary{list-style:none;cursor:pointer;min-height:48px;padding:8px 0}.te[open]>summary{padding-bottom:0}.te dl{margin:8px 0}
+
+/* ---- v11: movable timer, small pill, topic tests, grouped exams ---- */
+.live:not(.full){touch-action:none;cursor:grab}.live:not(.full):active{cursor:grabbing}.live.full{transform:none!important}
+.lvx.lvm{right:auto!important;left:12px}
+.live.mini{left:auto;right:12px;width:auto;max-width:none;flex-direction:row;gap:10px;padding:10px 18px;border-radius:999px}
+.live.mini .mt{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.live.mini .md{width:12px;height:12px;border-radius:50%;background:var(--tc);box-shadow:0 0 10px var(--tc);animation:md 1.6s ease-in-out infinite}@keyframes md{50%{opacity:.35}}
+body.lv.lvm{padding-bottom:96px}
+.gh{margin:20px 0 0;color:var(--mu);font-size:13px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}.gh:first-child{margin-top:12px}.gh+.xcs{padding-top:8px}
+.qo.ok{background:var(--ok);color:var(--pt);border-color:var(--ok)}.qo.no{background:var(--er);color:var(--pt);border-color:var(--er)}.qo:disabled{opacity:1;cursor:default}
+@media(prefers-reduced-motion:reduce){.live.mini .md{animation:none}}

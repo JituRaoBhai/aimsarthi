@@ -1,11 +1,17 @@
 /* AI helpers. Gemini is called by your own Cloud Function at /api/ai, so the API key never reaches the browser.
    Loaded after app.js and account.js (uses their wait, sheet, toast, esc, byId, S and so on). Every AI answer is checked here and shown with esc(). */
 const AI={
+ LIM:5,                                                                  // AI requests per person per day (the server enforces the same number in functions/index.js)
+ day:()=>new Date(Date.now()+198e5).toISOString().slice(0,10),           // the date in India (UTC+5:30); the server counts days the same way
+ left(){const u=S&&S.ai&&S.ai.use;return Math.max(0,AI.LIM-(u&&u.day===AI.day()?u.n:0))},
  on:()=>!!(window.Cloud&&Cloud.enabled&&Cloud.user&&navigator.onLine),
  async ask(task,data){
+  if(AI.left()<=0)throw new Error('You have used all '+AI.LIM+' AI requests for today. They reset at midnight.');
   let tok;try{tok=await Cloud.token()}catch(e){throw new Error('Please log in again.')}
-  const r=await wait(fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({task,data})}).then(async x=>({ok:x.ok,j:await x.json().catch(()=>({}))})),75000);
+  const r=await wait(fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({task,data})}).then(async x=>({ok:x.ok,st:x.status,j:await x.json().catch(()=>({}))})),75000);
   if(r==='timeout')throw new Error('The AI took too long. Try again.');
+  if(r.ok&&Number.isFinite(r.j.used)){S.ai.use={day:AI.day(),n:r.j.used};save()}
+  if(r.st===429){S.ai.use={day:AI.day(),n:AI.LIM};save()}
   if(!r.ok)throw new Error(r.j.error||'The AI is not available right now.');
   if(!r.j.data)throw new Error('The AI sent an empty answer. Try again.');
   return r.j.data},
@@ -24,7 +30,7 @@ const AI={
 const aiLog=e=>{S.ai.hist=S.ai.hist.concat(Object.assign({id:uid(),at:new Date().toISOString()},e)).slice(-60);save()};   // saved in your account document, so it syncs
 const aiWait=(h,m)=>sheet(`<h2>${h}</h2><div class="load" style="padding:24px 0"><div class="spin" aria-hidden="true"></div><p class="sm mu" style="margin-top:12px">${m}</p></div><button class="btn o w" data-a="x">Cancel</button>`);
 const aiErr=(id,e)=>{if(V.air===id){closeSheet();toast(e&&e.message?e.message:'The AI is not available right now.')}};
-function coachCard(){if(S.draft||!AI.on())return'';return`<section class="card"><h2>AI Coach</h2><p class="sm mu">Tell the coach about your week: a night shift, a weak mock test, a busy day. It suggests changes and nothing moves until you accept.</p><button class="btn w" data-a="coach">Ask AI Coach to adjust my week</button></section>`}
+function coachCard(){if(S.draft||!AI.on())return'';return`<section class="card"><h2>AI Coach</h2><p class="sm mu">Tell the coach about your week: a night shift, a weak mock test, a busy day. It suggests changes and nothing moves until you accept.</p><button class="btn w" data-a="coach"${AI.left()?'':' disabled'}>Ask AI Coach to adjust my week</button><p class="sm mu" style="margin:8px 0 0">${AI.left()} of ${AI.LIM} AI requests left today (shared by the coach, quizzes and topic splits). Resets at midnight.</p></section>`}
 function aiCard(){const H=S.ai.hist;if(!H.length)return'';const Q=H.filter(h=>h.k==='quiz'),avg=Q.length?Math.round(sum(Q,h=>h.score)/Q.length):null;
  return`<section class="card"><h2>AI history</h2><p class="sm mu">${avg!==null?'Quiz average '+avg+'% over '+Q.length+' check'+(Q.length>1?'s':'')+'. ':''}Saved to your account.</p>${H.slice(-6).reverse().map(h=>`<p class="sm" style="margin:0 0 6px"><b>${h.k==='quiz'?'Quiz '+esc(h.score)+'%':h.k==='split'?'Split into '+esc(h.n)+' tasks':'Coach: '+esc(h.n)+' changes'}</b> · ${esc(h.subject||h.note||'')}${h.topic?': '+esc(h.topic):''}<br><span class="mu">${esc(fD(dk(new Date(h.at))))}</span></p>`).join('')}</section>`}
 Object.assign(A,{

@@ -1,5 +1,5 @@
 'use strict';
-const VER='v10, 24 Oct 2026';
+const VER='v11, 24 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -14,7 +14,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
-const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[]}});
+const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[],use:null},tests:[]});
 const cleanCap=m=>{const o={},t=addD(today(),-7);if(m&&typeof m==='object')for(const k in m){const v=+m[k];if(okD(k)&&k>=t&&v>=.1&&v<=2)o[k]=v}return o};
 function hydrate(s){const o=Object.assign(fresh(),s||{});o.p=Object.assign(fresh().p,o.p);o.p.dayCap=cleanCap(o.p.dayCap);o.soc=Object.assign(fresh().soc,o.soc);o.ai=Object.assign(fresh().ai,o.ai);return o}
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false,unW=null,loadedUid=null,socT=null,pomoT=null,pomoKey='';
@@ -132,6 +132,8 @@ function wzSubs(){const y=scrollY,f=document.activeElement&&document.activeEleme
  const a=$('#subs'),b=$('#ssum');if(a)a.innerHTML=subsHtml();if(b)b.innerHTML=subsSum();scrollTo(0,y);
  if(f&&f.a==='tt'){const e=$$('#subs [data-a=tt]').find(z=>z.dataset.s===f.s&&z.dataset.t===f.t&&z.dataset.m===f.m);if(e)e.focus({preventScroll:true})}}
 
+function examList(){const g={};Object.keys(EX).forEach(k=>{const n=EX[k].grp||'Other exams';(g[n]=g[n]||[]).push(k)});
+ return Object.keys(g).map(n=>`<h3 class="gh">${esc(n)}</h3><div class="xcs" role="group" aria-label="${esc(n)}">${g[n].map(k=>XC('exam',k,S.p.exam===k,EX[k].n,EX[k].sub.length+' subjects &middot; '+allTopics(k)+' topics &middot; '+EX[k].mock+' min paper')).join('')}</div>`).join('')}
 const XC=(k,v,on,t,d)=>`<button type="button" class="xc" data-a="pick" data-k="${k}" data-v="${esc(v)}" aria-pressed="${!!on}"><span class="xt"><b>${esc(t)}</b><span class="sm mu">${d}</span></span><span class="xk" aria-hidden="true">&#10003;</span></button>`;
 const LVD={Beginner:'Starting the syllabus from scratch, or only just begun.',Intermediate:'Covered most subjects once and building speed.',Advanced:'Revising and practising to sharpen your score.'};
 const DOWL=DOW;
@@ -158,10 +160,10 @@ function review(){const p=S.p,n=diff(today(),p.examDate),E=EX[p.exam],d=(p.tdone
 function wiz(){const p=S.p,s=V.step;
  if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AceLife</h1><p class="lead">Your study guide from today to exam day. Build a realistic plan, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p>`
   +`<ul class="feat"><li><b>Plan</b><span>Topic-by-topic schedule that fits your hours</span></li><li><b>Track</b><span>Study timer, streak and weekly progress</span></li><li><b>Recover</b><span>Missed days are spread out, never piled up</span></li></ul>`
-  +`<p class="note">Built first for NEET PG aspirants who are also doing an internship. Available exams: ${Object.values(EX).map(e=>e.n).join(', ')}. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button><p class="sm" style="margin:10px 0 0;text-align:center;opacity:.8">Takes about 3 minutes</p></section>`;
+  +`<p class="note">Built first for NEET PG aspirants who are also doing an internship. ${Object.keys(EX).length} exams across medical, nursing, teaching, law, management and government jobs. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button><p class="sm" style="margin:10px 0 0;text-align:center;opacity:.8">Takes about 3 minutes</p></section>`;
  const an=V.sa;V.sa=false;let b='';
  if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in as <b>'+esc(CL().user.username)+'</b>. Your plan is saved to your account.':'Your plan is saved on this phone.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" enterkeyhint="next" value="${esc(p.name||'')}"`);
- if(s===2)b=`<div class="xcs" role="group" aria-label="Exam">${Object.keys(EX).map(k=>XC('exam',k,p.exam===k,EX[k].n,EX[k].sub.length+' subjects &middot; '+allTopics(k)+' topics &middot; '+EX[k].mock+' min paper')).join('')}</div><p class="sm mu" style="margin-top:10px">Pick the exam you are preparing for. You can change it later from your plan.</p>`;
+ if(s===2)b=`${examList()}<p class="sm mu" style="margin-top:10px">Pick the exam you are preparing for. You can change it later from your plan.</p>`;
  if(s===3)b=`<label for="w_d">Exam date</label><input id="w_d" type="date" data-f="examDate" min="${addD(today(),2)}" max="${addD(today(),1100)}" value="${esc(p.examDate||'')}"><div class="chips" style="margin:10px 0" role="group" aria-label="Date shortcuts">${[['1 month',30],['2 months',60],['3 months',90],['6 months',180],['1 year',365]].map(([l,n])=>`<button type="button" class="chip" data-a="qd" data-v="${n}" aria-pressed="${p.examDate===addD(today(),n)}">${l}</button>`).join('')}</div><div id="lv" class="note" aria-live="polite">${wizHint()}</div>`+inp('w_t','Target score or rank',`data-f="target" maxlength="80" placeholder="For example: rank under 2,000" value="${esc(p.target||'')}"`)+'<p class="sm mu" style="margin-top:8px">Your target is for motivation. It does not change what is possible.</p>';
  if(s===4)b=`<div class="sl"><div class="row sp"><label for="w_h" style="margin:0">Study hours per day</label><output id="o_h" for="w_h">${hm((+p.hours||0)*60)}</output></div><input id="w_h" type="range" data-f="hours" min="0.5" max="16" step="0.5" value="${esc(p.hours)}"></div>`
   +`<div class="sl"><div class="row sp"><label for="w_w" style="margin:0">Internship or work hours per day</label><output id="o_w" for="w_w">${hm((+p.workHrs||0)*60)}</output></div><input id="w_w" type="range" data-f="workHrs" min="0" max="16" step="0.5" value="${esc(p.workHrs)}"></div><div id="lv" aria-live="polite">${wizHint()}</div>`
@@ -238,8 +240,8 @@ function progress(){
  +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
- return accountCard()+remCard()+socCard()+aiCard()+`<h1>Strategy library</h1>`
- +`<details class="card tops" data-k="tops"${V.lo.tops?' open':''}><summary><b>Toppers' strategies</b><br><span class="sm mu">${E.length?E.length+' for '+esc(EX[x].n)+'. Tap to view':'None yet for '+esc(EX[x].n)}</span></summary><div class="chips" style="margin:10px 0">${Object.keys(EX).map(k=>chip('lx','',k,x===k,EX[k].n)).join('')}</div><p class="sm mu">Every entry shows where it comes from. Nothing here is made up.</p>`
+ return accountCard()+remCard()+socCard()+aiCard()+(typeof testCard==='function'?testCard():'')+`<h1>Strategy library</h1>`
+ +`<details class="card tops" data-k="tops"${V.lo.tops?' open':''}><summary><b>Toppers' strategies</b><br><span class="sm mu">${E.length?E.length+' for '+esc(EX[x].n)+'. Tap to view':'None yet for '+esc(EX[x].n)}</span></summary><label class="sr" for="lx_s">Exam</label><select id="lx_s" data-g="lx" style="margin:10px 0">${Object.keys(EX).map(k=>`<option value="${k}"${x===k?' selected':''}>${esc(EX[k].n)}</option>`).join('')}</select><p class="sm mu">Every entry shows where it comes from. Nothing here is made up.</p>`
  +(E.length?E.map(e=>`<details class="te" data-k="e_${esc(String(e.id))}"${V.lo['e_'+e.id]?' open':''}><summary><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${(e.fixed?e.verified:e.checked)?'ok':''}">${e.fixed?(e.verified?'Verified source':'Source supplied, not verified'):(e.checked?'Source checked by you':'Source not yet checked')}</span></summary><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl>${e.fixed?'':`<div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div>`}</details>`).join(''):`<p class="mu">Toppers' strategies for ${EX[x].n} will appear here soon.</p>`)+'</details>'
  +`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`+dataCard()}
 const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
@@ -250,7 +252,7 @@ function render0(){try{
  if(V.build){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=buildView();return}
  if(authOn()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authView();return}
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');const sa=V.sa;a.innerHTML=wiz();if(sa&&V.step){const h=$('.wzt');if(h)h.focus({preventScroll:true})}return}
- const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);
+ const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);document.body.classList.toggle('lvm',!!(run&&V.mn&&!V.fs));
  nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
  a.innerHTML=({home,roadmap,recover,progress,library}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?liveHtml(run,rt):'');tick();postRender()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
@@ -263,13 +265,15 @@ function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 const TH=[[0,'Warm-up','#4CC9F0','#0B3A5B'],[15,'Settling in','#2EE6A8','#0B4F4A'],[30,'Deep focus','#A58BFF','#2B1F6B'],[60,'In the zone','#FFC94A','#4A3200'],[90,'Flow state','#FF8A4C','#5E2208'],[120,'Unstoppable','#FF5DA2','#561041']];   // [from minute, stage name, ring colour, background colour]
 const thIdx=m=>{let i=0;TH.forEach((t,j)=>{if(m>=t[0])i=j});return i};
 const clk=s=>pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60),mmss=s=>pad(Math.floor(s/60))+':'+pad(s%60);
-function liveHtml(run,rt){const el=Math.floor(stMs(run)/1e3),h=TH[thIdx(el/60)],po=run.pomo,br=po&&po.ph==='b',reached=!!(run.goal&&run.fired);
- return`<div class="live${V.fs?' full':''}" id="lvp" style="--tc:${h[2]};--tb:${h[3]}" role="group" aria-label="Study timer">`
+function liveHtml(run,rt){const el=Math.floor(stMs(run)/1e3),h=TH[thIdx(el/60)],po=run.pomo,br=po&&po.ph==='b',reached=!!(run.goal&&run.fired),tp=typeof tpStyle==='function'?tpStyle():'';
+ if(V.mn&&!V.fs)return`<div class="live mini" id="lvp" data-a="mini" role="button" tabindex="0" aria-label="Study timer running. Tap to open it." style="--tc:${h[2]};--tb:${h[3]};${tp}"><i class="md" aria-hidden="true"></i><span class="mt" id="tm">${clk(el)}</span></div>`;
+ return`<div class="live${V.fs?' full':''}" id="lvp" style="--tc:${h[2]};--tb:${h[3]};${V.fs?'':tp}" role="group" aria-label="Study timer">`
   +`<button type="button" class="lvx" data-a="fs" aria-expanded="${!!V.fs}" aria-label="${V.fs?'Minimise timer':'Open full-screen timer'}">${V.fs?'&#10005;':'&#10530;'}</button>`
+  +(V.fs?'':`<button type="button" class="lvx lvm" data-a="mini" aria-label="Shrink the timer to a small pill">&#8211;</button>`)
   +`<svg class="clk" viewBox="0 0 200 200" data-a="fs" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${br?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${br?' brk':''}" id="tm" x="100" y="110">${clk(el)}</text></svg>`
   +`<span class="stg" id="tl"></span><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}</small>`
   +(run.goal?`<span class="gl${reached?' ok':''}">${reached?'&#10003; Goal reached ('+hm(run.goal)+'). Keep going or stop.':'Goal '+hm(run.goal)}</span>`:'')
-  +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button>${reached&&rt?'<button class="btn s ok" data-a="tudone">Done &amp; stop</button>':''}<button class="btn s" data-a="timer">Stop</button></div></div>`}
+  +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}" aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button>${window.Float&&Float.ok()?'<button class="pmb" data-a="float" aria-label="Float the timer outside the app">Float</button>':''}${reached&&rt?'<button class="btn s ok" data-a="tudone">Done &amp; stop</button>':''}<button class="btn s" data-a="timer">Stop</button></div></div>`}
 function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S||!S.timer)return;
  const T=S.timer,el=Math.floor(stMs(T)/1e3),po=T.pomo,L=po?(po.ph==='f'?25:5)*60:0,left=po?Math.max(0,L-Math.floor((Date.now()-new Date(po.ps))/1e3)):0;
  e.textContent=clk(el);
@@ -339,7 +343,7 @@ const A={
    S.rem.askedTimer=true;save();try{await Notification.requestPermission()}catch(e){}
   }
  },
- tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button>${t.status==='todo'&&aiOn()?`<button class="btn o" data-a="aisp" data-id="${t.id}">Break into sub-topics (AI)</button>`:''}<button class="btn o" data-a="lg" data-id="${t.id}">Log what I did</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
+ tm:d=>{const t=byId(d.id);sheet(`<h2>${esc(t.subject)}</h2><p class="mu">${esc(t.topic)}</p><div class="stack"><button class="btn" data-a="go" data-id="${t.id}">Start studying this</button>${typeof testBtn==='function'?testBtn(t):''}${t.status==='todo'&&aiOn()?`<button class="btn o" data-a="aisp" data-id="${t.id}">Break into sub-topics (AI, '+AI.left()+' left today)</button>`:''}<button class="btn o" data-a="lg" data-id="${t.id}">Log what I did</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="partial">Partly done</button><button class="btn o" data-a="st2" data-id="${t.id}" data-v="incomplete">Not done</button><button class="btn o" data-a="del" data-id="${t.id}">Delete task</button><button class="btn o" data-a="x">Close</button></div>`)},
  st2:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;closeSheet();save();render()},
  add:()=>sheet(`<h2>Add task</h2>${inp('t_s','Subject',`list="sl" maxlength="60"`)}<datalist id="sl">${EX[S.p.exam].sub.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>${inp('t_t','Topic','maxlength="100"')}${inp('t_m','Estimated minutes (30 to 600, steps of 15)','type="number" inputmode="numeric" min="30" max="600" step="15" value="60"')}<label for="t_p">Priority</label><select id="t_p"><option>High</option><option selected>Medium</option><option>Low</option></select>${inp('t_d','Scheduled date',`type="date" min="${today()}" max="${S.p.examDate}" value="${V.day<today()?today():V.day}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="addok">Save task</button></div>`),
  addok:()=>{const s=$('#t_s').value.trim(),t=$('#t_t').value.trim(),m=+$('#t_m').value,d=$('#t_d').value;
@@ -350,7 +354,7 @@ const A={
  delok:d=>{S.tasks=S.tasks.filter(t=>t.id!==d.id);closeSheet();save();render();toast('Task deleted')},
  timer:()=>{if(S.timer){pomoStep(1);const s=new Date(S.timer.start),m=Math.min(720,Math.round(stMs(S.timer)/6e4));
    if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
-   S.timer=null;V.thI=undefined;V.fs=false;wake(false);clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
+   S.timer=null;V.thI=undefined;V.fs=false;wake(false);if(window.Float)Float.stopped();clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt};startTick()}save();render()},
  rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r,0,t)[0]||addD(today(),1);V.rs=t.id;
   sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (30 to 600, in steps of 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
  pickd:d=>{$('#r_d').value=d.v;rsp()},fit:d=>{$('#r_m').value=d.v;rsp()},
@@ -377,7 +381,7 @@ const A={
  resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()}
 };
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset);else if(e.target.id==='sh')closeSheet()});
-document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S){S.p[f]=t.value;wizLive()}if(g==='rs')rsp();if(g==='tt')V.tt=t.value;if(g==='tf'){V.tf=t.value;wzSubs()}});
+document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S){S.p[f]=t.value;wizLive()}if(g==='rs')rsp();if(g==='tt')V.tt=t.value;if(g==='tf'){V.tf=t.value;wzSubs()}if(g==='lx'){V.lx=t.value;render()}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('sj')){if(!V.tf)V.ob[d.dataset.s]=d.open}else if(d.dataset&&d.dataset.k)V.lo[d.dataset.k]=d.open},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(V.fs&&!sheetOpen()){V.fs=false;wake(false);render();return}closeSheet()}if(e.key==='Enter'&&S&&ready&&!S.p.onboarded&&V.step>0&&e.target.tagName==='INPUT'&&!e.target.dataset.g&&e.target.type!=='range'){e.preventDefault();A.next()}});
 
@@ -400,7 +404,7 @@ const LOGS=[['lec','Watched lectures'],['book','Read textbook'],['mcq','Solved p
 const LOGSHORT={lec:'Lectures',book:'Textbook',mcq:'Questions',test:'Topic test',grand:'Grand test',rev:'Notes'};
 const logText=t=>[...t.log.k.map(k=>LOGSHORT[k]),...(t.log.n?[t.log.n+' questions']:[]),...(t.log.s!=null?[t.log.s+'%']:[])].join(' · ');
 function logSheet(){const t=byId(V.lg.id),on=V.lg.k;
- sheet(`<h2>How did you study this?</h2><p class="mu">${esc(t.subject)}: ${esc(t.topic)}</p><div class="chips" role="group" aria-label="What you did">${LOGS.map(([k,l])=>chip('lgt','',k,on.includes(k),l)).join('')}</div>${inp('lg_n','Questions solved (optional)',`type="number" inputmode="numeric" min="0" max="500" data-g="lg" data-key="n" value="${esc(V.lg.n)}"`)}${inp('lg_s','Score in percent (optional)',`type="number" inputmode="numeric" min="0" max="100" data-g="lg" data-key="s" value="${esc(V.lg.s)}"`)}${aiOn()?'<button class="btn o w" style="margin-top:10px" data-a="aiq0">Quick 3-MCQ Check (AI)</button>':''}<p class="sm mu" style="margin-top:8px">This helps adjust your next practice and revision.</p><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Skip</button><button class="btn" style="flex:1" data-a="lgok">Save</button></div>`)}
+ sheet(`<h2>How did you study this?</h2><p class="mu">${esc(t.subject)}: ${esc(t.topic)}</p><div class="chips" role="group" aria-label="What you did">${LOGS.map(([k,l])=>chip('lgt','',k,on.includes(k),l)).join('')}</div>${inp('lg_n','Questions solved (optional)',`type="number" inputmode="numeric" min="0" max="500" data-g="lg" data-key="n" value="${esc(V.lg.n)}"`)}${inp('lg_s','Score in percent (optional)',`type="number" inputmode="numeric" min="0" max="100" data-g="lg" data-key="s" value="${esc(V.lg.s)}"`)}${aiOn()?'<button class="btn o w" style="margin-top:10px" data-a="aiq0">Quick 3-MCQ Check (AI, '+AI.left()+' left today)</button>':''}<p class="sm mu" style="margin-top:8px">This helps adjust your next practice and revision.</p><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Skip</button><button class="btn" style="flex:1" data-a="lgok">Save</button></div>`)}
 function advise(t){const L=t.log,out=[],name=t.tk?t.tk.split('|')[1]:t.topic,practice=L.k.includes('mcq')||L.k.includes('test')||L.n>0;
  const addT=(m,topic,txt)=>{const d=bestDays(m,0,t).filter(k=>diff(today(),k)<=3).sort()[0];if(d)out.push({kind:'add',d,m,topic,txt})};
  if(L.s!=null&&L.s<60)addT(45,'Practice questions: '+name,'Your score was low. Add a 45-minute practice session on this topic.');
@@ -436,7 +440,8 @@ function checkAlarm(){const T=S&&S.timer;if(!T||!T.goal)return;if(stMs(T)/6e4<T.
 A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();save();render();A.lg({id:t.id})}};
 A.tumore=()=>{if(!S.timer)return;S.timer.goal+=15;S.timer.fired=false;S.timer.ack=false;closeSheet();armAlarm();save();render()};
 A.offline=()=>skipNow();
-A.fs=()=>{if(!S.timer)return;V.fs=!V.fs;wake(V.fs);vib(10);render()};
+A.fs=()=>{if(!S.timer||Date.now()-(V.dg||0)<350)return;V.fs=!V.fs;wake(V.fs);vib(10);render()};
+A.mini=()=>{if(!S.timer||Date.now()-(V.dg||0)<350)return;V.mn=!V.mn;V.fs=false;vib(8);render()};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S&&S.timer){armAlarm();checkAlarm();if(V.fs)wake(true);render()}});
 addEventListener('error',e=>{if(Date.now()-errAt>1e4){errAt=Date.now();try{toast('Something went wrong. Your data is safe.')}catch(x){}}console.error(e.error||e.message)});
 addEventListener('unhandledrejection',e=>console.error(e.reason));
@@ -596,7 +601,7 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
 
 /* ---- v9 interactivity: greeting, confetti, entrance animation, ring sweep, swipe between days ---- */
 const greet=()=>{const h=new Date().getHours();return h<5?'Hi':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Good night'};
-function postRender(){const a=$('#app');if(V.fx){V.fx=false;a.classList.remove('fx');void a.offsetWidth;a.classList.add('fx')}
+function postRender(){const a=$('#app');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(V.fx){V.fx=false;a.classList.remove('fx');void a.offsetWidth;a.classList.add('fx')}
  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.ring .v').forEach(e=>{e.style.strokeDashoffset=e.dataset.to})))}
 function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,C=['#FFC94A','#5BE3B5','#93A0FF','#FF7A6B','#4CC9F0'];

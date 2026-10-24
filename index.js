@@ -3,12 +3,13 @@
    - The Gemini key lives in Secret Manager (GEMINI_API_KEY). It is never sent to the browser.
    - Only logged-in users may call it (Firebase ID token in the Authorization header).
    - The browser sends a task name and data, never a free-form prompt, so this cannot be used as a general Gemini proxy.
-   - Each user gets DAILY calls per day, counted in aiUsage/{uid}_{day} (locked by firestore.rules; only this function writes it). */
+   - Each user gets DAILY (5) calls per day, counted in aiUsage/{uid}_{day} (locked by firestore.rules; only this function writes it). */
 const {onRequest}=require('firebase-functions/v2/https');
 const {defineSecret}=require('firebase-functions/params');
 const admin=require('firebase-admin');
 admin.initializeApp();
-const KEY=defineSecret('GEMINI_API_KEY'),MODEL='gemini-2.5-flash',DAILY=60;
+const KEY=defineSecret('GEMINI_API_KEY'),MODEL='gemini-2.5-flash',DAILY=5;
+const day=()=>new Date(Date.now()+198e5).toISOString().slice(0,10);   // the date in India (UTC+5:30), so the limit resets at midnight there
 const txt=(v,n)=>String(v==null?'':v).replace(/[\u0000-\u001f]+/g,' ').trim().slice(0,n);
 const num=(v,a,b,d)=>{v=Math.round(+v);return v>=a&&v<=b?v:d};
 const str={type:'STRING'},int={type:'INTEGER'},arr=items=>({type:'ARRAY',items}),obj=p=>({type:'OBJECT',properties:p,required:Object.keys(p)});
@@ -36,17 +37,18 @@ exports.ai=onRequest({secrets:[KEY],region:'us-central1',timeoutSeconds:90,memor
  let uid;try{uid=(await admin.auth().verifyIdToken(m[1])).uid}catch(e){return res.status(401).json({error:'Please log in again.'})}
  const b=req.body||{},job=JOBS[b.task];
  if(!job||!b.data||typeof b.data!=='object'||Array.isArray(b.data))return res.status(400).json({error:'Bad request.'});
- const db=admin.firestore(),ref=db.doc('aiUsage/'+uid+'_'+new Date().toISOString().slice(0,10));
- let ok=false;try{ok=await db.runTransaction(async t=>{const s=await t.get(ref),n=s.exists?s.data().n:0;if(n>=DAILY)return false;t.set(ref,{uid,n:n+1,at:admin.firestore.FieldValue.serverTimestamp()});return true})}
+ const db=admin.firestore(),ref=db.doc('aiUsage/'+uid+'_'+day());
+ let used=-1;try{used=await db.runTransaction(async t=>{const s=await t.get(ref),n=s.exists?s.data().n:0;if(n>=DAILY)return -1;t.set(ref,{uid,n:n+1,at:admin.firestore.FieldValue.serverTimestamp()});return n+1})}
  catch(e){console.error('quota',e.message);return res.status(503).json({error:'Please try again in a moment.'})}
- if(!ok)return res.status(429).json({error:'Daily AI limit reached. Try again tomorrow.'});
+ if(used<0)return res.status(429).json({error:'You have used all '+DAILY+' AI requests for today. They reset at midnight.'});
+ const refund=()=>ref.update({n:admin.firestore.FieldValue.increment(-1)}).catch(()=>{});   // a failed AI call does not use up one of the 5
  try{
   const p=job(b.data);
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':KEY.value()},
    body:JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:'user',parts:[{text:p.prompt}]}],generationConfig:{responseMimeType:'application/json',responseSchema:p.schema,temperature:p.temp,maxOutputTokens:8192,thinkingConfig:{thinkingBudget:p.think}}}),signal:AbortSignal.timeout(70000)});
-  if(!r.ok){console.error('gemini',r.status,(await r.text()).slice(0,300));return res.status(502).json({error:'The AI is busy. Try again in a moment.'})}
+  if(!r.ok){console.error('gemini',r.status,(await r.text()).slice(0,300));await refund();return res.status(502).json({error:'The AI is busy. Try again in a moment.'})}
   const j=await r.json(),parts=j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts;
   const data=JSON.parse((parts||[]).map(x=>x.text||'').join(''));
-  return res.json({ok:true,data});
- }catch(e){console.error('ai',e.message);return res.status(502).json({error:'The AI sent an unusable answer. Try again.'})}
+  return res.json({ok:true,data,used,limit:DAILY});
+ }catch(e){console.error('ai',e.message);await refund();return res.status(502).json({error:'The AI sent an unusable answer. Try again.'})}
 });
