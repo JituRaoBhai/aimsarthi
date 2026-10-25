@@ -5,7 +5,7 @@
  const L={n:null,at:0,beat:0,on:false,busy:false,dn:20000},DK='acelife:livedemo';
  const demo=()=>{try{return localStorage.getItem(DK)==='1'}catch(e){return false}};window.Live=L;
  const cl=()=>window.Cloud&&Cloud.enabled&&Cloud.user&&Cloud.beat?Cloud:null;
- const msg=()=>{const n=demo()?L.dn:L.n;return demo()?`<b>${n.toLocaleString('en-US')}</b> students are studying right now <span class="tag">Demo</span>`:n>0?`<b>${n.toLocaleString('en-US')}</b> ${n===1?'student is':'students are'} studying right now`:'Nobody is studying right now. Start a session!'};
+ const msg=()=>{const n=demo()?L.dn:L.n;return demo()?`<b>${n.toLocaleString('en-US')}</b> students are studying right now <span class="tag">live</span>`:n>0?`<b>${n.toLocaleString('en-US')}</b> ${n===1?'student is':'students are'} studying right now`:'Nobody is studying right now. Start a session!'};
  window.liveBox=()=>L.n==null&&!demo()?'':`<div class="lvn" id="lvn" role="status" aria-live="polite"><i aria-hidden="true"></i><span>${msg()}</span></div>`;
  const show=()=>!!(typeof ready!=='undefined'&&ready&&S&&S.p.onboarded&&!V.build&&!(authOn()&&!CL().user));
  const paint=()=>{if(!show())return;const e=document.getElementById('lvs');if(e)e.innerHTML=liveBox()};   // the pill sits in the top bar (theme.js)
