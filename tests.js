@@ -28,16 +28,22 @@ const qxFmt=t=>{t=Math.max(0,t);return Math.floor(t/60)+':'+String(t%60).padStar
 const qxTopic=z=>z.key.split('|').slice(1).join('|'),qxStat=(z,i)=>z.ans[i]==null?'skip':z.ans[i]===z.qs[i].a?'ok':'no';
 function qxClose(){clearInterval(qxT);const e=document.getElementById('qx');if(e)e.remove();document.body.classList.remove('qxo');V.qt=null;render()}
 function qxRender(keep){const z=V.qt;if(!z)return;let e=document.getElementById('qx');if(!e){e=document.createElement('div');e.id='qx';e.setAttribute('role','dialog');e.setAttribute('aria-modal','true');document.body.appendChild(e);document.body.classList.add('qxo')}
- const y=keep?e.scrollTop:0;e.innerHTML=z.ph==='run'?qxRun(z):z.ph==='result'?qxRes(z):qxRev(z);e.scrollTop=y}
+ const y=keep?e.scrollTop:0;e.innerHTML=z.ph==='intro'?qxIntro(z):z.ph==='run'?qxRun(z):z.ph==='result'?qxRes(z):qxRev(z);e.scrollTop=y}
 const qxHead=(z,t,sub,right)=>`<div class="qxh"><button type="button" class="qxb" data-a="qxend" aria-label="${z.ph==='run'?'Leave test':'Close'}">&times;</button><div style="min-width:0;flex:1"><b>${t}</b><br><span class="sm mu">${sub}</span></div>${right||''}</div>`;
-function qxRun(z){const q=z.qs[z.i],n=z.qs.length,a=z.ans.filter(x=>x!=null).length,m=z.mk.filter(Boolean).length;
- return qxHead(z,esc(qxTopic(z)),'Question '+(z.i+1)+' of '+n+' · '+a+' answered','<span class="qxt'+(qxLeft(z)<=60?' low':'')+'" id="qxt" aria-label="Time left">'+qxFmt(qxLeft(z))+'</span>')
- +`<div class="bar" style="margin:0 16px 0"><i style="width:${a/n*100}%"></i></div>`
- +`<div class="qxm"><div class="qxq"><span class="qxn">Q${z.i+1}</span>${esc(q.q)}</div><div class="qxos" role="radiogroup" aria-label="Options">`
+function qxPal(z){return z.qs.map((_,k)=>`<button type="button" class="${k===z.i?'c ':''}${z.ans[k]!=null?'a ':z.vis[k]?'v ':''}${z.mk[k]?'m':''}" data-a="qxgo" data-v="${k}" aria-label="Question ${k+1}${z.ans[k]!=null?', answered':z.vis[k]?', not answered':', not visited'}${z.mk[k]?', marked for review':''}"${k===z.i?' aria-current="true"':''}>${k+1}</button>`).join('')}
+function qxIntro(z){const n=z.qs.length;
+ return qxHead(z,'Instructions',esc(qxTopic(z)))
+ +`<div class="qxm"><div class="qxq" style="font-size:16px"><b>${esc(z.key.split('|')[0])}</b><br>${esc(qxTopic(z))}</div>`
+ +`<div class="stats"><div><b>${n}</b><span>Questions</span></div><div><b>${qxFmt(z.limit)}</b><span>Minutes</span></div><div><b>+1 / 0</b><span>Marking</span></div></div>`
+ +`<ul class="qxi"><li>Each question has one best answer. Choose A, B, C or D.</li><li>You can move between questions any time using the numbers at the top.</li><li><b>Mark for review</b> flags a question to come back to. You can clear an answer too.</li><li>Correct answers and explanations are shown only after you submit.</li><li>The test submits itself when the time ends. There is no negative marking.</li></ul>`
+ +`<div class="qxk" style="margin:8px 0 16px"><i class="a"></i>Answered <i class="v"></i>Not answered <i class="m"></i>Marked <i></i>Not visited</div>`
+ +`<div class="stack"><button type="button" class="btn" data-a="qxstart">Begin test</button><button type="button" class="btn o" data-a="qxend">Cancel</button></div></div>`}
+function qxRun(z){z.vis[z.i]=true;const q=z.qs[z.i],n=z.qs.length,a=z.ans.filter(x=>x!=null).length,m=z.mk.filter(Boolean).length,u=z.vis.filter((v,k)=>v&&z.ans[k]==null).length;
+ return`<div class="qxtop"><div class="qxh" style="border:0"><button type="button" class="qxb" data-a="qxend" aria-label="Leave test">&times;</button><div style="min-width:0;flex:1"><b>${esc(qxTopic(z))}</b><br><span class="sm mu">Question ${z.i+1} of ${n}</span></div><span class="qxt${qxLeft(z)<=60?' low':''}" id="qxt" role="timer" aria-label="Time left">${qxFmt(qxLeft(z))}</span><button type="button" class="btn s" data-a="qxsub">Submit</button></div>`
+ +`<div class="qxgr" role="group" aria-label="Question numbers">${qxPal(z)}</div><div class="qxk sm"><i class="a"></i>${a} <i class="v"></i>${u} <i class="m"></i>${m} <i></i>${n-z.vis.filter(Boolean).length}</div></div>`
+ +`<div class="qxm"><div class="qxq"><span class="qxn">Q${z.i+1}</span>${esc(q.q)}${z.mk[z.i]?'<span class="bd" style="margin-left:8px">Marked</span>':''}</div><div class="qxos" role="radiogroup" aria-label="Options">`
  +q.o.map((o,j)=>`<button type="button" role="radio" aria-checked="${z.ans[z.i]===j}" class="qxop${z.ans[z.i]===j?' sel':''}" data-a="qxp" data-v="${j}"><span class="ltr">${L4(j)}</span><span>${esc(o)}</span></button>`).join('')+'</div>'
- +(z.ans[z.i]!=null?'<button type="button" class="qxl" data-a="qxclr">Clear my answer</button>':'')
- +`<div class="qxg" role="group" aria-label="Question palette"><p class="sm mu" style="margin:0 0 8px">Question palette</p><div class="qxgr">${z.qs.map((_,k)=>`<button type="button" class="${k===z.i?'c ':''}${z.ans[k]!=null?'a ':''}${z.mk[k]?'m':''}" data-a="qxgo" data-v="${k}" aria-label="Question ${k+1}${z.ans[k]!=null?', answered':''}${z.mk[k]?', marked':''}">${k+1}</button>`).join('')}</div>`
- +`<p class="sm mu qxk"><i class="a"></i>Answered <i class="m"></i>Marked <i></i>Not answered</p><button type="button" class="btn w" data-a="qxsub">Submit test${m?' ('+m+' marked)':''}</button></div></div>`
+ +(z.ans[z.i]!=null?'<button type="button" class="qxl" data-a="qxclr">Clear my answer</button>':'')+`</div>`
  +`<div class="qxf"><button type="button" class="btn o" data-a="qxprev"${z.i?'':' disabled'}>Previous</button><button type="button" class="btn o${z.mk[z.i]?' mk':''}" data-a="qxmk" aria-pressed="${!!z.mk[z.i]}">${z.mk[z.i]?'Marked':'Mark'}</button><button type="button" class="btn" data-a="qxnext">${z.i+1<n?'Next':'Finish'}</button></div>`}
 function qxRes(z){const n=z.qs.length,c=z.c,w=z.w,sk=z.sk,pc=z.pc,f=z.fl||'all',R=2*Math.PI*44,L=z.qs.map((q,i)=>[q,i]).filter(([q,i])=>f==='all'||(f==='wrong'&&qxStat(z,i)==='no')||(f==='skip'&&qxStat(z,i)==='skip')||(f==='mark'&&z.mk[i]));
  return qxHead(z,'Test result',esc(qxTopic(z)))
@@ -64,8 +70,9 @@ const qxCounts=z=>({a:z.ans.filter(x=>x!=null).length,m:z.mk.filter(Boolean).len
 Object.assign(A,{
  qts:d=>{const k=d.key,qp=(S.qp||{})[k]||{},Q=d.mode==='wrong'?qbQs(k).filter(q=>qp[qid(q.q)]!==1&&(qp[qid(q.q)]===0)):qbQs(k);if(!Q.length){toast(d.mode==='wrong'?'No missed questions to practise.':'No questions have been added for this topic yet.');return}
   const qs=shuf(Q).slice(0,QN).map(q=>{const ix=shuf([0,1,2,3]);return{id:qid(q.q),q:q.q,o:ix.map(i=>q.o[i]),a:ix.indexOf(q.a),e:q.e||'',y:q.y||''}});
-  closeSheet();clearInterval(qxT);V.qt={key:k,tid:d.id||'',qs,i:0,ans:qs.map(()=>null),mk:qs.map(()=>false),ph:'run',t0:Date.now(),limit:qs.length*60,mode:d.mode||'',fl:'all'};
-  qxRender();qxT=setInterval(qxTick,1000)},
+  closeSheet();clearInterval(qxT);V.qt={key:k,tid:d.id||'',qs,i:0,ans:qs.map(()=>null),mk:qs.map(()=>false),vis:qs.map(()=>false),ph:'intro',t0:0,limit:qs.length*60,mode:d.mode||'',fl:'all'};
+  qxRender()},
+ qxstart:()=>{const z=V.qt;if(!z||z.ph!=='intro')return;z.ph='run';z.t0=Date.now();clearInterval(qxT);qxT=setInterval(qxTick,1000);qxRender()},
  qxp:d=>{const z=V.qt;if(!z||z.ph!=='run')return;z.ans[z.i]=+d.v;vib(8);qxRender(1)},
  qxclr:()=>{const z=V.qt;if(!z||z.ph!=='run')return;z.ans[z.i]=null;qxRender(1)},
  qxmk:()=>{const z=V.qt;if(!z||z.ph!=='run')return;z.mk[z.i]=!z.mk[z.i];qxRender(1)},

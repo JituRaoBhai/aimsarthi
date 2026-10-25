@@ -282,3 +282,22 @@ body.qxo{overflow:hidden}
 .qxr .qi{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--soft);font-weight:800;font-size:13px}.qxr .qt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qxe{margin-top:16px;padding:14px;border-radius:14px;background:var(--soft);line-height:1.5}
 .qxh b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ===== v12.4: live pill centred and pinned; exam-style test header ===== */
+.tbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9;justify-content:center;pointer-events:none;margin:0 0 4px}
+.tbar #lvs{margin:0 auto}.tbar .lvn{margin:0 auto 10px;pointer-events:auto;box-shadow:0 4px 14px rgba(20,30,80,.14)}
+.qxtop{position:sticky;top:0;z-index:4;background:var(--sf);border-bottom:1px solid var(--ln);box-shadow:0 3px 10px rgba(20,30,80,.08)}
+.qxtop .qxh{position:static;padding:10px 14px 8px}.qxtop .qxh b{-webkit-line-clamp:1}
+.qxtop .qxh .btn{min-height:38px;padding:0 14px;flex:none}.qxtop .qxt{font-size:16px;padding:5px 10px}
+.qxtop .qxgr{grid-template-columns:repeat(auto-fill,minmax(28px,1fr));gap:5px;padding:0 14px 6px;margin:0}
+.qxtop .qxgr button{height:26px;border-radius:7px;border-width:1.5px;font-size:12px;padding:0}
+.qxtop .qxgr button.a{background:var(--ok);border-color:var(--ok);color:var(--pt)}
+.qxtop .qxgr button.v{border-color:var(--er);color:var(--er);background:color-mix(in srgb,var(--er) 10%,var(--sf))}
+.qxtop .qxgr button.m{box-shadow:0 0 0 2px var(--wn);border-color:var(--wn)}
+.qxtop .qxgr button.c{outline:2px solid var(--pr);outline-offset:1px}
+.qxk{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.qxtop .qxk{padding:0 14px 8px;font-size:12px;color:var(--mu);gap:4px 6px}
+.qxk i{width:12px;height:12px;border-radius:4px;border:2px solid var(--ln);display:inline-block;margin-left:8px}.qxk i:first-child{margin-left:0}
+.qxk i.a{background:var(--ok);border-color:var(--ok)}.qxk i.v{border-color:var(--er);background:color-mix(in srgb,var(--er) 15%,transparent)}.qxk i.m{border-color:var(--wn);background:transparent}
+.qxi{margin:14px 0 0;padding-left:20px;line-height:1.6}.qxi li{margin-bottom:6px}
+.qxh>div>b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;-webkit-line-clamp:unset}.qxh>div>span{display:block;overflow:hidden;text-overflow:ellipsis}.qxh br{display:none}
+.qxtop .qxh>div>span{white-space:nowrap}
