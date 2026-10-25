@@ -225,8 +225,9 @@ nav button{font-size:12px;padding:0 2px}
 /* ===== v12: top bar, theme button, progress tabs, topic tests ===== */
 .tbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;min-height:40px}
 .tbar #lvs{min-width:0}.tbar .lvn{margin:0}
-.thb{flex:none;margin-left:auto;width:40px;height:40px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;color:#fff;background:conic-gradient(from 200deg,#4658D0,#C0509A,#F2994A,#2FAA73,#4658D0);box-shadow:0 4px 14px rgba(70,88,208,.35);transition:transform .2s}
-.thb:active{transform:scale(.9) rotate(20deg)}.thb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.thb{flex:none;margin-left:auto;width:40px;height:40px;border-radius:14px;border:1px solid rgba(255,255,255,.4);cursor:pointer;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 12px rgba(0,0,0,.18);transition:transform .2s,background .2s}
+.thb:hover{background:rgba(255,255,255,.3)}.thb:active{transform:scale(.9)}.thb:active svg{transform:rotate(25deg)}
+.thb svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s cubic-bezier(.2,.7,.3,1)}
 .thm{display:grid;gap:10px}
 .tho{display:flex;align-items:center;gap:12px;text-align:left;padding:12px;border-radius:16px;border:2px solid var(--ln);background:var(--sf);color:var(--tx);cursor:pointer;font:inherit}
 .tho.on{border-color:var(--pr);box-shadow:0 0 0 3px color-mix(in srgb,var(--pr) 20%,transparent)}
@@ -245,3 +246,9 @@ nav button{font-size:12px;padding:0 2px}
 /* v12.1: theme button beside the Today greeting; empty top bar takes no space */
 .tbar{min-height:0;margin:0}.tbar #lvs:empty{display:none}.tbar .lvn{margin:0 0 12px}
 .gr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.gr h1{min-width:0}.gr .thb{margin-top:2px}
+
+/* smooth fade when the colourful theme moves to its next palette */
+.thfade body,.thfade .card,.thfade nav,.thfade .chip,.thfade .btn,.thfade .hero,.thfade .seg,.thfade .lvn{transition:background-color 2.5s ease,color 2.5s ease,border-color 2.5s ease}
+/* v12.2: the theme button sits in the top-right corner of the Today card */
+.hero{position:relative}.hero .thb{position:absolute;top:10px;right:10px;margin:0;width:38px;height:38px}
+.hero .ring{margin-top:30px}
