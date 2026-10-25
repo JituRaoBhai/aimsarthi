@@ -2,10 +2,10 @@
    The number is real: while your timer is running (not paused) and you are logged in, the app sends a small "I am studying" signal every 2 minutes.
    The /api/live function counts the signals from the last 5 minutes and returns only that number. No names, no details. */
 (function(){
- const L={n:0,at:0,beat:0,on:false,busy:false,dn:20000},DK='acelife:livedemo';
+ const L={n:0,at:0,beat:0,on:false,busy:false,dn:Math.floor(19580+Math.random()*841)},DK='acelife:livedemo';
  const demo=()=>{try{return localStorage.getItem(DK)!=='0'}catch(e){return true}};window.Live=L;
  const cl=()=>window.Cloud&&Cloud.enabled&&Cloud.user&&Cloud.beat?Cloud:null;
- const msg=()=>{const n=demo()?L.dn:(L.n||0);return demo()?`<b>${n.toLocaleString('en-US')}</b> students are studying right now <span class="tag">Live 🔺</span>`:n>0?`<b>${n.toLocaleString('en-US')}</b> ${n===1?'student is':'students are'} studying right now`:'Nobody is studying right now. Start a session!'};
+ const msg=()=>{const n=demo()?L.dn:(L.n||0);return demo()?`<b>${n.toLocaleString('en-US')}</b> students are studying right now <span class="tag">Live..</span>`:n>0?`<b>${n.toLocaleString('en-US')}</b> ${n===1?'student is':'students are'} studying right now`:'Nobody is studying right now. Start a session!'};
  window.liveBox=()=>`<div class="lvn" id="lvn" role="status" aria-live="polite"><i aria-hidden="true"></i><span>${msg()}</span></div>`;
  const show=()=>true;
  const paint=()=>{if(!show())return;const e=document.getElementById('lvs');if(e)e.innerHTML=liveBox()};   // the pill sits in the top bar (theme.js)
