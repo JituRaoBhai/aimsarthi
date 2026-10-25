@@ -22,38 +22,86 @@ function testCard(){if(!qbOn())return'';const x=S.p.exam,B=qbAll(),ks=Object.key
   :`<p class="sm mu">No questions have been added for ${esc(EX[x].n)} yet. Build <b>qbank/${x}.js</b> with tools/qbank-build.js (steps are in qbank/README-QBANK.txt) and redeploy.</p>`;
  return`<details class="card tops" data-k="tests"${V.lo.tests?' open':''}><summary><b>Topic tests</b><br><span class="sm mu">${!qbLoaded[x]||!QB[x]?'Loading...':ks.length?ks.length+' topics, '+tot+' questions. Tap to choose a topic.':'Not set up yet for '+esc(EX[x].n)}</span></summary>${body}</details>`}
 
-function qtSheet(){const z=V.qt,q=z.qs[z.i],done=z.pick!==null,n=z.qs.length;
- const subj=z.key.split('|')[0],top=z.key.split('|').slice(1).join('|');
- sheet(`<h2>Topic test</h2><p class="sm mu">${esc(subj)}: ${esc(top)}</p><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${z.i+1}" style="margin:8px 0"><i style="width:${(z.i+(done?1:0))/n*100}%"></i></div>`
-  +`<p class="sm mu" style="margin:0">Question ${z.i+1} of ${n}</p><h3 style="margin-top:6px">${esc(q.q)}</h3><div class="opts" role="group" aria-label="Options">`
-  +q.o.map((o,j)=>`<button type="button" class="chip qo${done?(j===q.a?' ok':j===z.pick?' no':''):''}" data-a="qtp" data-v="${j}"${done?' disabled':''}>${String.fromCharCode(65+j)}. ${esc(o)}</button>`).join('')+'</div>'
-  +(done?`<p class="sm"><b>${z.pick===q.a?'Correct.':'Not quite. Answer: '+String.fromCharCode(65+q.a)+'.'}</b> ${esc(q.e)}${q.y?`<br><span class="mu">${esc(q.y)}</span>`:''}</p>`:'')
-  +`<div class="row"><button class="btn o" data-a="x">End test</button><button class="btn" style="flex:1" data-a="qtn"${done?'':' disabled'}>${z.i+1<n?'Next question':'See result'}</button></div>`)}
-function qtResult(){const z=V.qt,n=z.qs.length,c=z.ans.filter((a,i)=>a===z.qs[i].a).length,pc=Math.round(c/n*100),bad=z.qs.map((q,i)=>[q,i]).filter(([q,i])=>z.ans[i]!==q.a);
- S.tests=(S.tests||[]).concat({id:uid(),exam:S.p.exam,key:z.key,n,c,at:new Date().toISOString(),m:z.mode==='wrong'?1:0}).slice(-300);
- S.qp=S.qp||{};const qm=S.qp[z.key]=S.qp[z.key]||{};z.qs.forEach((q,i)=>{if(q.id)qm[q.id]=z.ans[i]===q.a?1:0});save();render();   // remembers, per question, whether your latest answer was right; the Tests list behind the sheet updates
-z.c=c;z.pc=pc;
- sheet(`<h2>${c} of ${n} correct</h2><p class="sm mu">Score ${pc}%.${pc>=80?' Strong. Keep this topic on your revision rhythm.':pc>=60?' Fair. Review the questions you missed.':' This topic needs more work. Revise it and try again.'}</p>`
-  +(bad.length?`<details><summary class="sm"><b>${bad.length} to review</b></summary>${bad.map(([q,i])=>`<div class="qres no"><b>${esc(q.q)}</b><br><span class="sm">Your answer: ${esc(q.o[z.ans[i]])}. Answer: <b>${esc(q.o[q.a])}</b></span>${q.e?`<br><span class="sm mu">${esc(q.e)}</span>`:''}</div>`).join('')}</details>`:'<p class="sm">No mistakes. Well done.</p>')
-  +`<div class="stack">${z.tid&&byId(z.tid)?'<button class="btn" data-a="qtlog">Save score to my study log</button>':''}<button class="btn o" data-a="qtagain">${z.mode==='wrong'?'Practise missed again':'Try a new set'}</button><button class="btn o" data-a="x">Close</button></div>`)}
+/* ---- exam-style test runner (v12): full screen, question on top, options below, no answers until you submit, then result and review ---- */
+let qxT=0;
+const qxFmt=t=>{t=Math.max(0,t);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')},qxLeft=z=>z.limit-Math.floor((Date.now()-z.t0)/1e3),L4=j=>String.fromCharCode(65+j);
+const qxTopic=z=>z.key.split('|').slice(1).join('|'),qxStat=(z,i)=>z.ans[i]==null?'skip':z.ans[i]===z.qs[i].a?'ok':'no';
+function qxClose(){clearInterval(qxT);const e=document.getElementById('qx');if(e)e.remove();document.body.classList.remove('qxo');V.qt=null;render()}
+function qxRender(keep){const z=V.qt;if(!z)return;let e=document.getElementById('qx');if(!e){e=document.createElement('div');e.id='qx';e.setAttribute('role','dialog');e.setAttribute('aria-modal','true');document.body.appendChild(e);document.body.classList.add('qxo')}
+ const y=keep?e.scrollTop:0;e.innerHTML=z.ph==='run'?qxRun(z):z.ph==='result'?qxRes(z):qxRev(z);e.scrollTop=y}
+const qxHead=(z,t,sub,right)=>`<div class="qxh"><button type="button" class="qxb" data-a="qxend" aria-label="${z.ph==='run'?'Leave test':'Close'}">&times;</button><div style="min-width:0;flex:1"><b>${t}</b><br><span class="sm mu">${sub}</span></div>${right||''}</div>`;
+function qxRun(z){const q=z.qs[z.i],n=z.qs.length,a=z.ans.filter(x=>x!=null).length,m=z.mk.filter(Boolean).length;
+ return qxHead(z,esc(qxTopic(z)),'Question '+(z.i+1)+' of '+n+' · '+a+' answered','<span class="qxt'+(qxLeft(z)<=60?' low':'')+'" id="qxt" aria-label="Time left">'+qxFmt(qxLeft(z))+'</span>')
+ +`<div class="bar" style="margin:0 16px 0"><i style="width:${a/n*100}%"></i></div>`
+ +`<div class="qxm"><div class="qxq"><span class="qxn">Q${z.i+1}</span>${esc(q.q)}</div><div class="qxos" role="radiogroup" aria-label="Options">`
+ +q.o.map((o,j)=>`<button type="button" role="radio" aria-checked="${z.ans[z.i]===j}" class="qxop${z.ans[z.i]===j?' sel':''}" data-a="qxp" data-v="${j}"><span class="ltr">${L4(j)}</span><span>${esc(o)}</span></button>`).join('')+'</div>'
+ +(z.ans[z.i]!=null?'<button type="button" class="qxl" data-a="qxclr">Clear my answer</button>':'')
+ +`<div class="qxg" role="group" aria-label="Question palette"><p class="sm mu" style="margin:0 0 8px">Question palette</p><div class="qxgr">${z.qs.map((_,k)=>`<button type="button" class="${k===z.i?'c ':''}${z.ans[k]!=null?'a ':''}${z.mk[k]?'m':''}" data-a="qxgo" data-v="${k}" aria-label="Question ${k+1}${z.ans[k]!=null?', answered':''}${z.mk[k]?', marked':''}">${k+1}</button>`).join('')}</div>`
+ +`<p class="sm mu qxk"><i class="a"></i>Answered <i class="m"></i>Marked <i></i>Not answered</p><button type="button" class="btn w" data-a="qxsub">Submit test${m?' ('+m+' marked)':''}</button></div></div>`
+ +`<div class="qxf"><button type="button" class="btn o" data-a="qxprev"${z.i?'':' disabled'}>Previous</button><button type="button" class="btn o${z.mk[z.i]?' mk':''}" data-a="qxmk" aria-pressed="${!!z.mk[z.i]}">${z.mk[z.i]?'Marked':'Mark'}</button><button type="button" class="btn" data-a="qxnext">${z.i+1<n?'Next':'Finish'}</button></div>`}
+function qxRes(z){const n=z.qs.length,c=z.c,w=z.w,sk=z.sk,pc=z.pc,f=z.fl||'all',R=2*Math.PI*44,L=z.qs.map((q,i)=>[q,i]).filter(([q,i])=>f==='all'||(f==='wrong'&&qxStat(z,i)==='no')||(f==='skip'&&qxStat(z,i)==='skip')||(f==='mark'&&z.mk[i]));
+ return qxHead(z,'Test result',esc(qxTopic(z)))
+ +`<div class="qxm"><div class="qxs"><svg viewBox="0 0 100 100" class="qxrg" role="img" aria-label="${pc} percent"><circle cx="50" cy="50" r="44" class="t"/><circle cx="50" cy="50" r="44" class="v ${pc>=80?'ok':pc>=60?'wn':'no'}" stroke-dasharray="${R.toFixed(1)}" stroke-dashoffset="${(R*(1-pc/100)).toFixed(1)}" transform="rotate(-90 50 50)"/><text x="50" y="56">${pc}%</text></svg>`
+ +`<div><h2 style="margin:0">${c} of ${n} correct</h2><p class="sm mu" style="margin:4px 0 0">${pc>=80?'Strong. Keep this topic on your revision rhythm.':pc>=60?'Fair. Review the questions you missed.':'This topic needs more work. Revise it and try again.'}</p></div></div>`
+ +`<div class="stats"><div><b class="g">${c}</b><span>Correct</span></div><div><b class="r">${w}</b><span>Wrong</span></div><div><b>${sk}</b><span>Skipped</span></div></div>`
+ +`<p class="sm mu">Time taken ${qxFmt(z.tt)} of ${qxFmt(z.limit)}. Each question is 1 mark; wrong and skipped answers score 0.</p>`
+ +`<div class="stack"><button type="button" class="btn" data-a="qxrv" data-v="0">Review all answers</button>${z.tid&&byId(z.tid)&&!z.logged?'<button type="button" class="btn o" data-a="qtlog">Save score to my study log</button>':''}${w+sk?'<button type="button" class="btn o" data-a="qtw" data-key="'+esc(z.key)+'">Practise my '+(w+sk)+' missed</button>':''}<button type="button" class="btn o" data-a="qtagain">${z.mode==='wrong'?'Practise missed again':'Try a new set'}</button><button type="button" class="btn o" data-a="qxend">Close</button></div>`
+ +`<h3 style="margin:18px 0 8px">Your answers</h3><div class="chips" role="group" aria-label="Filter answers">${[['all','All'],['wrong','Wrong'],['skip','Skipped'],['mark','Marked']].map(([v,l])=>`<button type="button" class="chip" data-a="qxf" data-v="${v}" aria-pressed="${f===v}">${l}</button>`).join('')}</div>`
+ +(L.length?L.map(([q,i])=>{const s=qxStat(z,i);return`<button type="button" class="qxr ${s}" data-a="qxrv" data-v="${i}"><span class="qi">${i+1}</span><span class="qt">${esc(q.q)}</span><span class="bd ${s==='ok'?'ok':s==='no'?'no':'nt'}">${s==='ok'?'Correct':s==='no'?'Wrong':'Skipped'}</span></button>`}).join(''):'<p class="mu sm">Nothing here.</p>')+`</div>`}
+function qxRev(z){const q=z.qs[z.ri],n=z.qs.length,s=qxStat(z,z.ri),a=z.ans[z.ri];
+ return qxHead(z,'Review',esc(qxTopic(z))+' · Question '+(z.ri+1)+' of '+n)
+ +`<div class="qxm"><div class="qxq"><span class="qxn">Q${z.ri+1}</span>${esc(q.q)}</div><p class="sm" style="margin:0 0 8px"><span class="bd ${s==='ok'?'ok':s==='no'?'no':'nt'}">${s==='ok'?'You got it right':s==='no'?'Your answer was wrong':'You skipped this'}</span>${z.mk[z.ri]?' <span class="bd">Marked</span>':''}</p><div class="qxos">`
+ +q.o.map((o,j)=>`<div class="qxop rv${j===q.a?' ok':j===a?' no':''}"><span class="ltr">${L4(j)}</span><span>${esc(o)}${j===q.a?'<br><span class="sm"><b>Correct answer</b></span>':j===a?'<br><span class="sm"><b>Your answer</b></span>':''}</span></div>`).join('')+'</div>'
+ +`<div class="qxe"><b>Explanation</b><p style="margin:6px 0 0">${q.e?esc(q.e):'No explanation was added for this question.'}</p>${q.y?`<p class="sm mu" style="margin:6px 0 0">${esc(q.y)}</p>`:''}</div></div>`
+ +`<div class="qxf"><button type="button" class="btn o" data-a="qxrp"${z.ri?'':' disabled'}>Previous</button><button type="button" class="btn o" data-a="qxrb">Results</button><button type="button" class="btn" data-a="qxrn"${z.ri+1<n?'':' disabled'}>Next</button></div>`}
+function qxSubmit(){const z=V.qt;if(!z||z.ph!=='run')return;clearInterval(qxT);const n=z.qs.length;
+ z.tt=Math.min(z.limit,Math.floor((Date.now()-z.t0)/1e3));z.c=z.qs.filter((q,i)=>z.ans[i]===q.a).length;z.sk=z.ans.filter(a=>a==null).length;z.w=n-z.c-z.sk;z.pc=Math.round(z.c/n*100);z.ph='result';z.fl='all';
+ S.tests=(S.tests||[]).concat({id:uid(),exam:S.p.exam,key:z.key,n,c:z.c,at:new Date().toISOString(),m:z.mode==='wrong'?1:0}).slice(-300);
+ S.qp=S.qp||{};const qm=S.qp[z.key]=S.qp[z.key]||{};z.qs.forEach((q,i)=>{if(q.id)qm[q.id]=z.ans[i]===q.a?1:0});   // remembers, per question, whether your latest answer was right
+ save();render();qxRender();vib([20,40,20])}
+function qxTick(){const z=V.qt;if(!z||z.ph!=='run'){clearInterval(qxT);return}const l=qxLeft(z),e=document.getElementById('qxt');if(e){e.textContent=qxFmt(l);e.classList.toggle('low',l<=60)}if(l<=0){toast('Time is up. Your test was submitted.');closeSheet();qxSubmit()}}
+const qxCounts=z=>({a:z.ans.filter(x=>x!=null).length,m:z.mk.filter(Boolean).length});
 Object.assign(A,{
- qts:d=>{const k=d.key,qp=(S.qp||{})[k]||{},Q=d.mode==='wrong'?qbQs(k).filter(q=>qp[qid(q.q)]===0):qbQs(k);if(!Q.length){toast(d.mode==='wrong'?'No missed questions to practise.':'No questions have been added for this topic yet.');return}
+ qts:d=>{const k=d.key,qp=(S.qp||{})[k]||{},Q=d.mode==='wrong'?qbQs(k).filter(q=>qp[qid(q.q)]!==1&&(qp[qid(q.q)]===0)):qbQs(k);if(!Q.length){toast(d.mode==='wrong'?'No missed questions to practise.':'No questions have been added for this topic yet.');return}
   const qs=shuf(Q).slice(0,QN).map(q=>{const ix=shuf([0,1,2,3]);return{id:qid(q.q),q:q.q,o:ix.map(i=>q.o[i]),a:ix.indexOf(q.a),e:q.e||'',y:q.y||''}});
-  V.qt={key:k,tid:d.id||'',qs,i:0,ans:[],pick:null,mode:d.mode||''};qtSheet()},
- qtp:d=>{const z=V.qt;if(!z||z.pick!==null)return;z.pick=+d.v;z.ans[z.i]=z.pick;vib(10);qtSheet()},
- qtn:()=>{const z=V.qt;if(!z||z.pick===null)return;if(z.i+1<z.qs.length){z.i++;z.pick=null;qtSheet()}else qtResult()},
+  closeSheet();clearInterval(qxT);V.qt={key:k,tid:d.id||'',qs,i:0,ans:qs.map(()=>null),mk:qs.map(()=>false),ph:'run',t0:Date.now(),limit:qs.length*60,mode:d.mode||'',fl:'all'};
+  qxRender();qxT=setInterval(qxTick,1000)},
+ qxp:d=>{const z=V.qt;if(!z||z.ph!=='run')return;z.ans[z.i]=+d.v;vib(8);qxRender(1)},
+ qxclr:()=>{const z=V.qt;if(!z||z.ph!=='run')return;z.ans[z.i]=null;qxRender(1)},
+ qxmk:()=>{const z=V.qt;if(!z||z.ph!=='run')return;z.mk[z.i]=!z.mk[z.i];qxRender(1)},
+ qxprev:()=>{const z=V.qt;if(z&&z.ph==='run'&&z.i>0){z.i--;qxRender()}},
+ qxnext:()=>{const z=V.qt;if(!z||z.ph!=='run')return;if(z.i+1<z.qs.length){z.i++;qxRender()}else A.qxsub()},
+ qxgo:d=>{const z=V.qt;if(z&&z.ph==='run'){z.i=+d.v;qxRender()}},
+ qxsub:()=>{const z=V.qt;if(!z||z.ph!=='run')return;const c=qxCounts(z),n=z.qs.length;sheet(`<h2>Submit the test?</h2><p>${c.a} of ${n} answered${n-c.a?', <b>'+(n-c.a)+' not answered</b>':''}${c.m?', '+c.m+' marked for review':''}.</p><p class="sm mu">You cannot change answers after submitting. You can review every question with explanations afterwards.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep working</button><button class="btn" style="flex:1" data-a="qxsubok">Submit</button></div>`)},
+ qxsubok:()=>{closeSheet();qxSubmit()},
+ qxend:()=>{const z=V.qt;if(!z)return;if(z.ph==='run')sheet(`<h2>Leave this test?</h2><p>Your answers so far will not be saved.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep working</button><button class="btn" style="flex:1" data-a="qxquit">Leave</button></div>`);else qxClose()},
+ qxquit:()=>{closeSheet();qxClose()},
+ qxf:d=>{const z=V.qt;if(z){z.fl=d.v;qxRender(1)}},
+ qxrv:d=>{const z=V.qt;if(z){z.ph='review';z.ri=+d.v;qxRender()}},
+ qxrb:()=>{const z=V.qt;if(z){z.ph='result';qxRender()}},
+ qxrp:()=>{const z=V.qt;if(z&&z.ri>0){z.ri--;qxRender()}},
+ qxrn:()=>{const z=V.qt;if(z&&z.ri+1<z.qs.length){z.ri++;qxRender()}},
  qtagain:()=>{const z=V.qt;if(z)A.qts({key:z.key,id:z.tid,mode:z.mode})},
  qtw:d=>A.qts({key:d.key,mode:'wrong'}),
  pt:d=>{V.pt=d.v;if(V.tab!=='progress'){V.nav.push(V.tab);V.tab='progress'}V.fx=true;scrollTo(0,0);render()},
  tfl:d=>{V.tfl=d.v;render()},
- qtlog:()=>{const z=V.qt,t=z&&byId(z.tid);if(!t)return;t.log={k:['mcq','test'],n:z.qs.length,s:z.pc,at:new Date().toISOString()};save();closeSheet();render();toast('Score saved to your study log')}});
+ qtlog:()=>{const z=V.qt,t=z&&byId(z.tid);if(!t)return;t.log={k:['mcq','test'],n:z.qs.length,s:z.pc,at:new Date().toISOString()};z.logged=true;save();render();qxRender(1);toast('Score saved to your study log')}});
+
+/* ---- PYQ test suggestion: only when a whole topic is finished, once per topic ---- */
+function topicDone(t){if(t.type!=='study')return null;const k=qkey(t),L=S.tasks.filter(x=>x.type==='study'&&qkey(x)===k);return L.length&&L.every(x=>x.status==='done')?k:null}
+function qsugShow(){const k=V.sug;V.sug=null;if(!k||sheetOpen()||V.qt)return;const n=Math.min(QN,qbN(k)),nm=k.split('|').slice(1).join('|'),sb=k.split('|')[0];
+ sheet(`<h2>Topic complete: time to test it</h2><p><b>${esc(sb)}</b>: ${esc(nm)}</p><p class="sm mu">You finished every session of this topic. A ${n}-question test from previous-year-style questions now will show what stuck and what to revise.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Later</button><button class="btn" style="flex:1" data-a="qts" data-key="${esc(k)}">Start the test</button></div>`);vib([30,40,30])}
+['st','lgok','x'].forEach(n=>{const f=A[n];if(typeof f!=='function')return;A[n]=function(d){const r=f.apply(this,arguments);
+ if(n==='st'){const t=d&&byId(d.id);if(t&&t.status==='done'&&qbOn()){const k=topicDone(t);S.sug=S.sug||{};if(k&&qbN(k)>0&&!S.sug[k]&&!(S.tests||[]).some(h=>h.key===k)){S.sug[k]=today();save();V.sug=k}}}
+ if(V.sug&&(n==='lgok'||n==='x'))setTimeout(qsugShow,350);   // after the "how did you study" sheet is closed
+ return r}});
 
 /* ---- Progress > Tests (v12) ---- */
 const pcOf=h=>Math.round(h.c/h.n*100);
-const tState=i=>!i.att?['Not taken','nt']:i.lp>=80?['Strong','ok']:i.lp>=60?['Fair','wn']:['Needs work','no'];
+const tState=i=>!i.att?(i.sug?['Suggested','ok']:['Not taken','nt']):i.lp>=80?['Strong','ok']:i.lp>=60?['Fair','wn']:['Needs work','no'];
 function tInfo(x){const B=qbAll(),H=(S.tests||[]).filter(h=>h&&h.exam===x&&!h.m),HA=(S.tests||[]).filter(h=>h&&h.exam===x);
  return Object.keys(B).filter(k=>qbN(k)>0).map(k=>{const h=H.filter(a=>a.key===k),qp=(S.qp||{})[k]||{},ids=qbQs(k).map(q=>qid(q.q)),last=h[h.length-1];
-  return{k,n:ids.length,att:h.length,ok:ids.filter(i=>qp[i]===1).length,bad:ids.filter(i=>qp[i]===0).length,best:h.length?Math.max(...h.map(pcOf)):0,lp:last?pcOf(last):0,at:last?last.at:''}})}
+  return{k,sug:!!(S.sug||{})[k],n:ids.length,att:h.length,ok:ids.filter(i=>qp[i]===1).length,bad:ids.filter(i=>qp[i]===0).length,best:h.length?Math.max(...h.map(pcOf)):0,lp:last?pcOf(last):0,at:last?last.at:''}})}
 function testsView(){const x=S.p.exam,E=EX[x];
  if(!qbOn())return`<section class="card"><h2>Topic tests</h2><p class="sm mu">Topic tests are available for ${(window.TEST_EXAMS||[]).map(k=>esc(EX[k]?EX[k].n:k)).join(', ')}. Your exam, ${esc(E.n)}, does not have them yet.</p></section>`;
  if(!qbLoaded[x]||!QB[x])return`<section class="card"><p class="mu">Loading questions...</p></section>`;

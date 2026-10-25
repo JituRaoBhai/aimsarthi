@@ -14,7 +14,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
-const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[],use:null},tests:[],qp:{}});
+const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[],use:null},tests:[],qp:{},sug:{}});
 const cleanCap=m=>{const o={},t=addD(today(),-7);if(m&&typeof m==='object')for(const k in m){const v=+m[k];if(okD(k)&&k>=t&&v>=.1&&v<=2)o[k]=v}return o};
 function hydrate(s){const o=Object.assign(fresh(),s||{});o.p=Object.assign(fresh().p,o.p);o.p.dayCap=cleanCap(o.p.dayCap);o.soc=Object.assign(fresh().soc,o.soc);o.ai=Object.assign(fresh().ai,o.ai);return o}
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false,unW=null,loadedUid=null,socT=null,pomoT=null,pomoKey='';
@@ -167,7 +167,7 @@ function wiz(){const p=S.p,s=V.step;
  if(s===2)b=`${examList()}<p class="sm mu" style="margin-top:10px">Pick the exam you are preparing for. You can change it later from your plan.</p>`;
  if(s===3)b=`<label for="w_d">Exam date</label><input id="w_d" type="date" data-f="examDate" min="${addD(today(),2)}" max="${addD(today(),1100)}" value="${esc(p.examDate||'')}"><div class="chips" style="margin:10px 0" role="group" aria-label="Date shortcuts">${[['1 month',30],['2 months',60],['3 months',90],['6 months',180],['1 year',365]].map(([l,n])=>`<button type="button" class="chip" data-a="qd" data-v="${n}" aria-pressed="${p.examDate===addD(today(),n)}">${l}</button>`).join('')}</div><div id="lv" class="note" aria-live="polite">${wizHint()}</div>`+inp('w_t','Target score or rank',`data-f="target" maxlength="80" placeholder="For example: rank under 2,000" value="${esc(p.target||'')}"`)+'<p class="sm mu" style="margin-top:8px">Your target is for motivation. It does not change what is possible.</p>';
  if(s===4)b=`<div class="sl"><div class="row sp"><label for="w_h" style="margin:0">Study hours per day</label><output id="o_h" for="w_h">${hm((+p.hours||0)*60)}</output></div><input id="w_h" type="range" data-f="hours" min="0.5" max="16" step="0.5" value="${esc(p.hours)}"></div>`
-  +`<div class="sl"><div class="row sp"><label for="w_w" style="margin:0">Lecture or Work hours per day</label><output id="o_w" for="w_w">${hm((+p.workHrs||0)*60)}</output></div><input id="w_w" type="range" data-f="workHrs" min="0" max="16" step="0.5" value="${esc(p.workHrs)}"></div><div id="lv" aria-live="polite">${wizHint()}</div>`
+  +`<div class="sl"><div class="row sp"><label for="w_w" style="margin:0">Internship or work hours per day</label><output id="o_w" for="w_w">${hm((+p.workHrs||0)*60)}</output></div><input id="w_w" type="range" data-f="workHrs" min="0" max="16" step="0.5" value="${esc(p.workHrs)}"></div><div id="lv" aria-live="polite">${wizHint()}</div>`
   +`<label for="w_o">Weekly day off</label><select id="w_o" data-f="off"><option value="">No fixed day off</option>${DOW.map((d,i)=>`<option value="${i}" ${p.off===String(i)?'selected':''}>${d}</option>`).join('')}</select>`+inp('w_c','Commitment notes (optional)',`data-f="workNote" maxlength="120" placeholder="For example: night duty on Fridays" value="${esc(p.workNote||'')}"`);
  if(s===5)b=`<div class="xcs" role="group" aria-label="Current level">${['Beginner','Intermediate','Advanced'].map(l=>XC('level',l,p.level===l,l,LVD[l])).join('')}</div><p class="sm mu" style="margin-top:10px">Your level sets how much time each new topic gets.</p>`;
  if(s===6)b=`<p class="sm mu" style="margin:0 0 10px">Open a subject and tick what you have finished. Use <b>!</b> for topics you find hard. Your plan skips finished topics and gives hard ones more time.</p><div class="legend sm"><span><i class="tb d on" aria-hidden="true">&#10003;</i> Completed</span><span><i class="tb w on" aria-hidden="true">!</i> Needs work</span></div><div id="ssum" class="card" style="margin:10px 0">${subsSum()}</div><label for="w_f" class="sr">Search subjects and topics</label><input id="w_f" type="search" data-g="tf" placeholder="Search a subject or topic" value="${esc(V.tf||'')}" autocomplete="off"><div id="subs" style="margin-top:10px">${subsHtml()}</div>`;
@@ -254,7 +254,7 @@ function profile(){const p=S.p,ex=EX[p.exam]||{n:''},a=act();let st=0,c=today();
  return`<h1>Profile</h1><section class="card pf"><span class="av" aria-hidden="true">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</span><div style="min-width:0"><h2 style="margin:0">${esc(p.name||'Student')}</h2><p class="sm mu" style="margin:2px 0 6px">${esc(ex.n)}</p><span class="pill">${st}-day streak</span> <span class="pill">${hm(totalMins())} studied</span></div></section>`
  +accountCard()
  +`<section class="card"><h2>Your answers</h2><p class="sm mu">Change anything you told us at set-up. Your plan is rebuilt from the new answers and nothing is applied until you accept it. The back button cancels.</p>${rows.map(r=>`<div class="row sp ans"><span style="min-width:0"><b>${r[1]}</b><br><span class="sm mu">${esc(r[2])}</span></span><button class="btn o s" data-a="redo" data-v="${r[0]}" aria-label="Edit ${r[1]}">Edit</button></div>`).join('')}</section>`
- +(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+dataCard()
+ +(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
  +`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
@@ -405,12 +405,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(V.fs&&!sheetOpen
 
 let guardOn=false,skipPop=false;
 const sheetOpen=()=>$('#sh').classList.contains('on');
-const needGuard=()=>!!(S&&ready&&(sheetOpen()||(V.build&&!V.build.err)||(authOn()&&!CL().user&&AUTH.mode==='signup')||(S.p.onboarded?V.tab!=='home':V.step>0)));
+const needGuard=()=>!!(S&&ready&&(sheetOpen()||document.getElementById('qx')||(V.build&&!V.build.err)||(authOn()&&!CL().user&&AUTH.mode==='signup')||(S.p.onboarded?V.tab!=='home':V.step>0)));
 function syncGuard(){const n=needGuard();
  if(n&&!guardOn){try{history.pushState({g:1},'');guardOn=true}catch(e){}}
  else if(!n&&guardOn){guardOn=false;skipPop=true;setTimeout(()=>{skipPop=false},500);try{history.back()}catch(e){}}}
 function handleBack(){
  if(sheetOpen()){closeSheet();return true}
+ if(document.getElementById('qx')){A.qxend();return true}
  if(V.build&&!V.build.err)return true;
  if(authOn()&&!CL().user){if(AUTH.mode==='signup'){AUTH.mode='login';AUTH.err='';return true}return false}
  if(!S.p.onboarded){if(S.p.planStart||S.draft){S.p.onboarded=true;V.step=0;return true}if(V.step>0){V.err='';V.step--;return true}return false}
@@ -641,7 +642,7 @@ function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:redu
 let tx=0,ty=0,t0=0,tOK=false;
 document.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY;t0=Date.now();
  tOK=e.touches.length===1&&tx>24&&tx<innerWidth-24&&!(e.target.closest&&e.target.closest('input,textarea,select,.live,[data-noswipe]'))},{passive:true});
-document.addEventListener('touchend',e=>{if(!tOK)return;tOK=false;if(!S||!ready||!S.p.onboarded||V.build||sheetOpen()||(authOn()&&!CL().user))return;
+document.addEventListener('touchend',e=>{if(!tOK)return;tOK=false;if(!S||!ready||!S.p.onboarded||V.build||sheetOpen()||document.getElementById('qx')||(authOn()&&!CL().user))return;
  const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*.6||Date.now()-t0>800)return;
  if(V.tab==='home'&&e.target.closest&&e.target.closest('.wk')){V.day=addD(V.day,dx<0?1:-1);vib(8);render();return}   // the week strip still moves the day
  const i=TABS.indexOf(V.tab==='recover'?'roadmap':V.tab),j=i+(dx<0?1:-1);if(i<0||j<0||j>=TABS.length)return;
