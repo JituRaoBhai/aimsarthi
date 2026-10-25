@@ -219,8 +219,8 @@ body.lv.lvm{padding-bottom:96px}
 nav button{font-size:12px;padding:0 2px}
 @keyframes slL{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
 @keyframes slR{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
-.fx.sl>*:not(.live){animation-name:slL}.fx.sr>*:not(.live){animation-name:slR}
-@media(prefers-reduced-motion:reduce){.lvn i{animation:none}.fx.sl>*,.fx.sr>*{animation:none!important}}
+.fx.swl>*:not(.live){animation-name:slL}.fx.swr>*:not(.live){animation-name:slR}
+@media(prefers-reduced-motion:reduce){.lvn i{animation:none}.fx.swl>*,.fx.swr>*{animation:none!important}}
 
 /* ===== v12: top bar, theme button, progress tabs, topic tests ===== */
 .tbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;min-height:40px}
@@ -241,3 +241,7 @@ nav button{font-size:12px;padding:0 2px}
 .tph{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .bd{flex:none;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--mu);white-space:nowrap}
 .bd.ok{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}.bd.wn{background:color-mix(in srgb,var(--wn) 20%,transparent);color:var(--wn)}.bd.no{background:color-mix(in srgb,var(--er) 18%,transparent);color:var(--er)}
+
+/* v12.1: theme button beside the Today greeting; empty top bar takes no space */
+.tbar{min-height:0;margin:0}.tbar #lvs:empty{display:none}.tbar .lvn{margin:0 0 12px}
+.gr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.gr h1{min-width:0}.gr .thb{margin-top:2px}

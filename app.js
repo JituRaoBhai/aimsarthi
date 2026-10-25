@@ -202,7 +202,7 @@ function home(){
  let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
  const next=T.find(t=>t.status==='todo')||T.find(t=>t.status==='partial'),up=S.tasks.filter(t=>t.date>today()&&t.status!=='done').sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:P[x.pri]-P[y.pri]).slice(0,4);
  const wk=wkDays(0).map(d=>`<button class="${d===V.day?'sel':''}${d===today()?' now':''}" data-a="day" data-v="${d}" aria-pressed="${d===V.day}" aria-label="${fD(d)}"><span class="sm">${pd(d).toLocaleDateString(undefined,{weekday:'narrow'})}</span><b>${pd(d).getDate()}</b><i class="${S.tasks.some(t=>t.date===d)?'has':''}"></i></button>`).join('');
- return`<div class="hero"><div style="flex:1;min-width:0"><h1>${greet()}, ${esc(S.p.name)}</h1><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done </p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
+ return`<div class="hero"><div style="flex:1;min-width:0"><div class="gr"><h1>${greet()}, ${esc(S.p.name)}</h1>${typeof themeBtn==='function'?themeBtn():''}</div><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done </p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
  +(M.length?`<div class="note" style="margin-bottom:14px"><b>${M.length} missed task${M.length>1?'s':''}.</b> <button class="btn s" data-a="tab" data-v="roadmap" style="margin-left:6px">Fix my plan</button></div>`:'')
  +`<div class="wk">${wk}</div>`
  +`<div class="row" style="margin:0 0 14px"><button class="btn o s" style="flex:1" data-a="rest">Rest</button><button class="btn o s" style="flex:1" data-a="share">Share today's progress</button></div>`
@@ -631,7 +631,7 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
 
 /* ---- v9 interactivity: greeting, confetti, entrance animation, ring sweep, swipe between days ---- */
 const greet=()=>{const h=new Date().getHours();return h<5?'Hi':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Good night'};
-function postRender(){const a=$('#app');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(V.fx){V.fx=false;a.classList.remove('fx','sl','sr');if(V.sw){a.classList.add(V.sw==='l'?'sl':'sr');V.sw=''}void a.offsetWidth;a.classList.add('fx')}
+function postRender(){const a=$('#app');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(V.fx){V.fx=false;a.classList.remove('fx','swl','swr');if(V.sw){a.classList.add(V.sw==='l'?'swl':'swr');V.sw=''}void a.offsetWidth;a.classList.add('fx')}
  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.ring .v').forEach(e=>{e.style.strokeDashoffset=e.dataset.to})))}
 function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,C=['#FFC94A','#5BE3B5','#93A0FF','#FF7A6B','#4CC9F0'];
@@ -640,7 +640,7 @@ function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:redu
   e.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate('+(Math.cos(a)*d)+'px,'+(Math.sin(a)*d+34)+'px) rotate('+Math.round(Math.random()*540)+'deg) scale(.4)',opacity:0}],{duration:600+Math.random()*350,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>e.remove()}}
 let tx=0,ty=0,t0=0,tOK=false;
 document.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY;t0=Date.now();
- tOK=e.touches.length===1&&tx>24&&tx<innerWidth-24&&!(e.target.closest&&e.target.closest('input,textarea,select,.live,.chart,.cal,pre,table,[data-noswipe]'))},{passive:true});
+ tOK=e.touches.length===1&&tx>24&&tx<innerWidth-24&&!(e.target.closest&&e.target.closest('input,textarea,select,.live,[data-noswipe]'))},{passive:true});
 document.addEventListener('touchend',e=>{if(!tOK)return;tOK=false;if(!S||!ready||!S.p.onboarded||V.build||sheetOpen()||(authOn()&&!CL().user))return;
  const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*.6||Date.now()-t0>800)return;
  if(V.tab==='home'&&e.target.closest&&e.target.closest('.wk')){V.day=addD(V.day,dx<0?1:-1);vib(8);render();return}   // the week strip still moves the day

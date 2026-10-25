@@ -32,7 +32,8 @@
   hours:'<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'};
  const svg=m=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[m]}</svg>`;
  /* the slim bar at the top of every tab: live-students pill (live.js) on the left, theme button on the right */
- window.topBar=()=>`<div class="tbar"><span id="lvs">${typeof liveBox==='function'?liveBox():''}</span><button type="button" class="thb m-${T.get()}" data-a="theme" aria-label="Theme: ${T.label()}. Tap to change.">${svg(T.get())}</button></div>`;
+ window.topBar=()=>`<div class="tbar"><span id="lvs">${typeof liveBox==='function'?liveBox():''}</span></div>`;
+ window.themeBtn=()=>`<button type="button" class="thb m-${T.get()}" data-a="theme" aria-label="Theme: ${T.label()}. Tap to change.">${svg(T.get())}</button>`;   // shown beside the greeting on the Today tab only
  window.themeCard=()=>`<section class="card"><div class="row sp"><span><b>Appearance</b><br><span class="sm mu">${T.label()}</span></span><button type="button" class="btn o s" data-a="theme">Change</button></div></section>`;
  T.hook=()=>{Object.assign(A,{
   theme:()=>{const cur=T.get();sheet(`<h2>Choose a theme</h2><div class="thm">${MODES.map(m=>`<button type="button" class="tho m-${m}${m===cur?' on':''}" data-a="thset" data-v="${m}" aria-pressed="${m===cur}"><span class="sw">${svg(m)}</span><span><b>${NAME[m]}${m==='system'?' (default)':''}</b><br><span class="sm mu">${SUB[m]}</span></span></button>`).join('')}</div><button class="btn o w" data-a="x" style="margin-top:12px">Close</button>`)},
