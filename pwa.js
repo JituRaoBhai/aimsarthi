@@ -3,22 +3,29 @@
    - Thin bar at the top: red "No internet connection", then green "Internet connection restored".
    - Profile card: version, Check for updates, legal links, report a problem, delete account. */
 (function(){
- const P={reg:null,waiting:null,updating:false,wasOff:false,online:true};window.PWA=P;
+ const P={reg:null,waiting:null,updating:false,wasOff:false,online:true,verified:false};window.PWA=P;
  const bar=id=>{let e=document.getElementById(id);if(!e){e=document.createElement('div');e.id=id;e.setAttribute('role','status');e.setAttribute('aria-live','polite');document.body.appendChild(e)}return e};
  /* ---------- internet connection ---------- */
  let nbT=0;
- function net(on){if(on===P.online&&!(on&&P.wasOff))return;const e=bar('nb');clearTimeout(nbT);P.online=on;
-  if(!on){P.wasOff=true;e.className='nb off on';e.textContent='No internet connection';document.body.classList.add('nbo')}
-  else if(P.wasOff){P.wasOff=false;e.className='nb ok on';e.textContent='Internet connection restored';document.body.classList.add('nbo');nbT=setTimeout(()=>{e.classList.remove('on');document.body.classList.remove('nbo')},3000)}}
+ const paintLive=()=>{try{if(window.Live&&Live.repaint)Live.repaint()}catch(e){}};
+ function barOff(){const e=bar('nb');clearTimeout(nbT);e.className='nb off on';e.textContent='No internet connection';document.body.classList.add('nbo');
+  nbT=setTimeout(()=>{e.classList.remove('on');document.body.classList.remove('nbo')},7000)}   // the red bar goes away by itself after 7 seconds
+ function net(on){const was=P.online;P.online=on;P.verified=on;
+  if(!on){P.wasOff=true;if(was)barOff()}
+  else if(P.wasOff){P.wasOff=false;const e=bar('nb');clearTimeout(nbT);e.className='nb ok on';e.textContent='Internet connection restored';document.body.classList.add('nbo');nbT=setTimeout(()=>{e.classList.remove('on');document.body.classList.remove('nbo')},3000)}
+  paintLive()}
+ /* call this before something that needs the internet: returns true (and shows the red bar for 7 seconds) when there is no connection */
+ P.needNet=()=>{if(P.online&&navigator.onLine)return false;P.wasOff=true;barOff();return true};
  async function probe(){   // navigator.onLine says "connected" for Wi-Fi with no internet, so also ask our own server (the service worker sends this request straight to the network)
   if(!navigator.onLine)return net(false);
   try{const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);const r=await fetch('manifest.json?probe='+Date.now(),{cache:'no-store',headers:{'x-probe':'1'},signal:c.signal});clearTimeout(t);net(!!r&&r.status>0)}
   catch(e){net(false)}}
+ P.probe=probe;
  addEventListener('offline',()=>net(false));addEventListener('online',probe);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')probe()});
  setInterval(()=>{if(document.visibilityState==='visible')probe()},20000);
- if(!navigator.onLine){P.wasOff=true;P.online=false;const e=bar('nb');e.className='nb off on';e.textContent='No internet connection';document.body.classList.add('nbo')}
- else setTimeout(probe,1500);
+ if(!navigator.onLine){P.wasOff=true;P.online=false;barOff()}
+ probe();
 
  /* ---------- updates ---------- */
  function showUpd(w){P.waiting=w;const e=bar('ub');e.className='ub on';e.setAttribute('role','alert');
@@ -36,10 +43,22 @@
   updnow:()=>{const w=waitingSW();if(!w){location.reload();return}P.updating=true;try{save()}catch(e){}toast('Updating...');w.postMessage({type:'SKIP_WAITING'});setTimeout(()=>location.reload(),4000)},
   updlater:()=>{const e=document.getElementById('ub');if(e)e.classList.remove('on')},
   chk:async()=>{if(!P.reg){toast('Updates are checked when the app is installed or opened from its web address.');return}
-   if(!P.online||!navigator.onLine){toast('No internet connection.');return}
+   if(P.needNet())return;
    toast('Checking for updates...');try{await P.reg.update()}catch(e){toast('Could not check. Try again later.');return}
    for(let i=0;i<16;i++){const w=waitingSW();if(w){showUpd(w);toast('A new version is ready.');return}if(!P.reg.installing&&i>2)break;await new Promise(r=>setTimeout(r,500))}
    toast('You have the latest version ('+VER+')')}});
+
+ /* ---------- things that need the internet: show the red bar when there is none ---------- */
+ const wrap=(obj,k,fn)=>{const f=obj&&obj[k];if(typeof f!=='function')return;obj[k]=function(){return fn(f,this,arguments)}};
+ setTimeout(()=>{
+  wrap(A,'auth',(f,t,a)=>{if(P.needNet()){AUTH.err='No internet connection. Connect and try again.';render();return}return f.apply(t,a)});
+  wrap(A,'delaccok',(f,t,a)=>{if(P.needNet()){const s=$('#se');if(s)s.textContent='No internet connection.';return}return f.apply(t,a)});
+  wrap(A,'fbok',(f,t,a)=>{P.needNet();return f.apply(t,a)});   // feedback is still saved and sent later
+  wrap(A,'bki',(f,t,a)=>{if(authOn()&&CL().user)P.needNet();return f.apply(t,a)});   // import saves to your account too
+  wrap(A,'bkm',(f,t,a)=>{if(authOn()&&CL().user&&P.needNet())toast('Imported on this phone. It will sync when you are online.');return f.apply(t,a)});
+  wrap(A,'remon',(f,t,a)=>{P.needNet();return f.apply(t,a)});
+  if(typeof AI!=='undefined')wrap(AI,'ask',async(f,t,a)=>{if(P.needNet())throw new Error('No internet connection. Connect and try again.');try{return await f.apply(t,a)}catch(e){P.probe();throw e}});
+ },0);
 
  /* ---------- Profile > About and updates ---------- */
  window.aboutCard=()=>{const w=!!waitingSW(),u=authOn()&&CL().user;
