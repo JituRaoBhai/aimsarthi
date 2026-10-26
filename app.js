@@ -1,5 +1,5 @@
 'use strict';
-const VER='v13, 26 Oct 2026';
+const VER='v14, 27 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -186,7 +186,24 @@ function cal(){const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new
 const logged=t=>sum(S.sessions.filter(x=>x.taskId===t.id),x=>x.mins);
 const med=a=>{a=a.slice().sort((x,y)=>x-y);const n=a.length;return n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0};
 const SYM={done:'&#10003;',partial:'&frac12;',incomplete:'&#10005;',todo:''},LAB={done:'done',partial:'partly done',incomplete:'not done',todo:'not started'};
-const trow=t=>`<div class="trow"><button class="chk ${t.status}" data-a="st" data-id="${t.id}" data-v="done" aria-pressed="${t.status==='done'}" aria-label="${esc(t.subject)}, ${LAB[t.status]}. Tap to mark done">${SYM[t.status]}</button><div class="m"><b>${esc(t.subject)}</b><span class="sm mu">${esc(t.topic)}</span> <span class="sm">${logged(t)?'Studied '+hm(logged(t))+' · ':''}<span class="pri${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+(t.type==='mock'?'mock test':'revision'):''}${t.history?' · moved':''}</span>${t.log?`<span class="sm" style="color:var(--ok)">${esc(logText(t))}</span>`:''}</div><button class="more" data-a="tm" data-id="${t.id}" aria-label="More options for ${esc(t.subject)}">&#8943;</button></div>`;
+let PI=null;
+const tbase=t=>String(t.topic).replace(/ \(part \d+\)$/,'');
+function partInfo(t){if(t.type!=='study')return null;   // part number and share of the topic, counted across every day the topic is spread over
+ if(!PI){PI={};const G={};S.tasks.forEach((x,i)=>{if(x.type!=='study')return;const k=x.subject+'|'+tbase(x);(G[k]=G[k]||[]).push([x,i])});
+  for(const k in G){const L=G[k].sort((a,b)=>a[0].date<b[0].date?-1:a[0].date>b[0].date?1:a[1]-b[1]),tot=sum(L,z=>z[0].mins)||1;let c=0;
+   L.forEach(([x],j)=>{c+=x.mins;PI[x.id]={i:j+1,n:L.length,p:Math.round(x.mins/tot*100),end:j===L.length-1?100:Math.round(c/tot*100)}})}}
+ return PI[t.id]||null}
+const partTxt=t=>{const p=partInfo(t);return p?(p.n>1?'Part '+p.i+' of '+p.n+' · '+p.p+'% of this topic · '+p.end+'% done after this':'Whole topic · 100%'):''};
+const partLine=t=>{const x=partTxt(t);return x?`<span class="sm part">${x}</span>`:''};
+/* ---- 2. "how did you study this?" boxes under a finished task (replaces the pop-up) ---- */
+const LGB=[['lec','Watched video'],['book','Read notes / book'],['mcq','Solved questions'],['test','Took a test'],['rev','Revised notes'],['grand','Grand test']];
+const hasLog=t=>!!(t.log&&((t.log.k||[]).length||t.log.n||t.log.s!=null));
+function lgBox(t){if(t.status!=='done'&&t.status!=='partial')return'';const open=V.lgi===t.id;
+ if(!open&&hasLog(t))return`<div class="lgs"><span class="sm" style="color:var(--ok)">&#10003; ${esc(logText(t))}</span><button type="button" class="lgm" data-a="lgi" data-id="${t.id}">Edit</button></div>`;
+ if(!open&&(t.doneDate!==today()))return'';
+ const on=(t.log&&t.log.k)||[];
+ return`<div class="lgb" role="group" aria-label="How did you study ${esc(t.subject)}?"><p class="sm mu" style="margin:0 0 6px">How did you study this? Tick all that apply.</p><div class="lgc">${LGB.map(([k,l])=>`<button type="button" class="lgk${on.includes(k)?' on':''}" data-a="lgq" data-id="${t.id}" data-v="${k}" aria-pressed="${on.includes(k)}"><i aria-hidden="true">${on.includes(k)?'&#10003;':''}</i>${l}</button>`).join('')}</div><div class="row" style="margin-top:8px"><button type="button" class="btn s" data-a="lgx" data-id="${t.id}">Done</button><button type="button" class="lgm" data-a="lg" data-id="${t.id}">Add score or question count</button></div></div>`}
+const trow=t=>`<div class="trw"><div class="trow"><button class="chk ${t.status}" data-a="st" data-id="${t.id}" data-v="done" aria-pressed="${t.status==='done'}" aria-label="${esc(t.subject)}, ${LAB[t.status]}. Tap to mark done">${SYM[t.status]}</button><div class="m"><b>${esc(t.subject)}</b><span class="sm mu">${esc(tbase(t))}</span>${partLine(t)} <span class="sm">${logged(t)?'Studied '+hm(logged(t))+' · ':''}<span class="pri${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+(t.type==='mock'?'mock test':'revision'):''}${t.history?' · moved':''}</span></div><button class="more" data-a="tm" data-id="${t.id}" aria-label="More options for ${esc(t.subject)}">&#8943;</button></div>${lgBox(t)}</div>`;
 function ring(p){const c=251.3,from=V.rp==null?0:V.rp;V.rp=p;return`<svg class="ring" viewBox="0 0 96 96" role="img" aria-label="${p}% of the plan done"><circle class="t" cx="48" cy="48" r="40"/><circle class="v" cx="48" cy="48" r="40" stroke-dasharray="${c}" stroke-dashoffset="${(c*(1-from/100)).toFixed(1)}" data-to="${(c*(1-p/100)).toFixed(1)}" transform="rotate(-90 48 48)"/><text x="48" y="48">${p}%</text></svg>`}
 function act(){const a=new Set(),m={};S.tasks.forEach(t=>{if(t.doneDate&&(t.status==='done'||t.status==='partial'))a.add(t.doneDate)});S.sessions.forEach(x=>m[x.day]=(m[x.day]||0)+x.mins);for(const k in m)if(m[k]>=20)a.add(k);return a}
 function dayMins(k){return sum(S.sessions.filter(x=>x.day===k),x=>x.mins)+(S.timer&&dk(new Date(S.timer.start))===k?Math.floor(stMs(S.timer)/6e4):0)}
@@ -195,7 +212,7 @@ const totalMins=()=>sum(S.sessions,x=>x.mins)+(S.timer?Math.floor(stMs(S.timer)/
 function sessCard(k){const L=S.sessions.filter(x=>x.day===k).sort((a,b)=>a.start<b.start?-1:1),run=S.timer&&dk(new Date(S.timer.start))===k?S.timer:null,w=sum(wkDays(0),dayMins);
  return`<section class="card sess"><div class="row sp"><h2 style="margin:0">Study sessions</h2><span class="sm mu">${k===today()?'Today':fD(k)}</span></div>`
  +`<div class="stats" style="margin-top:10px"><div><b>${hm(dayMins(k))}</b><span>${k===today()?'Today':'This day'}</span></div><div><b>${hm(w)}</b><span>This week</span></div><div><b>${hm(totalMins())}</b><span>All time</span></div></div>`
- +(L.length||run?L.map((x,i)=>{const t=x.taskId?byId(x.taskId):null;return`<p class="row sp srow"><span><b>Session ${i+1}: ${hm(x.mins)}</b><br><span class="sm mu">${tmf(x.start)} to ${tmf(x.end)}${t?' · '+esc(t.subject):''}</span></span><button class="more" data-a="sdel" data-id="${x.id}" aria-label="Delete session ${i+1}">&times;</button></p>`}).join('')
+ +(L.length||run?L.map((x,i)=>{const t=x.taskId?byId(x.taskId):null;return`<p class="row sp srow"><span><b>Session ${i+1}: ${hm(x.mins)}</b><br><span class="sm mu">${tmf(x.start)} to ${tmf(x.end)}${t?' · '+esc(t.subject):''}${x.aw?' · left the app '+x.aw+(x.aw>1?' times':' time')+(x.awm?' ('+x.awm+'m)':''):''}</span></span><button class="more" data-a="sdel" data-id="${x.id}" aria-label="Delete session ${i+1}">&times;</button></p>`}).join('')
   +(run?`<p class="row sp srow"><span><b>Session ${L.length+1}: ${hm(Math.floor(stMs(run)/6e4))}</b> <span class="tag ok">${run.pz?'paused':'running'}</span><br><span class="sm mu">Started ${tmf(run.start)}</span></span></p>`:''):'<p class="mu sm" style="margin:6px 0 0">No sessions yet. Start the timer and every session you finish is listed here. Pause it any time you need a rest.</p>')+`</section>`}
 function home(){
  const k=V.day,T=tasksOn(k),est=sum(T,t=>t.mins),dm=sum(T,doneMin),pc=est?Math.round(dm/est*100):0,n=diff(today(),S.p.examDate),M=miss(),a=act(),nd=T.filter(t=>t.status==='done').length;
@@ -228,7 +245,7 @@ function planBody(){
  h+=planCard(d);h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
  Object.keys(W).forEach(w=>{const X=W[w],ds=[...new Set(X.map(t=>t.date))].sort(),foc=[...new Set(X.filter(t=>t.type==='study').map(t=>t.subject))].slice(0,4).join(', ')||'revision';
   h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[ds.length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
-  +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(t.topic)}<br><span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
+  +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(tbase(t))}<br>${partLine(t)}<span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
  return h}
 function roadmap(){const c=!S.draft&&miss().length?recover():'',k=coachCard(),b=planBody();return c||k?b.replace('</h1>',()=>'</h1>'+k+c):b}
 const dataCard=()=>`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Saved to your account and on this phone.':'Saved on this phone.'} A backup file holds your plan, tasks, study sessions and settings.</p><div class="stack"><button class="btn o" data-a="bkx">Export backup (.json)</button><button class="btn o" data-a="bki">Import backup (.json)</button><button class="btn o" data-a="csvx">Download study sessions (.csv)</button><button class="btn o dng" data-a="reset">Erase everything</button></div><input type="file" id="bk" accept="application/json,.json" hidden></section>`;
@@ -254,7 +271,7 @@ function profile(){const p=S.p,ex=EX[p.exam]||{n:''},a=act();let st=0,c=today();
  return`<h1>Profile</h1><section class="card pf"><span class="av" aria-hidden="true">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</span><div style="min-width:0"><h2 style="margin:0">${esc(p.name||'Student')}</h2><p class="sm mu" style="margin:2px 0 6px">${esc(ex.n)}</p><span class="pill">${st}-day streak</span> <span class="pill">${hm(totalMins())} studied</span></div></section>`
  +accountCard()
  +`<section class="card"><h2>Your answers</h2><p class="sm mu">Change anything you told us at set-up. Your plan is rebuilt from the new answers and nothing is applied until you accept it. The back button cancels.</p>${rows.map(r=>`<div class="row sp ans"><span style="min-width:0"><b>${r[1]}</b><br><span class="sm mu">${esc(r[2])}</span></span><button class="btn o s" data-a="redo" data-v="${r[0]}" aria-label="Edit ${r[1]}">Edit</button></div>`).join('')}</section>`
- +(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
+ +(typeof focusCard==='function'?focusCard():'')+(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
  +(typeof aboutCard==='function'?aboutCard():`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`)}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
@@ -270,7 +287,7 @@ function render0(){try{
  if(V.build){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=buildView();return}
  if(authOn()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authView();return}
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');const sa=V.sa;a.innerHTML=wiz();if(sa&&V.step){const h=$('.wzt');if(h)h.focus({preventScroll:true})}return}
- const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);document.body.classList.toggle('lvm',!!(run&&V.mn&&!V.fs));
+ PI=null;const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);document.body.classList.toggle('lvm',!!(run&&V.mn&&!V.fs));
  nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library'],['profile','Profile']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
  a.innerHTML=(typeof topBar==='function'?topBar():'')+({home,roadmap,recover,progress,library,profile}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?liveHtml(run,rt):'');tick();postRender()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
@@ -289,7 +306,7 @@ function liveHtml(run,rt){const el=Math.floor(stMs(run)/1e3),h=TH[thIdx(el/60)],
   +`<button type="button" class="lvx" data-a="fs" aria-expanded="${!!V.fs}" aria-label="${V.fs?'Minimise timer':'Open full-screen timer'}">${V.fs?'&#10005;':'&#10530;'}</button>`
   +(V.fs?'':`<button type="button" class="lvx lvm" data-a="mini" aria-label="Shrink the timer to a small pill">&#8211;</button>`)
   +`<svg class="clk" viewBox="0 0 200 200" data-a="fs" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${br?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${br?' brk':''}" id="tm" x="100" y="110">${clk(el)}</text></svg>`
-  +`<span class="stg" id="tl"></span><small>${rt?esc(rt.subject+': '+rt.topic):'General study'}</small>`
+  +`<span class="stg" id="tl"></span><small>${rt?esc(rt.subject+': '+tbase(rt)):'General study'}${S.p.fm&&S.p.fm.on?' · Focus on':''}</small>`
   +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}"${pz?' disabled':''} aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button>${window.Float&&Float.ok()?'<button class="pmb" data-a="float" aria-label="Float the timer outside the app">Float</button>':''}<button class="btn s pzb" data-a="pause">${pz?'Resume':'Pause'}</button><button class="btn s" data-a="timer">Stop</button></div></div>`}
 function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S||!S.timer)return;
  const T=S.timer,el=Math.floor(stMs(T)/1e3),po=T.pomo,L=po?(po.ph==='f'?25:5)*60:0,left=po?Math.max(0,L-Math.floor((Date.now()-new Date(po.ps))/1e3)):0;
@@ -340,7 +357,7 @@ const A={
  day:d=>{V.day=d.v;render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
  st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render();vib(12);
-  if(t.status==='done'){const b=$(`.chk[data-id="${t.id}"]`);if(b){b.classList.add('pop');burst(b)}const T=tasksOn(today());if(t.date===today()&&T.every(z=>z.status==='done'))toast('All of today\'s tasks are done. Great work!');A.lg({id:t.id})}},
+  if(t.status==='done'){const b=$(`.chk[data-id="${t.id}"]`);if(b){b.classList.add('pop');burst(b)}const T=tasksOn(today());if(t.date===today()&&T.every(z=>z.status==='done'))toast('All of today\'s tasks are done. Great work!');V.lgi=t.id;setTimeout(()=>{if(V.lgi===t.id)render()},450)}},
  x:closeSheet,
  remon:async()=>{if(!window.Notification||!navigator.serviceWorker){toast('This browser cannot show notifications.');return}
   if(await Notification.requestPermission()!=='granted'){toast('Notifications are blocked. Allow them in your browser settings.');return}
@@ -371,7 +388,7 @@ const A={
  del:d=>sheet(`<h2>Delete this task?</h2><p>${esc(byId(d.id).subject)}: ${esc(byId(d.id).topic)}. This cannot be undone.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep it</button><button class="btn" style="flex:1" data-a="delok" data-id="${d.id}">Delete</button></div>`),
  delok:d=>{S.tasks=S.tasks.filter(t=>t.id!==d.id);closeSheet();save();render();toast('Task deleted')},
  timer:()=>{if(S.timer){pomoStep(1);const s=new Date(S.timer.start),m=Math.min(1440,Math.round(stMs(S.timer)/6e4));
-   if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId});toast('Saved '+hm(m)+' of study')}
+   if(m<1)toast('Under a minute, so it was not logged.');else{S.sessions.push({id:uid(),start:s.toISOString(),end:new Date().toISOString(),day:dk(s),mins:m,taskId:S.timer.taskId,aw:S.timer.aw||0,awm:Math.round((S.timer.awt||0)/6e4)});toast('Saved '+hm(m)+' of study')}
    S.timer=null;V.thI=undefined;V.fs=false;wake(false);if(window.Float)Float.stopped();clearInterval(iv);clearTimeout(alarmT);clearTimeout(pomoT);pomoKey=''}else{S.timer={start:new Date().toISOString(),taskId:V.tt,goal:0,pt:0,pz:null};startTick()}save();render()},
  rs:d=>{const t=byId(d.id),r=remain(t),best=bestDays(r,0,t)[0]||addD(today(),1);V.rs=t.id;
   sheet(`<h2>Reschedule task</h2><p>${esc(t.subject)}: ${esc(t.topic)}</p>${t.status==='partial'?'<p class="sm mu">Part of this task is done. The unfinished part becomes a new task and your partial credit stays.</p>':''}${inp('r_m','Minutes to schedule (30 to 600, in steps of 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" data-g="rs" value="${r}"`)}${inp('r_d','New date',`type="date" data-g="rs" min="${today()}" max="${addD(S.p.examDate,-1)}" value="${best}"`)}<div id="rp" class="note" style="margin-top:12px"></div><p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="rsok">Move task</button></div>`);rsp()},
@@ -442,6 +459,12 @@ A.lgok=()=>{const t=byId(V.lg.id),n=V.lg.n===''?null:+V.lg.n,s=V.lg.s===''?null:
  const adv=V.adj=advise(t);
  if(!adv.length){closeSheet();render();toast('Saved. Thanks.');return}
  sheet(`<h2>Adjust your next sessions?</h2>${adv.map(o=>`<p>${esc(o.txt)}${o.kind==='add'?'<br><span class="sm mu">'+fD(o.d)+', '+hm(o.m)+'</span>':''}</p>`).join('')}<p class="sm mu">Nothing changes unless you apply it.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">No thanks</button><button class="btn" style="flex:1" data-a="adjok">Apply</button></div>`);render()};
+A.lgq=d=>{const t=byId(d.id);if(!t)return;t.log=t.log||{k:[],n:0,s:null};t.log.k=t.log.k||[];const i=t.log.k.indexOf(d.v);i<0?t.log.k.push(d.v):t.log.k.splice(i,1);t.log.at=new Date().toISOString();V.lgi=t.id;vib(8);save();render()};   // saved the moment you tick
+A.lgi=d=>{V.lgi=V.lgi===d.id?null:d.id;render()};
+A.lgx=d=>{const t=byId(d.id);V.lgi=null;if(!t)return;if(!hasLog(t)){render();return}
+ V.lg={id:t.id,k:t.log.k.slice(),n:t.log.n?String(t.log.n):'',s:t.log.s!=null?String(t.log.s):''};const adv=V.adj=advise(t);
+ if(!adv.length){render();toast('Saved. Thanks.');return}
+ sheet(`<h2>Adjust your next sessions?</h2>${adv.map(o=>`<p>${esc(o.txt)}${o.kind==='add'?'<br><span class="sm mu">'+fD(o.d)+', '+hm(o.m)+'</span>':''}</p>`).join('')}<p class="sm mu">Nothing changes unless you apply it.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">No thanks</button><button class="btn" style="flex:1" data-a="adjok">Apply</button></div>`);render()};
 A.adjok=()=>{const t=byId(V.lg.id);(V.adj||[]).forEach(o=>{if(o.kind==='add')S.tasks.push({id:uid(),subject:t.subject,topic:o.topic,mins:o.m,pri:'High',date:o.d,type:'study',why:'Added after your study log',status:'todo'});else{const r=byId(o.id);if(r)moveT(r,o.d,r.mins)}});V.adj=[];closeSheet();save();render();toast('Plan adjusted')};
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.g==='lg'&&V.lg)V.lg[t.dataset.key]=t.value});
 
@@ -456,7 +479,7 @@ function alertNow(T){const t=T.taskId?byId(T.taskId):null,txt=t?t.subject+': '+t
 function checkAlarm(){const T=S&&S.timer;if(!T||!T.goal)return;if(stMs(T)/6e4<T.goal)return;
  if(!T.fired){T.fired=true;save();alertNow(T)}
  if(!T.ack&&document.visibilityState==='visible'){T.ack=true;save();toast('Goal reached: '+hm(T.goal)+'. Keep going or stop when you like.');render()}}
-A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();save();render();A.lg({id:t.id})}};
+A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();V.lgi=t.id;save();render()}};
 A.tumore=()=>{if(!S.timer)return;S.timer.goal+=15;S.timer.fired=false;S.timer.ack=false;closeSheet();armAlarm();save();render()};
 A.offline=()=>skipNow();
 function tAct(x){if(!S)return;

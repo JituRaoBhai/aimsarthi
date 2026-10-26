@@ -98,9 +98,10 @@ Object.assign(A,{
 function topicDone(t){if(t.type!=='study')return null;const k=qkey(t),L=S.tasks.filter(x=>x.type==='study'&&qkey(x)===k);return L.length&&L.every(x=>x.status==='done')?k:null}
 function qsugShow(){const k=V.sug;V.sug=null;if(!k||sheetOpen()||V.qt)return;const n=Math.min(QN,qbN(k)),nm=k.split('|').slice(1).join('|'),sb=k.split('|')[0];
  sheet(`<h2>Topic complete: time to test it</h2><p><b>${esc(sb)}</b>: ${esc(nm)}</p><p class="sm mu">You finished every session of this topic. A ${n}-question test from previous-year-style questions now will show what stuck and what to revise.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Later</button><button class="btn" style="flex:1" data-a="qts" data-key="${esc(k)}">Start the test</button></div>`);vib([30,40,30])}
-['st','lgok','x'].forEach(n=>{const f=A[n];if(typeof f!=='function')return;A[n]=function(d){const r=f.apply(this,arguments);
+['st','lgok','x','lgx'].forEach(n=>{const f=A[n];if(typeof f!=='function')return;A[n]=function(d){const r=f.apply(this,arguments);
  if(n==='st'){const t=d&&byId(d.id);if(t&&t.status==='done'&&qbOn()){const k=topicDone(t);S.sug=S.sug||{};if(k&&qbN(k)>0&&!S.sug[k]&&!(S.tests||[]).some(h=>h.key===k)){S.sug[k]=today();save();V.sug=k}}}
- if(V.sug&&(n==='lgok'||n==='x'))setTimeout(qsugShow,350);   // after the "how did you study" sheet is closed
+ if(V.sug&&n==='st')setTimeout(qsugShow,1100);   // shown under the study-log boxes, no pop-up to wait for
+ if(V.sug&&(n==='lgok'||n==='x'||n==='lgx'))setTimeout(qsugShow,350);
  return r}});
 
 /* ---- Progress > Tests (v12) ---- */
