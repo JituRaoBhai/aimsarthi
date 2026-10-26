@@ -52,3 +52,15 @@ exports.ai=onRequest({secrets:[KEY],region:'us-central1',timeoutSeconds:90,memor
   return res.json({ok:true,data,used,limit:DAILY});
  }catch(e){console.error('ai',e.message);await refund();return res.status(502).json({error:'The AI sent an unusable answer. Try again.'})}
 });
+
+/* GET /api/live : how many students have their timer running right now (a signal in the last 5 minutes). Returns only a number.
+   Cached for 10 seconds at the edge, so thousands of app opens cost only a handful of reads. */
+exports.live=onRequest({region:'us-central1',timeoutSeconds:20,memory:'256MiB',maxInstances:5,cors:true},async(req,res)=>{
+ if(req.method!=='GET')return res.status(405).json({error:'Use GET.'});
+ try{
+  const since=admin.firestore.Timestamp.fromMillis(Date.now()-300000);
+  const s=await admin.firestore().collection('presence').where('t','>',since).count().get();
+  res.set('Cache-Control','public, max-age=5, s-maxage=10');
+  return res.json({ok:true,n:s.data().count});
+ }catch(e){console.error('live',e.message);res.set('Cache-Control','no-store');return res.status(503).json({error:'Try again soon.'})}
+});

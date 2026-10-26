@@ -1,0 +1,72 @@
+ACELIFE ON GOOGLE PLAY (v13)
+============================
+AceLife is a PWA. Google Play accepts it as a "Trusted Web Activity" (TWA): a thin Android shell that opens your hosted app full screen.
+You do NOT rewrite anything. Your website stays the app, and every web update appears instantly for Play users too.
+
+0. WHAT IS ALREADY DONE IN THE CODE (this version)
+ - manifest.json: id, scope, standalone, icons (any + maskable), categories, shortcuts, screenshots
+ - privacy-policy.html, terms.html, delete-account.html  (Play requires a privacy policy URL and an account-deletion URL)
+ - In-app account deletion (Profile > About and updates > Delete my account) + firestore.rules updated to allow it
+ - In-app way to report problems / wrong AI answers (Profile > Report a problem or AI answer)  (Play's AI-content policy)
+ - Offline support, update prompt, no ads, no location/camera/mic permissions
+ - screenshots/ (5 phone screenshots, 1080x1920) and store/feature-graphic-1024x500.png for the store listing
+ - .well-known/assetlinks.json template (you fill 2 values, see step 3)
+
+1. BEFORE YOU START (about 20 minutes)
+ a) Host the app on Firebase Hosting (HTTPS). Example address: https://YOUR-PROJECT.web.app . Play needs a real HTTPS site; GitHub Pages under /repo/ cannot host the .well-known file at the site root, so use Firebase Hosting (or your own domain).
+ b) Open privacy-policy.html, terms.html, delete-account.html and replace the yellow [YOUR NAME OR COMPANY] and [YOUR-SUPPORT-EMAIL] with your real details. Use an email you check.
+ c) Deploy:  firebase deploy --only functions,firestore:rules,hosting
+ d) Open https://YOUR-SITE/privacy-policy.html in a browser and check it loads. Do the same for terms.html and delete-account.html.
+
+2. BUILD THE ANDROID APP BUNDLE (.aab)  (no coding)
+ a) Go to https://www.pwabuilder.com , paste your site address, tap Start. Fix anything it highlights in red.
+ b) Package for stores > Android > Google Play. Fill:
+      Package ID: something unique and permanent, e.g. com.yourname.acelife  (cannot be changed later)
+      App name: AceLife   Version: 1  Version code: 1
+      Signing key: "Create new" (let it generate). It gives you a zip containing the .aab file, a signing key file, a password file and an assetlinks.json.
+ c) BACK UP THE KEY FILE AND PASSWORDS in two places. If you lose them you cannot update the app the normal way.
+ (Alternative for developers: Bubblewrap CLI does the same.)
+
+3. DIGITAL ASSET LINKS  (removes the browser address bar inside the app)
+ a) In Play Console, after creating the app (step 4), go to Test and release > Setup > App signing and copy the "SHA-256 certificate fingerprint" of the APP SIGNING key (Google re-signs your app, so this one matters; adding your upload key's SHA-256 as a second entry is harmless).
+ b) Edit .well-known/assetlinks.json in this project: put your package ID and that SHA-256. Deploy hosting again.
+ c) Check it opens: https://YOUR-SITE/.well-known/assetlinks.json . If the address bar still shows in the app, this file or the fingerprint is wrong.
+
+4. PLAY CONSOLE (play.google.com/console)
+ - Create a developer account (one-time registration fee, ID verification needed).
+ - Create app > App, Free, English.
+ - Production/closed testing: Google currently requires NEW personal developer accounts to run a closed test with a minimum number of testers (check the Console; it has been 12 testers for 14 days) before you can apply for production. Organisation accounts are exempt. Start this early.
+ - Store listing:
+     App name: AceLife - Study Planner for Exams   (max 30 chars; shorten if the Console complains)
+     Short description (max 80): Daily study plan, timer and topic tests for NEET PG and other exams.
+     Full description (max 4000): describe plan builder, timer with pause, topic tests, progress, themes, backup.
+     Do NOT claim "official", do NOT use NEET/NBEMS/AIIMS logos, and do not promise ranks or results.
+     App icon: icon-512.png      Feature graphic: store/feature-graphic-1024x500.png
+     Phone screenshots: screenshots/1-today.png ... 5-profile.png   (add 7-inch / 10-inch tablet screenshots if you want a tablet listing)
+     Category: Education      Contact email: your support email      Website: your site
+     Privacy policy URL: https://YOUR-SITE/privacy-policy.html
+ - App content (all required):
+     Privacy policy: the URL above
+     Ads: No
+     App access: your app needs an account for sync. Give Google a test login (create a demo username/password/favourite number) in "App access"; the app also works without login if accounts are off.
+     Content rating: answer the questionnaire honestly (no violence, no user-to-user chat yet). Expect an "Everyone"-type rating.
+     Target audience: 13+ (the policies say 13+). Not "designed for children".
+     News app: No.   Government app: No.   Financial features: None.   Health: it is not a health/medical-advice app. Choose "no health features".
+     Data safety (match privacy-policy.html):
+        Collected: Personal info (username; optional email), App activity / user-generated content (study plan, tasks, sessions, test scores, feedback).
+        Shared: none for advertising. The AI feature sends topic text to Google Gemini through your server; Google's guidance says processing by a service provider on your behalf is not "sharing", but read the current definition and decide.
+        Encrypted in transit: Yes.   Users can request deletion: Yes.   Deletion URL: https://YOUR-SITE/delete-account.html
+     Account deletion: provide the URL above (the in-app delete button also exists).
+     Generative AI: declare that the app has AI-generated content, and that users can report it (Profile > Report a problem or AI answer).
+ - Upload the .aab to a testing track first (Internal testing is instant), install it from the test link on your phone, check: login, timer, notifications, no address bar.
+
+5. AFTER RELEASE
+ - Web changes (everything in this project): deploy to hosting; users get the "Update" prompt inside the app. You do not upload a new .aab.
+ - Upload a new .aab only if you change the package settings, icon, name, or Android target level. Raise Version code each time.
+ - Bump the cache name in sw.js (aimsarthi-v13 -> v14) and VER in app.js every release so the update prompt appears.
+
+6. THINGS THAT CAN GET AN APP REJECTED (check yours)
+ - Placeholders left in privacy-policy.html / terms.html / assetlinks.json.
+ - Question bank content copied from copyrighted books or paid test series. Use only questions you are allowed to publish, or write your own. Your qbank/ files are YOUR responsibility.
+ - Names/logos of exams or institutions used as if the app were official. Keep the "not affiliated" wording in the store description: "AceLife is an independent study tool and is not affiliated with NBEMS, NTA, UPSC or any exam authority."
+ - A "live students" number that is not real. The app shows the real count; the Demo preview is for your own phone only. Never ship a fake count as real.

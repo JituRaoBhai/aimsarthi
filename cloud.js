@@ -30,6 +30,9 @@ else(async()=>{try{
  Cloud.saveState=async S=>{await F.setDoc(sref(),{json:JSON.stringify(S),updatedAt:F.serverTimestamp(),v:8})};
  Cloud.watch=cb=>F.onSnapshot(sref(),s=>{if(!s.exists()||s.metadata.hasPendingWrites)return;try{cb(JSON.parse(s.data().json))}catch(e){}},()=>{});
  Cloud.token=()=>auth.currentUser.getIdToken();
+ Cloud.deleteAccount=async pw=>{const u=auth.currentUser,uid=u.uid;await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,pw));
+  for(const r of [sref(),lref(),F.doc(db,'presence',uid),uref()]){try{await F.deleteDoc(r)}catch(e){}}   // plan, old copy, studying signal, profile
+  await A.deleteUser(u);Cloud.user=null};
  Cloud.beat=async()=>{await F.setDoc(F.doc(db,'presence',auth.currentUser.uid),{t:F.serverTimestamp()})};   // "I am studying now" signal; the number of recent signals is the live count
  Cloud.unbeat=async()=>{await F.deleteDoc(F.doc(db,'presence',auth.currentUser.uid))};
  Cloud.sendFeedback=async f=>{await F.addDoc(F.collection(db,'feedback'),{...f,uid:auth.currentUser.uid,username:Cloud.user.username,status:'new',createdAt:F.serverTimestamp()})};

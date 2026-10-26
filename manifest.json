@@ -1,11 +1,11 @@
 {
- "name": "AceLife",
+ "name": "AceLife - Study Planner for Exams",
  "short_name": "AceLife",
- "description": "Study plan, daily tracker and missed-task recovery for competitive exams.",
+ "description": "Smart study planner for NEET PG, NEET SS, INI-CET, NET, UPSC CMS and more: daily plan, study timer, topic tests and progress tracking.",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
- "orientation": "portrait",
+ "orientation": "portrait-primary",
  "background_color": "#F4F6FB",
  "theme_color": "#27348B",
  "lang": "en",
@@ -27,6 +27,78 @@
    "sizes": "512x512",
    "type": "image/png",
    "purpose": "maskable"
+  }
+ ],
+ "id": "/",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "dir": "ltr",
+ "categories": [
+  "education",
+  "productivity"
+ ],
+ "prefer_related_applications": false,
+ "shortcuts": [
+  {
+   "name": "Start studying",
+   "short_name": "Study",
+   "url": "./?t=start",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Topic tests",
+   "short_name": "Tests",
+   "url": "./?go=tests",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  }
+ ],
+ "screenshots": [
+  {
+   "src": "screenshots/1-today.png",
+   "sizes": "1080x1920",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Your plan for today"
+  },
+  {
+   "src": "screenshots/2-timer.png",
+   "sizes": "1080x1920",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Study timer that counts up with pause"
+  },
+  {
+   "src": "screenshots/3-test.png",
+   "sizes": "1080x1920",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Exam-style topic tests"
+  },
+  {
+   "src": "screenshots/4-progress.png",
+   "sizes": "1080x1920",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Track your test progress"
+  },
+  {
+   "src": "screenshots/5-profile.png",
+   "sizes": "1080x1920",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Profile, themes and backup"
   }
  ]
 }

@@ -1,5 +1,5 @@
 'use strict';
-const VER='v12, 25 Oct 2026';
+const VER='v13, 26 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -77,7 +77,7 @@ async function boot(){
  V.lm='Loading your plan';render();
  await loadState();ready=true;clearTimeout(slowT);V.slow=false;
  if(S.timer){startTick();armAlarm();if(window.Float&&Float.arm)Float.arm()}
- try{const q=new URLSearchParams(location.search).get('t');if(q){history.replaceState(null,'',location.pathname);setTimeout(()=>tAct(q),300)}}catch(e){}
+ try{const u=new URLSearchParams(location.search),q=u.get('t')||u.get('go');if(q){history.replaceState(null,'',location.pathname);setTimeout(()=>tAct(q),300)}}catch(e){}
  setInterval(chkRem,6e4);setInterval(retryPull,6e4);addEventListener('online',()=>{retryPull();if(typeof flushFb==='function')flushFb()});
  pushMeta();if(typeof flushFb==='function')flushFb();render();if(S.soc.run&&S.soc.run.left)socBack()}
 
@@ -255,7 +255,7 @@ function profile(){const p=S.p,ex=EX[p.exam]||{n:''},a=act();let st=0,c=today();
  +accountCard()
  +`<section class="card"><h2>Your answers</h2><p class="sm mu">Change anything you told us at set-up. Your plan is rebuilt from the new answers and nothing is applied until you accept it. The back button cancels.</p>${rows.map(r=>`<div class="row sp ans"><span style="min-width:0"><b>${r[1]}</b><br><span class="sm mu">${esc(r[2])}</span></span><button class="btn o s" data-a="redo" data-v="${r[0]}" aria-label="Edit ${r[1]}">Edit</button></div>`).join('')}</section>`
  +(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
- +`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`}
+ +(typeof aboutCard==='function'?aboutCard():`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`)}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
  return socCard()+aiCard()+(typeof testsView==='function'&&qbOn()?`<section class="card"><div class="row sp"><span><b>Topic tests</b><br><span class="sm mu">Now in Progress, with your scores</span></span><button class="btn s" data-a="pt" data-v="tests">Open</button></div></section>`:'')+`<h1>Strategy library</h1>`
@@ -459,7 +459,10 @@ function checkAlarm(){const T=S&&S.timer;if(!T||!T.goal)return;if(stMs(T)/6e4<T.
 A.tudone=()=>{const id=S.timer&&S.timer.taskId;closeSheet();A.timer();const t=id?byId(id):null;if(t){t.status='done';t.doneDate=today();save();render();A.lg({id:t.id})}};
 A.tumore=()=>{if(!S.timer)return;S.timer.goal+=15;S.timer.fired=false;S.timer.ack=false;closeSheet();armAlarm();save();render()};
 A.offline=()=>skipNow();
-function tAct(x){if(!S||!S.timer)return;if(x==='stop')A.timer();else if(x==='pause'&&!S.timer.pz)A.pause();else if(x==='resume'&&S.timer.pz)A.pause()}
+function tAct(x){if(!S)return;
+ if(x==='start'){if(!S.timer&&S.p.onboarded){const n=tasksOn(today()).find(t=>t.status==='todo');A.go({id:n?n.id:''})}return}
+ if(x==='tests'){V.tab='progress';V.pt='tests';V.fx=true;render();return}
+ if(!S.timer)return;if(x==='stop')A.timer();else if(x==='pause'&&!S.timer.pz)A.pause();else if(x==='resume'&&S.timer.pz)A.pause()}
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('message',e=>{const m=e.data;if(m&&m.type==='timer')tAct(m.act)})}
 A.pause=()=>{const T=S&&S.timer;if(!T)return;
  if(T.pz){const w=Math.max(0,Date.now()-new Date(T.pz).getTime());T.pt=(T.pt||0)+w;if(T.pomo)T.pomo.ps=new Date(new Date(T.pomo.ps).getTime()+w).toISOString();T.pz=null;pomoKey='';toast('Resumed')}
@@ -647,4 +650,4 @@ document.addEventListener('touchend',e=>{if(!tOK)return;tOK=false;if(!S||!ready|
  if(V.tab==='home'&&e.target.closest&&e.target.closest('.wk')){V.day=addD(V.day,dx<0?1:-1);vib(8);render();return}   // the week strip still moves the day
  const i=TABS.indexOf(V.tab==='recover'?'roadmap':V.tab),j=i+(dx<0?1:-1);if(i<0||j<0||j>=TABS.length)return;
  V.sw=dx<0?'l':'r';A.tab({v:TABS[j]})},{passive:true});
-if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+/* the service worker is registered in pwa.js, which also handles update prompts */

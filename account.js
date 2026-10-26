@@ -47,3 +47,13 @@ document.addEventListener('input',e=>{const k=e.target.dataset.au;if(k)AUTH[k]=e
 async function flushFb(){if(!CL().user||!S||!S.fbq||!S.fbq.length)return;const left=[];   // feedback written offline is sent later
  for(const f of S.fbq){try{const r=await wait(Cloud.sendFeedback(f),12000);if(r==='timeout')throw 0}catch(e){left.push(f)}}
  S.fbq=left;save()}
+
+/* Delete account (required by Google Play): removes the online data and the login after the password is confirmed. */
+Object.assign(A,{
+ delacc:()=>{if(!authOn()||!CL().user){toast('You are not logged in.');return}
+  sheet(`<h2>Delete your account?</h2><p>This permanently deletes your login and the plan, tasks, study sessions and settings saved online. It cannot be undone. Tip: export a backup first from the Your data card.</p>${inp('da_p','Enter your password to confirm','type="password" autocomplete="current-password" maxlength="64"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="delaccok">Delete account</button></div>`)},
+ delaccok:async()=>{const pw=$('#da_p').value,s=$('#se');if(!pw){s.textContent='Enter your password.';return}
+  s.textContent='Deleting...';
+  try{const r=await wait(Cloud.deleteAccount(pw),25000);if(r==='timeout')throw{code:'auth/network-request-failed'};
+   loadedUid=null;if(unW){unW();unW=null}try{localStorage.removeItem(lkey())}catch(e){}S=fresh();V.tab='home';V.step=0;AUTH.mode='signup';AUTH.err='';closeSheet();render();toast('Your account was deleted')}
+  catch(x){s.textContent=Cloud.msg(x)}}});
