@@ -51,7 +51,7 @@ function qxRes(z){const n=z.qs.length,c=z.c,w=z.w,sk=z.sk,pc=z.pc,f=z.fl||'all',
  +`<div><h2 style="margin:0">${c} of ${n} correct</h2><p class="sm mu" style="margin:4px 0 0">${pc>=80?'Strong. Keep this topic on your revision rhythm.':pc>=60?'Fair. Review the questions you missed.':'This topic needs more work. Revise it and try again.'}</p></div></div>`
  +`<div class="stats"><div><b class="g">${c}</b><span>Correct</span></div><div><b class="r">${w}</b><span>Wrong</span></div><div><b>${sk}</b><span>Skipped</span></div></div>`
  +`<p class="sm mu">Time taken ${qxFmt(z.tt)} of ${qxFmt(z.limit)}. Each question is 1 mark; wrong and skipped answers score 0.</p>`
- +`<div class="stack"><button type="button" class="btn" data-a="qxrv" data-v="0">Review all answers</button>${z.tid&&byId(z.tid)&&!z.logged?'<button type="button" class="btn o" data-a="qtlog">Save score to my study log</button>':''}${w+sk?'<button type="button" class="btn o" data-a="qtw" data-key="'+esc(z.key)+'">Practise my '+(w+sk)+' missed</button>':''}<button type="button" class="btn o" data-a="qtagain">${z.mode==='wrong'?'Practise missed again':'Try a new set'}</button><button type="button" class="btn o" data-a="qxend">Close</button></div>`
+ +`<div class="stack"><button type="button" class="btn" data-a="qxrv" data-v="0">Review all answers</button>${z.tid&&byId(z.tid)&&!z.logged?'<button type="button" class="btn o" data-a="qtlog">Save score to my study log</button>':''}${w+sk&&!z.cu?'<button type="button" class="btn o" data-a="qtw" data-key="'+esc(z.key)+'">Practise my '+(w+sk)+' missed</button>':''}<button type="button" class="btn o" data-a="qtagain">${z.mode==='wrong'?'Practise missed again':'Try a new set'}</button><button type="button" class="btn o" data-a="qxend">Close</button></div>`
  +`<h3 style="margin:18px 0 8px">Your answers</h3><div class="chips" role="group" aria-label="Filter answers">${[['all','All'],['wrong','Wrong'],['skip','Skipped'],['mark','Marked']].map(([v,l])=>`<button type="button" class="chip" data-a="qxf" data-v="${v}" aria-pressed="${f===v}">${l}</button>`).join('')}</div>`
  +(L.length?L.map(([q,i])=>{const s=qxStat(z,i);return`<button type="button" class="qxr ${s}" data-a="qxrv" data-v="${i}"><span class="qi">${i+1}</span><span class="qt">${esc(q.q)}</span><span class="bd ${s==='ok'?'ok':s==='no'?'no':'nt'}">${s==='ok'?'Correct':s==='no'?'Wrong':'Skipped'}</span></button>`}).join(''):'<p class="mu sm">Nothing here.</p>')+`</div>`}
 function qxRev(z){const q=z.qs[z.ri],n=z.qs.length,s=qxStat(z,z.ri),a=z.ans[z.ri];
@@ -62,8 +62,8 @@ function qxRev(z){const q=z.qs[z.ri],n=z.qs.length,s=qxStat(z,z.ri),a=z.ans[z.ri
  +`<div class="qxf"><button type="button" class="btn o" data-a="qxrp"${z.ri?'':' disabled'}>Previous</button><button type="button" class="btn o" data-a="qxrb">Results</button><button type="button" class="btn" data-a="qxrn"${z.ri+1<n?'':' disabled'}>Next</button></div>`}
 function qxSubmit(){const z=V.qt;if(!z||z.ph!=='run')return;clearInterval(qxT);const n=z.qs.length;
  z.tt=Math.min(z.limit,Math.floor((Date.now()-z.t0)/1e3));z.c=z.qs.filter((q,i)=>z.ans[i]===q.a).length;z.sk=z.ans.filter(a=>a==null).length;z.w=n-z.c-z.sk;z.pc=Math.round(z.c/n*100);z.ph='result';z.fl='all';
- S.tests=(S.tests||[]).concat({id:uid(),exam:S.p.exam,key:z.key,n,c:z.c,at:new Date().toISOString(),m:z.mode==='wrong'?1:0}).slice(-300);
- S.qp=S.qp||{};const qm=S.qp[z.key]=S.qp[z.key]||{};z.qs.forEach((q,i)=>{if(q.id)qm[q.id]=z.ans[i]===q.a?1:0});   // remembers, per question, whether your latest answer was right
+ S.tests=(S.tests||[]).concat(Object.assign({id:uid(),exam:S.p.exam,key:z.key,n,c:z.c,at:new Date().toISOString(),m:z.mode==='wrong'?1:0},z.cu?{cu:1,lb:z.lb}:{})).slice(-300);
+ S.qp=S.qp||{};z.qs.forEach((q,i)=>{if(q.id){const qm=S.qp[q.k||z.key]=S.qp[q.k||z.key]||{};qm[q.id]=z.ans[i]===q.a?1:0}});   // remembers, per question, whether your latest answer was right
  save();render();qxRender();vib([20,40,20])}
 function qxTick(){const z=V.qt;if(!z||z.ph!=='run'){clearInterval(qxT);return}const l=qxLeft(z),e=document.getElementById('qxt');if(e){e.textContent=qxFmt(l);e.classList.toggle('low',l<=60)}if(l<=0){toast('Time is up. Your test was submitted.');closeSheet();qxSubmit()}}
 const qxCounts=z=>({a:z.ans.filter(x=>x!=null).length,m:z.mk.filter(Boolean).length});
@@ -88,7 +88,7 @@ Object.assign(A,{
  qxrb:()=>{const z=V.qt;if(z){z.ph='result';qxRender()}},
  qxrp:()=>{const z=V.qt;if(z&&z.ri>0){z.ri--;qxRender()}},
  qxrn:()=>{const z=V.qt;if(z&&z.ri+1<z.qs.length){z.ri++;qxRender()}},
- qtagain:()=>{const z=V.qt;if(z)A.qts({key:z.key,id:z.tid,mode:z.mode})},
+ qtagain:()=>{const z=V.qt;if(z&&z.cu){V.cb=Object.assign(cbd(),z.cfg);A.cbrun();return}if(z)A.qts({key:z.key,id:z.tid,mode:z.mode})},
  qtw:d=>A.qts({key:d.key,mode:'wrong'}),
  pt:d=>{V.pt=d.v;if(V.tab!=='progress'){V.nav.push(V.tab);V.tab='progress'}V.fx=true;scrollTo(0,0);render()},
  tfl:d=>{V.tfl=d.v;render()},
@@ -126,7 +126,7 @@ function testsView(){const x=S.p.exam,E=EX[x];
    +(i.att||i.bad?`<div class="bar" style="height:7px" title="Questions answered correctly"><i style="width:${Math.round(i.ok/i.n*100)}%"></i></div><p class="sm mu" style="margin:4px 0 6px">${i.ok} of ${i.n} questions got right${i.bad?' · '+i.bad+' to revisit':''}</p>`:'')
    +`<div class="row"><button type="button" class="btn s" style="flex:1" data-a="qts" data-key="${esc(i.k)}">${i.att?'Retake test':'Start test'}</button>${i.bad?`<button type="button" class="btn o s" style="flex:1" data-a="qtw" data-key="${esc(i.k)}">Practise ${i.bad} missed</button>`:''}</div></div>`}).join('')+'</details>'}).join('');
  const rec=HA.slice(-5).reverse().map(h=>`<p class="row sp" style="margin:0 0 6px"><span class="sm">${esc(h.key.split('|').slice(1).join('|'))}${h.m?' <span class="mu">(missed set)</span>':''}<br><span class="mu">${fD(h.at.slice(0,10))}</span></span><span class="bd ${pcOf(h)>=80?'ok':pcOf(h)>=60?'wn':'no'}">${h.c}/${h.n}</span></p>`).join('');
- return`<section class="card"><div class="stats"><div><b>${T.length}/${I.length}</b><span>Topics tested</span></div><div><b>${T.length?avg+'%':'-'}</b><span>Average score</span></div><div><b>${okQ}</b><span>Questions right</span></div></div><div class="bar g"><i style="width:${totQ?Math.round(okQ/totQ*100):0}%"></i></div><p class="sm mu" style="margin:6px 0 0">${okQ} of ${totQ} questions answered correctly in your latest attempts${badQ?'. '+badQ+' to revisit':''}.</p></section>`
+ return(typeof custCard==='function'?custCard():'')+`<section class="card"><div class="stats"><div><b>${T.length}/${I.length}</b><span>Topics tested</span></div><div><b>${T.length?avg+'%':'-'}</b><span>Average score</span></div><div><b>${okQ}</b><span>Questions right</span></div></div><div class="bar g"><i style="width:${totQ?Math.round(okQ/totQ*100):0}%"></i></div><p class="sm mu" style="margin:6px 0 0">${okQ} of ${totQ} questions answered correctly in your latest attempts${badQ?'. '+badQ+' to revisit':''}.</p></section>`
   +`<div class="chips" role="group" aria-label="Filter topics" style="margin:0 0 12px">${chips}</div>`
   +(subs||`<section class="card"><p class="mu">No topics match this filter.</p></section>`)
   +(rec?`<section class="card"><h2>Recent tests</h2>${rec}</section>`:'')}

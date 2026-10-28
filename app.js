@@ -1,5 +1,5 @@
 'use strict';
-const VER='v14, 27 Oct 2026';
+const VER='v15, 29 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -14,7 +14,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 const sum=(a,f)=>a.reduce((x,t)=>x+f(t),0);
 const P={High:0,Medium:1,Low:2},DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const RES=['Video lectures','Standard textbooks','Question bank (QBank)','Own notes','Previous-year papers','Mock test series','Flashcards'];
-const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[],use:null},tests:[],qp:{},sug:{}});
+const LK='aimsarthi:v1',fresh=()=>({p:{hours:4,workHrs:0,off:'',done:[],weak:[],tdone:[],tweak:[],ord:{},ordOn:false,res:[],dayCap:{}},tasks:[],draft:null,sessions:[],timer:null,top:[],rem:{on:false},days:[],soc:{apps:{},use:{},rem:true,run:null},ai:{hist:[],use:null},tests:[],qp:{},sug:{},lib:[],fc:[]});
 const cleanCap=m=>{const o={},t=addD(today(),-7);if(m&&typeof m==='object')for(const k in m){const v=+m[k];if(okD(k)&&k>=t&&v>=.1&&v<=2)o[k]=v}return o};
 function hydrate(s){const o=Object.assign(fresh(),s||{});o.p=Object.assign(fresh().p,o.p);o.p.dayCap=cleanCap(o.p.dayCap);o.soc=Object.assign(fresh().soc,o.soc);o.ai=Object.assign(fresh().ai,o.ai);return o}
 let S=null,ready=false,mode='local',ref=null,q=Promise.resolve(),sT,iv,tT,fromCloud=false,unW=null,loadedUid=null,socT=null,pomoT=null,pomoKey='';
@@ -175,14 +175,14 @@ function wiz(){const p=S.p,s=V.step;
  if(s===7)b=ordStep();
  if(s===9)b=review();
  const dots=WS.slice(1).map((l,i)=>{const n=i+1;return n<s?`<button type="button" class="sg ok" data-a="goto" data-v="${n}" aria-label="Back to ${l}"></button>`:`<i class="sg${n===s?' now':''}" aria-hidden="true"></i>`}).join('');
- return`<div class="wz${an?' in':''}"><header class="wzh"><span class="wzb"><span class="wzl" aria-hidden="true">A</span>AceLife</span><span class="sm mu">Step ${s} of ${WN} &middot; ${WS[s]}</span></header><div class="stp" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="${WN}" aria-valuenow="${s}">${dots}</div><h1 class="wzt" tabindex="-1">${WT[s]}</h1><div class="wzc">${b}</div><p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p></div>`
-  +`<div class="wzf"><button class="btn o" data-a="back">Back</button><button class="btn" style="flex:1" data-a="next">${s<WN?'Continue':'Build my plan'}</button></div>`}
+ return`<div class="wz${an?' in':''}"><header class="wzh"><span class="wzb"><span class="wzl" aria-hidden="true">A</span>AceLife</span><span class="sm mu">Step ${s} of ${WN} &middot; ${WS[s]}</span></header><div class="stp" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="${WN}" aria-valuenow="${s}">${dots}</div><h1 class="wzt" tabindex="-1">${WT[s]}</h1><div class="wzc">${V.edit&&s<WN?'<p class="note">You are editing one answer. Change it, then tap <b>Build my plan</b>. The other steps are optional.</p>':''}${b}</div><p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p></div>`
+  +(V.edit&&s<WN?`<div class="wzf wze"><button class="btn o" data-a="ecan">Cancel</button><button class="btn o" data-a="next">Next step</button><button class="btn" style="flex:1" data-a="ebuild">Build my plan</button></div>`:`<div class="wzf"><button class="btn o" data-a="back">${V.edit&&s===WN?'Previous':'Back'}</button><button class="btn" style="flex:1" data-a="next">${s<WN?'Continue':'Build my plan'}</button></div>`)}
 
-function cal(){const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(f.getDay()+6)%7;
+function cal(act){act=act||'pday';const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(f.getDay()+6)%7;
  let c='MTWTFSS'.split('').map(x=>`<span class="wd" aria-hidden="true">${x}</span>`).join('')+'<span></span>'.repeat(off);
  for(let d=1;d<=n;d++){const k=y+'-'+pad(m)+'-'+pad(d),T=S.tasks.filter(t=>t.date===k),all=T.length&&T.every(t=>t.status==='done');
-  c+=`<button class="cd${k===V.day?' sel':''}${k===today()?' now':''}" data-a="day" data-v="${k}" aria-label="${fD(k)}, ${T.length} tasks" aria-pressed="${k===V.day}">${d}<i class="${all?'ok':T.length?'has':''}"></i></button>`}
- return`<section class="card"><div class="row sp"><button class="btn o s" data-a="cm" data-v="-1" aria-label="Previous month">&lsaquo;</button><h2 style="margin:0">${f.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</h2><button class="btn o s" data-a="cm" data-v="1" aria-label="Next month">&rsaquo;</button></div><div class="grid7">${c}</div></section>`}
+  c+=`<button class="cd${k===(V.pcd||V.day)?' sel':''}${k===today()?' now':''}" data-a="${act}" data-v="${k}" aria-label="${fD(k)}, ${T.length} tasks" aria-pressed="${k===(V.pcd||V.day)}">${d}<i class="${all?'ok':T.length?'has':''}"></i></button>`}
+ return`<div class="calw"><div class="row sp"><button class="btn o s" data-a="cm" data-v="-1" aria-label="Previous month">&lsaquo;</button><b class="cmt">${f.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</b><button class="btn o s" data-a="cm" data-v="1" aria-label="Next month">&rsaquo;</button></div><div class="grid7">${c}</div></div>`}
 const logged=t=>sum(S.sessions.filter(x=>x.taskId===t.id),x=>x.mins);
 const med=a=>{a=a.slice().sort((x,y)=>x-y);const n=a.length;return n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0};
 const SYM={done:'&#10003;',partial:'&frac12;',incomplete:'&#10005;',todo:''},LAB={done:'done',partial:'partly done',incomplete:'not done',todo:'not started'};
@@ -219,13 +219,13 @@ function home(){
  let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
  const next=T.find(t=>t.status==='todo')||T.find(t=>t.status==='partial'),up=S.tasks.filter(t=>t.date>today()&&t.status!=='done').sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:P[x.pri]-P[y.pri]).slice(0,4);
  const wk=wkDays(0).map(d=>`<button class="${d===V.day?'sel':''}${d===today()?' now':''}" data-a="day" data-v="${d}" aria-pressed="${d===V.day}" aria-label="${fD(d)}"><span class="sm">${pd(d).toLocaleDateString(undefined,{weekday:'narrow'})}</span><b>${pd(d).getDate()}</b><i class="${S.tasks.some(t=>t.date===d)?'has':''}"></i></button>`).join('');
- return`<div class="hero"><div style="flex:1;min-width:0"><div class="gr"><h1>${greet()}, ${esc(S.p.name)}</h1>${typeof themeBtn==='function'?themeBtn():''}</div><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done </p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
+ return`<div class="hero"><div style="flex:1;min-width:0"><div class="gr">${typeof avBtn==='function'?avBtn():''}<h1>${greet()}, ${esc(S.p.name)}</h1>${typeof themeBtn==='function'?themeBtn():''}</div><p>${n>0?n+' days to '+EX[S.p.exam].n:'Exam date has passed'}</p><p class="sm">${k===today()?'Today':fD(k)}: ${nd} of ${T.length} tasks done </p><span class="pill">${st}-day streak</span></div>${ring(pc)}</div>`
  +(M.length?`<div class="note" style="margin-bottom:14px"><b>${M.length} missed task${M.length>1?'s':''}.</b> <button class="btn s" data-a="tab" data-v="roadmap" style="margin-left:6px">Fix my plan</button></div>`:'')
- +`<div class="wk">${wk}</div>`
+ +(typeof quickCard==='function'?quickCard():'')+`<div class="wk">${wk}</div>`
  +`<div class="row" style="margin:0 0 14px"><button class="btn o s" style="flex:1" data-a="rest">Rest</button><button class="btn o s" style="flex:1" data-a="share">Share today's progress</button></div>`
  +(next&&k===today()&&!S.timer?`<section class="card next"><p class="sm mu" style="margin:0">Up next</p><h2 style="margin:2px 0">${esc(next.subject)}</h2><p style="margin:0">${esc(next.topic)}</p><button class="btn" data-a="go" data-id="${next.id}">Start studying</button></section>`:'')
  +`<section class="card"><div class="row sp"><h2 style="margin:0">${k===today()?"Today's tasks":fD(k)}</h2><button class="btn o s" data-a="add">Add task</button></div>${capRow(k)}${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done, then note how you studied. The three dots have more options. Times are guides: a little more or less is fine.</p></section>`
- +sessCard(k)+`<details class="card"><summary><b>Month calendar</b></summary>${cal()}</details>`
+ +sessCard(k)
  +(up.length?`<section class="card"><h2>Coming up</h2>${up.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.subject)}:${esc(t.topic)}</span><span class="sm mu" style="white-space:nowrap">${fD(t.date)}</span></p>`).join('')}</section>`:'')
  +`<p class="sm mu">Streak: a day counts with 20+ minutes timed, or a task marked done or partly done.</p>`}
 function planCard(d){const sm=d?d.summary:S.p.summary,m=d?d.mode:S.p.planMode;if(!sm)return'';
@@ -240,14 +240,18 @@ function planBody(){
  const W={};L.forEach(t=>{const w=Math.max(0,Math.floor(diff(st,t.date)/7));(W[w]=W[w]||[]).push(t)});
  const ms=L.filter(t=>t.type!=='study'&&t.date>=today()).sort((a,b)=>a.date<b.date?-1:1).slice(0,5),rp=S.tasks.filter(repl).length;
  const LR=Engine.learn(S.p.exam,STRATEGIES.concat(S.top));let h=`<h1>${d?'Review your plan':'Your plan'}</h1><p class="note"><b>Suggestions, not verified facts.</b> ${LR.enough?`Tuned with ${LR.n} verified strategies and your answers.`:`Built from your answers and proven study habits: spaced revision, practice questions and weekly mocks.`} About 85% of your ${S.p.hours} daily hours is planned and the rest stays free for catching up. Check topics against your official syllabus. No plan can guarantee a score or rank.</p>`;
- h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p><button class="btn w" data-a="accept">Accept plan</button><div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
- :`<div class="row" style="margin:12px 0;flex-wrap:wrap"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button><button class="btn o s" data-a="ics">Export week to Calendar (.ics)</button></div>`;
- h+=planCard(d);h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
+ h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p>${d.agreed?'<button class="btn w" data-a="accept">Accept plan</button>':'<button class="btn w" data-a="disc">Read the terms to continue</button>'}<div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
+ :`<div class="row" style="margin:12px 0;flex-wrap:wrap"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button></div>`;
+ h+=planCard(d);if(!d)h+=planCal();h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
  Object.keys(W).forEach(w=>{const X=W[w],ds=[...new Set(X.map(t=>t.date))].sort(),foc=[...new Set(X.filter(t=>t.type==='study').map(t=>t.subject))].slice(0,4).join(', ')||'revision';
   h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[ds.length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
   +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(tbase(t))}<br>${partLine(t)}<span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
  return h}
+function planCal(){const k=V.pcd||today(),T=tasksOn(k);
+ return`<section class="card"><h2>Calendar</h2><p class="sm mu" style="margin:0 0 8px">Tap a date to see what is planned. Dots: blue = tasks planned, green = all done.</p>${cal('pday')}<div class="pcd"><div class="row sp"><b>${k===today()?'Today':fD(k)}</b><button class="btn o s" data-a="opd" data-v="${k}">Open in Today</button></div>`
+ +(T.length?T.map(t=>`<p class="rw ${t.status}"><b>${esc(t.subject)}</b>: ${esc(tbase(t))}<br>${partLine(t)}<span class="sm mu">${hm(t.mins)} · ${LAB[t.status]}${t.type!=='study'?' · '+t.type:''}</span></p>`).join(''):'<p class="sm mu" style="margin:6px 0 0">Nothing planned on this day.</p>')+`</div></section>`}
 function roadmap(){const c=!S.draft&&miss().length?recover():'',k=coachCard(),b=planBody();return c||k?b.replace('</h1>',()=>'</h1>'+k+c):b}
+const icsCard=()=>`<section class="card"><h2>Add to your calendar</h2><p class="sm mu">Put the next 7 days of study blocks into Google Calendar or Apple Calendar, with reminders.</p><button class="btn o" data-a="ics">Export week to Calendar (.ics)</button></section>`;
 const dataCard=()=>`<section class="card"><h2>Your data</h2><p class="sm mu">${mode==='cloud'?'Saved to your account and on this phone.':'Saved on this phone.'} A backup file holds your plan, tasks, study sessions and settings.</p><div class="stack"><button class="btn o" data-a="bkx">Export backup (.json)</button><button class="btn o" data-a="bki">Import backup (.json)</button><button class="btn o" data-a="csvx">Download study sessions (.csv)</button><button class="btn o dng" data-a="reset">Erase everything</button></div><input type="file" id="bk" accept="application/json,.json" hidden></section>`;
 function recover(){
  const M=miss().sort((a,b)=>P[a.pri]-P[b.pri]||(a.date<b.date?-1:1));
@@ -264,22 +268,24 @@ function progressMain(){
  return`<h1>Weekly progress</h1><div class="row sp"><button class="btn o s" data-a="wk" data-v="-1">&lsaquo; Prev</button><b>${fD(D[0])} to ${fD(D[6])}</b><button class="btn o s" data-a="wk" data-v="1">Next &rsaquo;</button></div>`
  +`<section class="card" style="margin-top:12px"><div class="stats"><div><b>${hm(pl)}</b><span>Planned</span></div><div><b>${hm(cp)}</b><span>Completed</span></div><div><b>${hm(sum(S.sessions.filter(s=>D.includes(s.day)),s=>s.mins))}</b><span>Timed</span></div></div><div class="chart" role="img" aria-label="Planned versus completed study for each day, Monday to Sunday">${per.map((x,i)=>`<div class="col"><div class="bars"><i class="pl" style="height:${x[0]/mx*100}%"></i><i class="cp" style="height:${x[1]/mx*100}%"></i></div><span class="sm">${'MTWTFSS'[i]}</span></div>`).join('')}</div><p class="sm mu" style="margin:6px 0 0">Light bars: planned. Dark bars: completed (partial counts as half).</p></section>`
  +`<section class="card"><h2>Tasks and consistency</h2><p>${T.filter(t=>t.status==='done').length} of ${T.length} tasks completed. ${out.length} outstanding, ${out.filter(t=>t.date<today()).length} of them already past.</p><p>${el.length?ac+' of '+el.length+' days active this week.':'This week has not started yet.'}</p><button class="btn o s" data-a="share">Share today's progress</button></section>`
- +`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
-const TABS=['home','roadmap','progress','library','profile'];
+ +(typeof testSum==='function'?testSum():'')+`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
+const TABS=['home','roadmap','progress','study','profile'];
+const planGate=()=>!!(S&&S.draft&&!S.tasks.length&&S.p.onboarded);   // first plan only: the other tabs open once you accept it (or choose to edit it)
+function discSheet(){sheet(`<h2>Before you continue</h2><p>AceLife builds a <b>suggested</b> study plan from your answers. Please read this:</p><ul class="sm dsc"><li><b>No guarantee.</b> We do not promise success, a score, a rank or a selection in any exam. Your result depends on your effort and many things outside this app.</li><li><b>Check the syllabus.</b> Topics, order and timings are suggestions. Confirm them with your exam's official notification.</li><li><b>You stay in control.</b> You can edit your answers or any task at any time.</li><li>AI replies and toppers' strategies are guidance only and can contain mistakes. They are not professional advice.</li></ul><p class="sm mu">By continuing you accept our <a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p><div class="stack"><button class="btn" data-a="agree">I agree and continue</button><button class="btn o" data-a="disced">No, let me edit my answers</button></div>`);$('#sh').dataset.lock='1'}
 function profile(){const p=S.p,ex=EX[p.exam]||{n:''},a=act();let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
  const nT=(p.tdone||[]).length,nW=(p.tweak||[]).length,rows=[[1,'Name',p.name||'-'],[2,'Exam',ex.n],[3,'Exam date and target',(p.examDate?fD(p.examDate):'-')+(p.target?' · '+p.target:'')],[4,'Daily study time',hm((+p.hours||0)*60)+(+p.workHrs?' · work '+hm(+p.workHrs*60):'')],[5,'Level',p.level||'-'],[6,'Syllabus',nT+' topics done, '+nW+' weak'],[7,'Study order',p.ordOn?'Your own order':'Automatic'],[8,'Resources',(p.res||[]).join(', ')||'-']];
- return`<h1>Profile</h1><section class="card pf"><span class="av" aria-hidden="true">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</span><div style="min-width:0"><h2 style="margin:0">${esc(p.name||'Student')}</h2><p class="sm mu" style="margin:2px 0 6px">${esc(ex.n)}</p><span class="pill">${st}-day streak</span> <span class="pill">${hm(totalMins())} studied</span></div></section>`
+ return`<h1>Profile</h1><section class="card pf"><button type="button" class="av avp" data-a="phot" aria-label="Change profile photo">${typeof avHtml==='function'?avHtml():esc((p.name||'?').trim().charAt(0).toUpperCase())}<i class="cam" aria-hidden="true">+</i></button><input type="file" id="phf" accept="image/*" hidden><div style="min-width:0"><h2 style="margin:0">${esc(p.name||'Student')}</h2><p class="sm mu" style="margin:2px 0 6px">${esc(ex.n)}</p><span class="pill">${st}-day streak</span> <span class="pill">${hm(totalMins())} studied</span>${p.photo?' <button type="button" class="lgm" data-a="phrm">Remove photo</button>':''}</div></section>`
  +accountCard()
  +`<section class="card"><h2>Your answers</h2><p class="sm mu">Change anything you told us at set-up. Your plan is rebuilt from the new answers and nothing is applied until you accept it. The back button cancels.</p>${rows.map(r=>`<div class="row sp ans"><span style="min-width:0"><b>${r[1]}</b><br><span class="sm mu">${esc(r[2])}</span></span><button class="btn o s" data-a="redo" data-v="${r[0]}" aria-label="Edit ${r[1]}">Edit</button></div>`).join('')}</section>`
- +(typeof focusCard==='function'?focusCard():'')+(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
- +(typeof aboutCard==='function'?aboutCard():`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`)}
+ +`<section class="card"><h2>Help</h2><p class="sm mu">New to AceLife, or want a reminder of what each tab does?</p><button class="btn o" data-a="tour">Take the 1-minute tour</button></section>`+timerCard()+(typeof focusCard==='function'?focusCard():'')+(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+icsCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
+ +library()+(typeof aboutCard==='function'?aboutCard():`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`)}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
- return socCard()+aiCard()+(typeof testsView==='function'&&qbOn()?`<section class="card"><div class="row sp"><span><b>Topic tests</b><br><span class="sm mu">Now in Progress, with your scores</span></span><button class="btn s" data-a="pt" data-v="tests">Open</button></div></section>`:'')+`<h1>Strategy library</h1>`
+ return socCard()+aiCard()+`<h2 class="sec">Strategy library</h2>`
  +`<details class="card tops" data-k="tops"${V.lo.tops?' open':''}><summary><b>Toppers' strategies</b><br><span class="sm mu">${E.length?E.length+' for '+esc(EX[x].n)+'. Tap to view':'None yet for '+esc(EX[x].n)}</span></summary><label class="sr" for="lx_s">Exam</label><select id="lx_s" data-g="lx" style="margin:10px 0">${Object.keys(EX).map(k=>`<option value="${k}"${x===k?' selected':''}>${esc(EX[k].n)}</option>`).join('')}</select><p class="sm mu">Every entry shows where it comes from. Nothing here is made up.</p>`
  +(E.length?E.map(e=>`<details class="te" data-k="e_${esc(String(e.id))}"${V.lo['e_'+e.id]?' open':''}><summary><b>${esc(e.name)}</b> <span class="sm mu">exam year ${e.year}</span><br><span class="tag ${(e.fixed?e.verified:e.checked)?'ok':''}">${e.fixed?(e.verified?'Verified source':'Source supplied, not verified'):(e.checked?'Source checked by you':'Source not yet checked')}</span></summary><dl class="sm"><dt>Reported preparation duration</dt><dd>${esc(e.dur||'Not stated')}</dd><dt>Reported resources</dt><dd>${esc(e.res||'Not stated')}</dd><dt>Revision approach</dt><dd>${esc(e.rev||'Not stated')}</dd><dt>Source</dt><dd>${/^https?:\/\//.test(e.src)?`<a href="${esc(e.src)}" target="_blank" rel="noopener noreferrer">${esc(e.src)}</a>`:esc(e.src)}</dd></dl>${e.fixed?'':`<div class="row"><button class="btn o s" data-a="tc" data-id="${e.id}">${e.checked?'Mark unchecked':'I checked the source'}</button><button class="btn o s" data-a="tr" data-id="${e.id}">Remove</button></div>`}</details>`).join(''):`<p class="mu">Toppers' strategies for ${EX[x].n} will appear here soon.</p>`)+'</details>'
  +`<section class="card"><h2>General recommendations</h2><p><span class="tag">General advice, not from any topper</span></p><ul class="sm"><li>Plan backwards from the exam date and keep a weekly buffer for missed days.</li><li>Mix reading with active recall and practice questions instead of only re-reading.</li><li>Revise on a fixed rhythm so earlier subjects do not fade.</li><li>Take timed mocks regularly and spend real time analysing mistakes.</li><li>Protect sleep and breaks. Steady days beat occasional marathon days.</li></ul></section>`}
-const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>'};
+const ICO={home:'<path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/>',roadmap:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 000-6h-4a3 3 0 010-6h6"/>',recover:'<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>',progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',library:'<path d="M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z"/>',study:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/>'};
 function render(){render0();try{syncGuard()}catch(e){}}
 function render0(){try{
  const a=$('#app'),nv=$('#nv');
@@ -287,13 +293,13 @@ function render0(){try{
  if(V.build){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=buildView();return}
  if(authOn()&&!CL().user){nv.hidden=true;document.body.classList.remove('lv');a.innerHTML=authView();return}
  if(!S.p.onboarded){nv.hidden=true;document.body.classList.remove('lv');const sa=V.sa;a.innerHTML=wiz();if(sa&&V.step){const h=$('.wzt');if(h)h.focus({preventScroll:true})}return}
- PI=null;const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);document.body.classList.toggle('lvm',!!(run&&V.mn&&!V.fs));
- nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['library','Library'],['profile','Profile']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
- a.innerHTML=(typeof topBar==='function'?topBar():'')+({home,roadmap,recover,progress,library,profile}[V.tab])()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?liveHtml(run,rt):'');tick();postRender()
+ if(planGate())V.tab='roadmap';PI=null;const M=miss().length,run=S.timer,rt=run&&run.taskId?byId(run.taskId):null;nv.hidden=false;document.body.classList.toggle('lv',!!run);document.body.classList.toggle('lvm',!!(run&&V.mn&&!V.fs));
+ const LK2=planGate();nv.innerHTML=[['home','Today'],['roadmap','Plan'],['progress','Progress'],['study','Study'],['profile','Profile']].map(([k,l])=>`<button data-a="tab" data-v="${k}" ${V.tab===k?'aria-current="page"':''}${LK2&&k!=='roadmap'?' disabled aria-disabled="true" title="Accept or edit your plan first"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>${l}${k==='roadmap'&&M?` <span class="dot">${M}</span>`:''}</button>`).join('');
+ a.innerHTML=(typeof topBar==='function'?topBar():'')+({home,roadmap,recover,progress,study:()=>typeof studyView==='function'?studyView():'',profile}[V.tab]||home)()+`<p class="sm mu" style="text-align:center"><span id="st">${esc(V.st)}</span></p>`+(run?liveHtml(run,rt):'');tick();postRender()
 }catch(e){console.error(e);$('#app').innerHTML='<div class="card"><h2>Something went wrong</h2><p class="mu">Your saved data is safe. Reload the page to try again.</p></div>'}}
 
 function sheet(h){$('#shb').innerHTML=h;$('#sh').classList.add('on');syncGuard();const i=$('#shb input,#shb button');if(i)i.focus()}
-function closeSheet(){$('#sh').classList.remove('on');syncGuard()}
+function closeSheet(){const h=$('#sh');h.classList.remove('on');delete h.dataset.lock;syncGuard()}
 function toast(m){const e=$('#ts');e.textContent=m;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),2600)}
 function startTick(){clearInterval(iv);iv=setInterval(tick,1000)}
 /* ---- study timer: counts UP from 00:00:00 until the learner stops it; the colour theme changes with time studied ---- */
@@ -307,9 +313,9 @@ function liveHtml(run,rt){const el=Math.floor(stMs(run)/1e3),h=TH[thIdx(el/60)],
   +(V.fs?'':`<button type="button" class="lvx lvm" data-a="mini" aria-label="Shrink the timer to a small pill">&#8211;</button>`)
   +`<svg class="clk" viewBox="0 0 200 200" data-a="fs" aria-hidden="true"><circle class="ct" cx="100" cy="100" r="88"/><circle class="cv${br?' brk':''}" id="cv" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9" transform="rotate(-90 100 100)"/><text class="t${br?' brk':''}" id="tm" x="100" y="110">${clk(el)}</text></svg>`
   +`<span class="stg" id="tl"></span><small>${rt?esc(rt.subject+': '+tbase(rt)):'General study'}${S.p.fm&&S.p.fm.on?' · Focus on':''}</small>`
-  +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}"${pz?' disabled':''} aria-label="Pomodoro rhythm, 25 minutes focus and 5 minutes break">25/5</button>${window.Float&&Float.ok()?'<button class="pmb" data-a="float" aria-label="Float the timer outside the app">Float</button>':''}<button class="btn s pzb" data-a="pause">${pz?'Resume':'Pause'}</button><button class="btn s" data-a="timer">Stop</button></div></div>`}
+  +`<div class="row"><button class="pmb" data-a="pomo" aria-pressed="${!!po}"${pz?' disabled':''} aria-label="Pomodoro rhythm, ${PF()} minutes focus and ${PB()} minutes break">${PF()}/${PB()}</button><button class="pmb" data-a="pset" aria-label="Timer and alarm settings">&#9881;</button>${window.Float&&Float.ok()?'<button class="pmb" data-a="float" aria-label="Float the timer outside the app">Float</button>':''}<button class="btn s pzb" data-a="pause">${pz?'Resume':'Pause'}</button><button class="btn s" data-a="timer">Stop</button></div></div>`}
 function tick(){if(S&&S.timer){if(pomoStep())render();checkAlarm()}const e=$('#tm');if(!e||!S||!S.timer)return;
- const T=S.timer,el=Math.floor(stMs(T)/1e3),po=T.pomo,L=po?(po.ph==='f'?25:5)*60:0,left=po?Math.max(0,L-Math.floor((Date.now()-new Date(po.ps))/1e3)):0;
+ const T=S.timer,el=Math.floor(stMs(T)/1e3),po=T.pomo,L=po?pdur(po)/1e3:0,left=po?Math.max(0,L-Math.floor((Date.now()-new Date(po.ps))/1e3)):0;
  e.textContent=clk(el);
  const f=po?1-left/L:T.goal?el/(T.goal*60):(el%3600)/3600,cv=$('#cv');if(cv)cv.setAttribute('stroke-dashoffset',(552.9*(1-Math.min(1,Math.max(0,f)))).toFixed(1));
  const i=thIdx(el/60),h=TH[i],p=$('#lvp');if(p){p.style.setProperty('--tc',h[2]);p.style.setProperty('--tb',h[3])}
@@ -333,13 +339,15 @@ function rsp(){const m=+$('#r_m').value,k=$('#r_d').value,e=$('#rp');if(!e)retur
  else h+='This fits your daily limit.';e.innerHTML=h}
 
 const A={
- tab:d=>{if(d.v!==V.tab){if(d.v==='home')V.nav=[];else V.nav.push(V.tab);V.tab=d.v;V.fx=true;V.rp=0}vib(6);scrollTo(0,0);render()},
+ tab:d=>{if(planGate()&&d.v!=='roadmap'){toast('Accept your plan, or edit your answers, to open the other tabs.');return}if(d.v!==V.tab){if(d.v==='home')V.nav=[];else V.nav.push(V.tab);V.tab=d.v;V.fx=true;V.rp=0}vib(6);scrollTo(0,0);render()},
  next:()=>{const e=chk(V.step);if(e){V.err=e;vib(40);render();return}V.err='';
   if(V.step<WN){V.step++;V.sa=true;if(V.step===6){migrateTopics();V.tf=''}save();render();scrollTo(0,0)}
   else{for(let i=1;i<WN;i++){const m=chk(i);if(m){V.step=i;V.err=m;V.sa=true;render();scrollTo(0,0);return}}
    S.p.hours=+S.p.hours;S.p.workHrs=+S.p.workHrs;cleanTopics();S.p.onboarded=true;buildRoadmap()}},
  back:()=>{V.err='';V.step=Math.max(0,V.step-1);V.sa=true;render();scrollTo(0,0)},
- goto:d=>{V.err='';V.step=+d.v;V.sa=true;if(V.step===6){migrateTopics();V.tf=''}render();scrollTo(0,0)},
+ ecan:()=>{try{if(V.snap)S.p=JSON.parse(V.snap)}catch(e){}S.p.onboarded=true;V.edit=false;V.snap='';V.step=0;V.err='';save();render();scrollTo(0,0)},
+ ebuild:()=>{const e=chk(V.step);if(e){V.err=e;vib(40);render();return}V.err='';V.step=WN;A.next()},
+ goto:d=>{if(V.step===WN&&S.p.planStart||V.step===WN&&S.draft)V.edit=true;V.err='';V.step=+d.v;V.sa=true;if(V.step===6){migrateTopics();V.tf=''}render();scrollTo(0,0)},
  ordm:d=>{S.p.ordOn=d.v==='1';S.p.ord=S.p.ord||{};V.err='';vib(8);const y=scrollY;render();scrollTo(0,y)},
  ordset:d=>{const o=S.p.ord=S.p.ord||{},r=+d.v;if(!r||+o[d.s]===r)delete o[d.s];else o[d.s]=r;V.err='';vib(8);const y=scrollY;render();scrollTo(0,y)},
  ordweak:()=>{const p=S.p,L=ordSubs(),wk=L.filter(s=>(p.weak||[]).includes(s)||subStat(s).w>0);if(!wk.length){toast('Mark some topics with ! first, then try again.');return}
@@ -351,10 +359,15 @@ const A={
  sall:d=>{const p=S.p,T=topicsOf(p.exam,d.s),full=subStat(d.s).d===T.length,has=k=>T.some(t=>tkey(d.s,t)===k);p.tdone=(p.tdone||[]).filter(k=>!has(k));p.tweak=(p.tweak||[]).filter(k=>!has(k));if(!full)T.forEach(t=>p.tdone.push(tkey(d.s,t)));syncSub(d.s);vib(12);wzSubs();save()},
  tg:d=>{const a=S.p[d.k]=S.p[d.k]||[],i=a.indexOf(d.v);i<0?a.push(d.v):a.splice(i,1);
   if(i<0&&d.k==='done')S.p.weak=(S.p.weak||[]).filter(x=>x!==d.v);if(i<0&&d.k==='weak')S.p.done=(S.p.done||[]).filter(x=>x!==d.v);render()},
- redo:d=>{S.p.onboarded=false;V.step=Math.min(WN,Math.max(1,+(d&&d.v)||2));save();render()},
+ redo:d=>{if(S.p.onboarded){V.snap=JSON.stringify(S.p);V.edit=true}S.p.onboarded=false;V.step=Math.min(WN,Math.max(1,+(d&&d.v)||2));save();render()},
  regen:()=>buildRoadmap(),
- accept:()=>{const d=S.draft;S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted');if(window.Perms)setTimeout(Perms.first,900)},
+ agree:()=>{const d=S.draft;S.p.agreeV=1;S.p.agreedAt=new Date().toISOString();if(d)d.agreed=1;closeSheet();save();render();toast('Thanks. Review your plan, then accept it.')},
+ disced:()=>{closeSheet();A.redo({v:9})},
+ disc:()=>discSheet(),
+ accept:()=>{const d=S.draft;if(!d.agreed){discSheet();return}S.tasks=S.tasks.filter(t=>!repl(t)).concat(d.tasks);S.p.planStart=d.start;S.p.planMode=d.mode;S.p.summary=d.summary;S.draft=null;V.tab='home';V.nav=[];V.day=today();save();render();toast('Plan accepted');setTimeout(()=>{if(typeof Guide!=='undefined'&&!S.p.toured)Guide.tour(0);else if(window.Perms)Perms.first()},900)},
  day:d=>{V.day=d.v;render()},
+ pday:d=>{V.pcd=d.v;vib(6);render()},
+ opd:d=>{V.day=d.v;V.nav=[];V.tab='home';V.fx=true;scrollTo(0,0);render()},
  cm:d=>{const[y,m]=V.cal.split('-').map(Number),x=new Date(y,m-1+(+d.v),1);V.cal=x.getFullYear()+'-'+pad(x.getMonth()+1);render()},
  st:d=>{const t=byId(d.id);t.status=t.status===d.v?'todo':d.v;if(t.status==='done'||t.status==='partial')t.doneDate=today();else delete t.doneDate;save();render();vib(12);
   if(t.status==='done'){const b=$(`.chk[data-id="${t.id}"]`);if(b){b.classList.add('pop');burst(b)}const T=tasksOn(today());if(t.date===today()&&T.every(z=>z.status==='done'))toast('All of today\'s tasks are done. Great work!');V.lgi=t.id;setTimeout(()=>{if(V.lgi===t.id)render()},450)}},
@@ -370,7 +383,7 @@ const A={
   if(S.timer)A.timer();
   const t=d.id?byId(d.id):null,g=t?Math.max(30,Math.round((t.mins-logged(t))/15)*15):0;
   unlockAudio();const n0=new Date().toISOString();
-  S.timer={start:n0,taskId:d.id||'',goal:0,brk:0,pt:0,pz:null,pomo:S.p.pomo?{ph:'f',ps:n0}:null};V.thI=undefined;
+  S.timer={start:n0,taskId:d.id||'',goal:0,brk:0,pt:0,pz:null,pomo:S.p.pomo?mkPomo(n0):null};V.thI=undefined;
   startTick();closeSheet();save();render();
   if(window.Float&&Float.arm)Float.arm();   // needs this tap, so it is armed here
   toast('Timer started. It runs until you stop it.');
@@ -415,7 +428,7 @@ const A={
  reset:()=>sheet(`<h2>Start over?</h2><p>This erases your profile, roadmap, tasks and study sessions.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="resetok">Erase everything</button></div>`),
  resetok:()=>{S=fresh();V.step=0;V.tab='home';clearInterval(iv);closeSheet();save();render()}
 };
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset);else if(e.target.id==='sh')closeSheet()});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset);else if(e.target.id==='sh'&&!e.target.dataset.lock)closeSheet()});
 document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f,g=t.dataset.g;if(f&&S){S.p[f]=t.value;wizLive()}if(g==='rs')rsp();if(g==='tt')V.tt=t.value;if(g==='tf'){V.tf=t.value;wzSubs()}if(g==='lx'){V.lx=t.value;render()}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('sj')){if(!V.tf)V.ob[d.dataset.s]=d.open}else if(d.dataset&&d.dataset.k)V.lo[d.dataset.k]=d.open},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(V.fs&&!sheetOpen()){V.fs=false;wake(false);render();return}closeSheet()}if(e.key==='Enter'&&S&&ready&&!S.p.onboarded&&V.step>0&&e.target.tagName==='INPUT'&&!e.target.dataset.g&&e.target.type!=='range'){e.preventDefault();A.next()}});
@@ -427,11 +440,13 @@ function syncGuard(){const n=needGuard();
  if(n&&!guardOn){try{history.pushState({g:1},'');guardOn=true}catch(e){}}
  else if(!n&&guardOn){guardOn=false;skipPop=true;setTimeout(()=>{skipPop=false},500);try{history.back()}catch(e){}}}
 function handleBack(){
- if(sheetOpen()){closeSheet();return true}
+ if(sheetOpen()){if($('#sh').dataset.lock)return true;closeSheet();return true}
  if(document.getElementById('qx')){A.qxend();return true}
  if(V.build&&!V.build.err)return true;
  if(authOn()&&!CL().user){if(AUTH.mode==='signup'){AUTH.mode='login';AUTH.err='';return true}return false}
- if(!S.p.onboarded){if(S.p.planStart||S.draft){S.p.onboarded=true;V.step=0;return true}if(V.step>0){V.err='';V.step--;return true}return false}
+ if(!S.p.onboarded){if(S.p.planStart||S.draft){A.ecan();return true}if(V.step>0){V.err='';V.step--;return true}return false}
+ if(V.tab==='study'&&(V.sv||V.fr)){V.sv='';V.fr=null;return true}
+ if(planGate())return false;
  if(V.tab!=='home'){V.tab=V.nav.pop()||'home';return true}
  return false}
 addEventListener('popstate',()=>{if(skipPop){skipPop=false;return}guardOn=false;try{handleBack()}catch(e){}render()});
@@ -469,8 +484,17 @@ A.adjok=()=>{const t=byId(V.lg.id);(V.adj||[]).forEach(o=>{if(o.kind==='add')S.t
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.g==='lg'&&V.lg)V.lg[t.dataset.key]=t.value});
 
 let alarmT=null,actx=null,errAt=0;
+const PF=()=>Math.min(180,Math.max(1,Math.round(+S.p.pf)||25)),PB=()=>Math.min(60,Math.max(1,Math.round(+S.p.pb)||5));
+const pdur=P=>(P.ph==='f'?(P.f||25):(P.b||5))*6e4,mkPomo=ps=>({ph:'f',ps,f:PF(),b:PB()});
+const SNDS={bell:'Soft bell',chime:'Glass chime',harp:'Harp',calm:'Calm tone',off:'No sound'};
+function chime(kind,sd,vl){try{sd=sd||(S&&S.p&&S.p.snd)||'bell';if(sd==='off')return;unlockAudio();if(!actx)return;
+ const vol={low:.12,mid:.22,high:.4}[vl||(S&&S.p&&S.p.pvol)||'mid']||.22,N={C6:1046.5,E6:1318.5,G6:1568,G5:784,C5:523.25};
+ const seq={stop:['G6','E6','C6'],go:['C6','E6','G6'],done:['C6','E6','G6','C6']}[kind||'done']||['C6'];
+ const st=sd==='chime'?{ty:'sine',dec:1.2,h:[1,3,4.2],ha:[1,.4,.2],gap:.32}:sd==='harp'?{ty:'triangle',dec:1.1,h:[1,2],ha:[1,.25],gap:.22}:sd==='calm'?{ty:'sine',dec:2.2,h:[1],ha:[1],gap:.7}:{ty:'sine',dec:1.8,h:[1,2.76,5.4],ha:[1,.35,.12],gap:.5};
+ const t0=actx.currentTime+.03;
+ seq.forEach((n,i)=>st.h.forEach((m,j)=>{const o=actx.createOscillator(),g=actx.createGain(),t=t0+i*st.gap;o.type=st.ty;o.frequency.value=N[n]*m*(sd==='calm'?.5:1);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol*st.ha[j],t+.025);g.gain.exponentialRampToValueAtTime(.0001,t+st.dec);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+st.dec+.05)}))}catch(e){}}
 function unlockAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){actx=actx||new AC();if(actx.state==='suspended')actx.resume()}}catch(e){}}
-function beep(){try{if(!actx)return;[0,.4,.8].forEach(o=>{const s=actx.createOscillator(),g=actx.createGain();s.frequency.value=880;g.gain.value=.25;s.connect(g);g.connect(actx.destination);s.start(actx.currentTime+o);s.stop(actx.currentTime+o+.2)})}catch(e){}}
+function beep(k){chime(k)}
 function armAlarm(){clearTimeout(alarmT);const T=S&&S.timer;if(!T||!T.goal||T.fired)return;alarmT=setTimeout(checkAlarm,Math.max(0,T.goal*6e4-stMs(T))+50)}
 function alertNow(T){const t=T.taskId?byId(T.taskId):null,txt=t?t.subject+': '+t.topic:'Your study session';
  try{navigator.vibrate&&navigator.vibrate([300,150,300,150,500])}catch(e){}
@@ -507,11 +531,11 @@ const loadView=()=>`<section class="load"><div class="spin" aria-hidden="true"><
 function buildView(){const b=V.build;
  if(b.err)return`<div class="card"><h2>Could not build the plan</h2><p class="mu">Your answers are saved. Please try again.</p><button class="btn w" data-a="regen">Try again</button></div>`;
  const n=BSTEPS.length;return`<section class="load"><div class="spin" aria-hidden="true"></div><h2>Building your plan</h2><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${b.i}" style="margin:12px 0"><i style="width:${b.i/n*100}%"></i></div><ul class="steps">${BSTEPS.map((s,i)=>`<li class="${i<b.i?'ok':i===b.i?'now':''}">${esc(s)}</li>`).join('')}</ul><p class="sm mu">This runs on your phone, so it keeps working on a slow connection.</p></section>`}
-async function buildRoadmap(){if(V.build&&!V.build.err)return;V.build={i:0};save();render();scrollTo(0,0);await sleep(120);
+async function buildRoadmap(){if(V.build&&!V.build.err)return;V.edit=false;V.snap='';V.build={i:0};save();render();scrollTo(0,0);await sleep(120);
  let d=null;try{d=gen(S.p)}catch(e){console.error(e)}
  if(!d){V.build={err:true};render();return}
  for(let i=1;i<=BSTEPS.length;i++){V.build.i=i;render();await sleep(450)}
- S.draft=d;V.build=null;V.tab='roadmap';V.nav=['home'];save();render();scrollTo(0,0)}
+ d.agreed=S.p.agreeV?1:0;S.draft=d;V.build=null;V.tab='roadmap';V.nav=['home'];save();render();scrollTo(0,0);if(!d.agreed)setTimeout(discSheet,350)}
 
 const usualHour=()=>{const hs=S.sessions.map(x=>new Date(x.start).getHours());return hs.length>=3?Math.min(22,Math.max(5,Math.round(med(hs)))):19};
 const h12=h=>(h%12||12)+(h<12?' am':' pm');
@@ -532,20 +556,29 @@ const capRow=k=>{if(k<today())return'';const m=(S.p.dayCap||{})[k]||1,c=cap(k),l
 A.dcap=d=>{const m=+d.v,k=V.day;S.p.dayCap=S.p.dayCap||{};if(m===1)delete S.p.dayCap[k];else S.p.dayCap[k]=m;save();render()};
 function dl(name,data,type){const b=data instanceof Blob?data:new Blob([data],{type:type||'text/plain'}),a=document.createElement('a');
  a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
-const stMs=T=>{const n=T.pz?new Date(T.pz).getTime():Date.now();return n-new Date(T.start)-(T.pt||0)-(T.brk||0)-(T.pomo&&T.pomo.ph==='b'?Math.min(n-new Date(T.pomo.ps),3e5):0)};   // T.pz = when it was paused (if paused now), T.pt = total paused time so far
-function pomoAlert(ph){const b=ph==='b',tt=b?'Break time: 5 minutes':'Back to focus: 25 minutes',bd=b?'Stand up, drink water, rest your eyes.':'Break is over. Start the next focus block.';
- try{navigator.vibrate&&navigator.vibrate(b?[300,150,300]:[500])}catch(e){}beep();toast(tt);
+const stMs=T=>{const n=T.pz?new Date(T.pz).getTime():Date.now();return n-new Date(T.start)-(T.pt||0)-(T.brk||0)-(T.pomo&&T.pomo.ph==='b'?Math.min(n-new Date(T.pomo.ps),(T.pomo.b||5)*6e4):0)};   // T.pz = when it was paused (if paused now), T.pt = total paused time so far
+function pomoAlert(ph){const b=ph==='b',PO=(S.timer&&S.timer.pomo)||{},tt=b?'Break time: '+(PO.b||5)+' minutes':'Back to focus: '+(PO.f||25)+' minutes',bd=b?'Stand up, drink water, rest your eyes.':'Break is over. Start the next focus block.';
+ try{navigator.vibrate&&navigator.vibrate(b?[300,150,300]:[500])}catch(e){}chime(b?'stop':'go');toast(tt);
  if(window.Notification&&Notification.permission==='granted'&&navigator.serviceWorker)navigator.serviceWorker.ready.then(r=>r.showNotification(tt,{body:bd,tag:'pomo',renotify:true,vibrate:[300,150,300],icon:'icon-192.png',badge:'icon-192.png'})).catch(()=>{})}
 function pomoStep(q){const T=S&&S.timer,P=T&&T.pomo;if(!P||T.pz)return false;let ch=false,i=0;const n=Date.now();
- while(i++<200){const d=(P.ph==='f'?25:5)*6e4,e=new Date(P.ps).getTime()+d;if(isNaN(e)){P.ps=new Date().toISOString();break}if(e>n)break;
+ while(i++<200){const d=pdur(P),e=new Date(P.ps).getTime()+d;if(isNaN(e)){P.ps=new Date().toISOString();break}if(e>n)break;
   if(P.ph==='b')T.brk=(T.brk||0)+d;P.ph=P.ph==='f'?'b':'f';P.ps=new Date(e).toISOString();ch=true}
  if(ch){save();armAlarm();if(!q)pomoAlert(P.ph)}
- if(pomoKey!==P.ps){pomoKey=P.ps;clearTimeout(pomoT);pomoT=setTimeout(tick,Math.max(500,new Date(P.ps).getTime()+(P.ph==='f'?25:5)*6e4-n)+60)}
+ if(pomoKey!==P.ps){pomoKey=P.ps;clearTimeout(pomoT);pomoT=setTimeout(tick,Math.max(500,new Date(P.ps).getTime()+pdur(P)-n)+60)}
  return ch}
+const PRE=[[25,5],[30,5],[45,10],[50,10],[60,10],[90,15]];
+A.pset=()=>{const f=PF(),b=PB(),sd=S.p.snd||'bell',vl=S.p.pvol||'mid';
+ sheet(`<h2>Timer and alarm</h2><p class="sm mu">Choose how long you focus and rest. A soft sound tells you when to stop for a break and when to continue.</p><div class="chips" role="group" aria-label="Presets">${PRE.map(([x,y])=>`<button type="button" class="chip" data-a="ppre" data-f="${x}" data-b="${y}">${x} / ${y}</button>`).join('')}</div><div class="row" style="margin:12px 0"><div style="flex:1"><label for="pf_f">Focus (minutes)</label><input id="pf_f" type="number" inputmode="numeric" min="1" max="180" value="${f}"></div><div style="flex:1"><label for="pf_b">Break (minutes)</label><input id="pf_b" type="number" inputmode="numeric" min="1" max="60" value="${b}"></div></div><label for="pf_s">Alarm sound</label><select id="pf_s">${Object.entries(SNDS).map(([k,v])=>`<option value="${k}"${k===sd?' selected':''}>${v}</option>`).join('')}</select><label for="pf_v" style="margin-top:10px">Volume</label><select id="pf_v">${[['low','Low'],['mid','Medium'],['high','High']].map(([k,v])=>`<option value="${k}"${k===vl?' selected':''}>${v}</option>`).join('')}</select><div class="row" style="margin:12px 0"><button type="button" class="btn o s" style="flex:1" data-a="pprev" data-k="stop">Hear: take a break</button><button type="button" class="btn o s" style="flex:1" data-a="pprev" data-k="go">Hear: continue</button></div><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="psave">Save</button></div>`)};
+A.ppre=d=>{$('#pf_f').value=d.f;$('#pf_b').value=d.b};
+A.pprev=d=>{unlockAudio();chime(d.k,$('#pf_s').value,$('#pf_v').value)};
+A.psave=()=>{const f=Math.round(+$('#pf_f').value),b=Math.round(+$('#pf_b').value);if(!(f>=1&&f<=180)||!(b>=1&&b<=60)){toast('Focus can be 1 to 180 minutes and break 1 to 60.');return}
+ S.p.pf=f;S.p.pb=b;S.p.snd=$('#pf_s').value;S.p.pvol=$('#pf_v').value;const T=S.timer;if(T&&T.pomo){T.pomo.f=f;T.pomo.b=b;pomoKey=''}
+ closeSheet();save();render();toast('Saved: '+f+' min focus, '+b+' min break')};
+const timerCard=()=>`<section class="card"><h2>Timer and alarm</h2><p class="sm mu">Focus and break lengths for the Pomodoro rhythm (now ${PF()}/${PB()}) and the alarm sound.</p><button class="btn o" data-a="pset">Change timer and alarm</button></section>`;
 A.pomo=async()=>{const T=S.timer;if(!T||T.pz)return;unlockAudio();pomoStep(1);
- if(T.pomo){if(T.pomo.ph==='b')T.brk=(T.brk||0)+Math.min(Date.now()-new Date(T.pomo.ps),3e5);T.pomo=null;S.p.pomo=false;pomoKey='';clearTimeout(pomoT)}
- else{T.pomo={ph:'f',ps:new Date().toISOString()};S.p.pomo=true}
- armAlarm();save();render();toast(T.pomo?'Pomodoro on: 25 minutes focus, 5 minutes break':'Pomodoro off');
+ if(T.pomo){if(T.pomo.ph==='b')T.brk=(T.brk||0)+Math.min(Date.now()-new Date(T.pomo.ps),(T.pomo.b||5)*6e4);T.pomo=null;S.p.pomo=false;pomoKey='';clearTimeout(pomoT)}
+ else{T.pomo=mkPomo(new Date().toISOString());S.p.pomo=true}
+ armAlarm();save();render();toast(T.pomo?'Pomodoro on: '+PF()+' min focus, '+PB()+' min break':'Pomodoro off');
  if(T.pomo&&window.Notification&&Notification.permission==='default')try{await Notification.requestPermission()}catch(e){}};
 
 A.bkx=()=>{dl('acelife-backup-'+today()+'.json',JSON.stringify(S,null,1),'application/json');toast('Backup downloaded')};
