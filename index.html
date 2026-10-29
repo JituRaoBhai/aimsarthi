@@ -18,6 +18,7 @@
 <script src="theme.js"></script>
 </head>
 <body>
+<div id="spl" aria-hidden="true"><div class="spg"></div><div class="spc"><div class="spm"><svg viewBox="0 0 120 120"><circle class="r0" cx="60" cy="60" r="54"/><circle class="r1" cx="60" cy="60" r="54" transform="rotate(-90 60 60)"/></svg><span class="spa">A</span><i style="--a:0"></i><i style="--a:36"></i><i style="--a:72"></i><i style="--a:108"></i><i style="--a:144"></i><i style="--a:180"></i><i style="--a:216"></i><i style="--a:252"></i><i style="--a:288"></i><i style="--a:324"></i></div><div class="spw"><b style="--i:0">A</b><b style="--i:1">c</b><b style="--i:2">e</b><b style="--i:3">L</b><b style="--i:4">i</b><b style="--i:5">f</b><b style="--i:6">e</b></div><div class="spr"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><u></u></div><p class="spt">Plan it. Study it. Ace it.</p></div></div>
 <main id="app"></main>
 <nav id="nv" hidden aria-label="Main"></nav>
 <div id="sh" role="dialog" aria-modal="true"><div id="shb"></div></div>
@@ -42,6 +43,12 @@
 <script src="live.js"></script>
 <script src="pwa.js"></script>
 <script type="module" src="cloud.js"></script>
-<script>Theme.hook();boot();</script>
+<script>Theme.hook();boot();
+(function(){var s=document.getElementById('spl');if(!s)return;var t0=Date.now(),d=0,rm=matchMedia('(prefers-reduced-motion:reduce)').matches,min=rm?400:2500;
+try{if(sessionStorage.getItem('acelife:spl')){s.remove();return}sessionStorage.setItem('acelife:spl','1')}catch(e){}
+document.body.classList.add('spo');
+function hide(){if(d)return;d=1;s.classList.add('out');document.body.classList.remove('spo');setTimeout(function(){s.remove()},650)}
+var iv=setInterval(function(){var el=Date.now()-t0,rd=false;try{rd=ready}catch(e){}if((rd&&el>=min)||el>7000){clearInterval(iv);hide()}},80)})();
+</script>
 </body>
 </html>

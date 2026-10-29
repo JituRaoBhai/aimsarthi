@@ -374,3 +374,40 @@ textarea{box-sizing:border-box}
 .calw{margin-top:4px}.cmt{font-size:17px}.pcd{margin-top:12px;padding-top:12px;border-top:1px solid var(--ln)}
 .wze{gap:8px}.wze .btn{padding:0 12px}
 .pf h2::before,.sbt h2::before{display:none}
+/* v15.1: routine tasks, telegram player */
+.rtr{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ln);transition:opacity .2s}.rtr:last-of-type{border-bottom:0}.rtr .m{flex:1;min-width:0}.rtr .m b,.rtr .m span{display:block;overflow-wrap:anywhere}
+.rtr .chk{width:38px;height:38px;font-size:17px}
+.rtr.done{opacity:.55}.rtr.done .m b{text-decoration:line-through}
+.rtk{display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer}.rtk input{width:20px;height:20px;min-height:0;flex:none}
+.yt.tg{padding-top:0;height:min(68vh,540px);background:var(--sf);border:1px solid var(--ln)}
+
+/* ===== v15.1: opening animation ===== */
+#spl{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:linear-gradient(160deg,#1B2468,#27348B 45%,#4658D0);color:#fff;overflow:hidden;transition:opacity .55s ease,transform .55s ease}
+#spl.out{opacity:0;transform:scale(1.06);pointer-events:none}
+body.spo{overflow:hidden}
+.spg{position:absolute;width:140vmax;height:140vmax;left:50%;top:50%;margin:-70vmax 0 0 -70vmax;background:conic-gradient(from 0deg,transparent,rgba(255,201,74,.16),transparent 30%,rgba(91,227,181,.14),transparent 62%,rgba(147,160,255,.2),transparent);animation:spSpin 9s linear infinite}
+@keyframes spSpin{to{transform:rotate(360deg)}}
+.spc{position:relative;display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
+.spm{position:relative;width:128px;height:128px;display:grid;place-items:center}
+.spm svg{position:absolute;inset:0;width:100%;height:100%}
+.spm circle{fill:none;stroke-width:5;stroke-linecap:round}
+.spm .r0{stroke:rgba(255,255,255,.16)}
+.spm .r1{stroke:#FFC94A;stroke-dasharray:339.3;stroke-dashoffset:339.3;animation:spRing 1.25s .25s cubic-bezier(.3,.7,.2,1) forwards}
+@keyframes spRing{to{stroke-dashoffset:0}}
+.spa{width:82px;height:82px;border-radius:26px;background:linear-gradient(135deg,#fff,#DDE3FF);color:#27348B;display:grid;place-items:center;font:800 46px/1 Mukta,system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.35);transform:scale(0) rotate(-40deg);animation:spPop .8s .15s cubic-bezier(.2,1.5,.4,1) forwards}
+@keyframes spPop{to{transform:scale(1) rotate(0)}}
+.spm i{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#FFC94A;opacity:0;animation:spBurst .9s 1.4s ease-out forwards}
+.spm i:nth-of-type(3n){background:#5BE3B5}.spm i:nth-of-type(3n+1){background:#fff}
+@keyframes spBurst{0%{opacity:1;transform:rotate(calc(var(--a)*1deg)) translateY(-58px) scale(1)}100%{opacity:0;transform:rotate(calc(var(--a)*1deg)) translateY(-104px) scale(.2)}}
+.spw{display:flex;font:800 42px/1 Mukta,system-ui,sans-serif;letter-spacing:.01em}
+.spw b{opacity:0;transform:translateY(24px) scale(.6);filter:blur(8px);animation:spLet .6s calc(.9s + var(--i)*.07s) cubic-bezier(.2,1.3,.4,1) forwards}
+@keyframes spLet{to{opacity:1;transform:none;filter:none}}
+.spr{position:relative;display:flex;gap:8px;margin-top:2px}
+.spr i{width:22px;height:9px;border-radius:5px;background:rgba(255,255,255,.2);animation:spLit .35s forwards}
+.spr i:nth-child(1){animation-delay:1.5s;--c:#5BE3B5}.spr i:nth-child(2){animation-delay:1.65s;--c:#5BE3B5}.spr i:nth-child(3){animation-delay:1.8s;--c:#FFC94A}.spr i:nth-child(4){animation-delay:1.95s;--c:#5BE3B5}.spr i:nth-child(5){animation-delay:2.1s;--c:#fff}.spr i:nth-child(6){animation-delay:2.25s;--c:#fff}.spr i:nth-child(7){animation-delay:2.4s;--c:#fff}
+@keyframes spLit{to{background:var(--c);box-shadow:0 0 12px var(--c);transform:scaleY(1.5)}}
+.spr u{position:absolute;left:0;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -2px;border-radius:50%;background:#fff;box-shadow:0 0 14px 4px rgba(255,255,255,.7);opacity:0;animation:spRun .95s 1.45s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes spRun{0%{opacity:1;left:0}90%{opacity:1}100%{opacity:0;left:calc(100% - 12px)}}
+.spt{margin:0;font-size:16px;letter-spacing:.04em;opacity:0;transform:translateY(8px);animation:spFade .7s 1.9s ease forwards}
+@keyframes spFade{to{opacity:.92;transform:none}}
+@media(prefers-reduced-motion:reduce){.spg,.spm i,.spr u{animation:none}.spm .r1{animation:none;stroke-dashoffset:0}.spa{animation:none;transform:none}.spw b,.spt{animation:none;opacity:1;transform:none;filter:none}.spr i{animation:none}}

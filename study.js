@@ -11,6 +11,8 @@ const SBT=Object.fromEntries(SBX.map(x=>[x[0],x]));
 const CT=()=>window.STUDY_CONTENT||{},SJ=()=>EX[S.p.exam]?EX[S.p.exam].sub:[];
 function sItems(k){const own=(S.lib||[]).filter(z=>z.k===k).map(z=>({...z,own:1})),b=(CT()[k]||[]).filter(z=>!z.x||z.x===S.p.exam).map((z,i)=>({...z,id:z.id||'b'+k+i,own:0}));return b.concat(own)}
 const ytId=u=>{const m=/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/.exec(u||'');return m?m[1]:''};
+const tgPost=u=>{const m=/^https?:\/\/(?:t|telegram)\.me\/(?:s\/)?([A-Za-z0-9_]{4,})\/(\d+)/i.exec(u||'');return m?{ch:m[1],id:m[2]}:null};
+const playOf=u=>{const y=ytId(u);if(y)return{t:'yt',id:y};const t=tgPost(u);return t?{t:'tg',...t}:null};
 const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return''}};
 const okUrl=u=>{try{const x=new URL(u);return x.protocol==='https:'||x.protocol==='http:'}catch(e){return false}};
 const svBack=t=>`<div class="row" style="margin:0 0 10px"><button class="btn o s" data-a="sv" data-v="">&lsaquo; Study</button></div><h1>${t}</h1>`;
@@ -30,17 +32,17 @@ function studyView(){const k=V.sv;if(!k||!SBT[k])return studyHub();
 function listView(k){const T=SBT[k],L=sItems(k),sub=V.sf||'';
  const G={};L.filter(z=>!sub||(z.s||'General')===sub).forEach(z=>{(G[z.s||'General']=G[z.s||'General']||[]).push(z)});
  const ss=[...new Set(L.map(z=>z.s||'General'))];
- const help={vid:'Save lecture videos. YouTube links play right here.',chan:'Save public Telegram channels (links like t.me/channelname). They open in Telegram.',crs:'Save the courses you follow on coaching apps and sites. They open in your browser or the app.',note:'Write short notes for quick revision.'}[k];
+ const help={vid:'Save lecture videos. YouTube links and Telegram post links play right here.',chan:'Save public Telegram channels (t.me/channelname) or single posts (t.me/channelname/123). Post links play right here.',crs:'Save the courses you follow on coaching apps and sites. They open in your browser or the app.',note:'Write short notes for quick revision.'}[k];
  return svBack(T[1])+pgd(help)+`<button class="btn w" data-a="sadd" data-k="${k}">${k==='note'?'Add a note':'Add a link'}</button>`
   +(ss.length>1?`<div class="chips" style="margin:12px 0" role="group" aria-label="Filter by subject"><button type="button" class="chip" data-a="sfl" data-v="" aria-pressed="${!sub}">All</button>${ss.map(s=>`<button type="button" class="chip" data-a="sfl" data-v="${esc(s)}" aria-pressed="${sub===s}">${esc(s)}</button>`).join('')}</div>`:'')
   +(L.length?Object.keys(G).sort().map(s=>`<h3 class="gh">${esc(s)}</h3>`+G[s].map(z=>itemCard(k,z)).join('')).join(''):`<section class="card"><p class="mu" style="margin:0">Nothing here yet. Tap the button above to add your first one.</p></section>`)}
-function itemCard(k,z){const u=z.u||'',y=k==='vid'?ytId(u):'',h=hostOf(u);
+function itemCard(k,z){const u=z.u||'',pl=k==='vid'||k==='chan'?playOf(u):null,y=pl&&pl.t==='yt',h=hostOf(u);
  return`<article class="card si"><div class="row sp"><b style="min-width:0;overflow-wrap:anywhere">${esc(z.t||'Untitled')}</b>${z.own?'':'<span class="bd">From AceLife</span>'}</div>`
   +(k!=='note'&&h?`<p class="sm mu" style="margin:2px 0 0">${esc(h)}</p>`:'')
   +((k==='note'?z.text:z.note)?`<p class="sm" style="margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere">${esc(z.text||z.note)}</p>`:'')
   +`<div class="row" style="margin-top:10px;flex-wrap:wrap">`
-  +(y?`<button class="btn s" data-a="syt" data-id="${esc(z.id)}">Watch here</button>`:'')
-  +(u&&okUrl(u)?`<a class="btn ${y?'o ':''}s" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${y?'Open in YouTube':k==='chan'?'Open channel':k==='crs'?'Open course':'Open link'}</a>`:'')
+  +(pl?`<button class="btn s" data-a="syt" data-id="${esc(z.id)}">&#9654; Play</button>`:'')
+  +(u&&okUrl(u)?`<a class="btn ${pl?'o ':''}s" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${y?'Open in YouTube':pl?'Open in Telegram':k==='chan'?'Open channel':k==='crs'?'Open course':'Open link'}</a>`:'')
   +(z.own?`<button class="btn o s" data-a="sadd" data-k="${k}" data-id="${esc(z.id)}">Edit</button><button class="btn o s dng" data-a="sdl" data-id="${esc(z.id)}">Delete</button>`:'')+`</div></article>`}
 Object.assign(A,{
  sv:d=>{V.sv=d.v;V.fr=null;V.sf='';V.fx=true;scrollTo(0,0);render()},
@@ -60,7 +62,9 @@ Object.assign(A,{
   closeSheet();save();render();toast('Saved')},
  sdl:d=>{const z=(S.lib||[]).find(x=>x.id===d.id);if(!z)return;sheet(`<h2>Delete this?</h2><p>${esc(z.t)}</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep it</button><button class="btn" style="flex:1" data-a="sdlok" data-id="${esc(z.id)}">Delete</button></div>`)},
  sdlok:d=>{S.lib=(S.lib||[]).filter(x=>x.id!==d.id);closeSheet();save();render();toast('Deleted')},
- syt:d=>{const z=sItems('vid').find(x=>x.id===d.id),id=z&&ytId(z.u);if(!id)return;sheet(`<h2 style="overflow-wrap:anywhere">${esc(z.t)}</h2><div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1" title="${esc(z.t)}" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><div class="row" style="margin-top:12px"><button class="btn o" style="flex:1" data-a="x">Close</button><a class="btn" style="flex:1;text-align:center" href="${esc(z.u)}" target="_blank" rel="noopener noreferrer">Open in YouTube</a></div>`)}});
+ syt:d=>{const z=[...sItems('vid'),...sItems('chan')].find(x=>x.id===d.id),pl=z&&playOf(z.u);if(!pl)return;
+  const src=pl.t==='yt'?`https://www.youtube-nocookie.com/embed/${pl.id}?rel=0&playsinline=1&autoplay=1`:`https://t.me/${pl.ch}/${pl.id}?embed=1&mode=tme&userpic=false`;
+  sheet(`<h2 style="overflow-wrap:anywhere">${esc(z.t)}</h2><div class="yt${pl.t==='tg'?' tg':''}"><iframe src="${src}" title="${esc(z.t)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><p class="sm mu" style="margin:8px 0 0">${pl.t==='tg'?'If the post does not load here, it may be from a private channel. Use Open in Telegram.':'Does not play? Use Open in YouTube.'}</p><div class="row" style="margin-top:10px"><button class="btn o" style="flex:1" data-a="x">Close</button><a class="btn" style="flex:1;text-align:center" href="${esc(z.u)}" target="_blank" rel="noopener noreferrer">${pl.t==='tg'?'Open in Telegram':'Open in YouTube'}</a></div>`)}});
 
 /* ---------- flashcards (spaced repetition) ---------- */
 const FCI=[0,1,3,7,14,30];
