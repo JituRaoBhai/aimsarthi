@@ -29,7 +29,7 @@
 
  /* ---------- updates ---------- */
  function showUpd(w){P.waiting=w;const e=bar('ub');e.className='ub on';e.setAttribute('role','alert');
-  e.innerHTML='<span>A new version of AceLife is ready.</span><button type="button" data-a="updnow">Update</button><button type="button" class="x" data-a="updlater" aria-label="Dismiss">&times;</button>';try{if(V.tab==='profile'&&!sheetOpen())render()}catch(x){}}
+  e.innerHTML='<span>A new version of Tasky is ready.</span><button type="button" data-a="updnow">Update</button><button type="button" class="x" data-a="updlater" aria-label="Dismiss">&times;</button>';try{if(V.tab==='profile'&&!sheetOpen())render()}catch(x){}}
  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
   addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(reg=>{P.reg=reg;
    if(reg.waiting&&navigator.serviceWorker.controller)showUpd(reg.waiting);
@@ -62,9 +62,9 @@
 
  /* ---------- Profile > About and updates ---------- */
  window.aboutCard=()=>{const w=!!waitingSW(),u=authOn()&&CL().user;
-  return`<section class="card"><h2>About and updates</h2><div class="row sp" style="align-items:center"><span><b>AceLife</b><br><span class="sm mu">Version ${esc(VER)}</span></span>${w?'<button type="button" class="btn s" data-a="updnow">Update now</button>':'<button type="button" class="btn o s" data-a="chk">Check for updates</button>'}</div>`
+  return`<section class="card"><h2>About and updates</h2><div class="row sp" style="align-items:center"><span><b>Tasky</b><br><span class="sm mu">Version ${esc(VER)}</span></span>${w?'<button type="button" class="btn s" data-a="updnow">Update now</button>':'<button type="button" class="btn o s" data-a="chk">Check for updates</button>'}</div>`
   +(w?'<p class="sm" style="margin:8px 0 0">A new version is ready. Tap Update now.</p>':'')
   +`<p class="sm" style="margin:14px 0 6px"><a href="privacy-policy.html" target="_blank" rel="noopener">Privacy policy</a> &middot; <a href="terms.html" target="_blank" rel="noopener">Terms of use</a> &middot; <a href="delete-account.html" target="_blank" rel="noopener">Delete your data</a></p>`
   +`<div class="stack">${u?'<button type="button" class="btn o s" data-a="fb">Report a problem or AI answer</button>':''}${u?'<button type="button" class="btn o s dng" data-a="delacc">Delete my account</button>':''}</div>`
-  +`<p class="sm mu" style="margin:10px 0 0">AceLife is a study planner. It does not give medical advice. AI answers can be wrong, so check them against your books.</p></section>`};
+  +`<p class="sm mu" style="margin:10px 0 0">Tasky is a study planner. It does not give medical advice. AI answers can be wrong, so check them against your books.</p></section>`};
 })();

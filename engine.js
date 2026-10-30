@@ -118,7 +118,7 @@ const Engine = (() => {
   
   const done0 = {}; (existing || []).forEach(t => { if (t.tk && (t.status === 'done' || t.status === 'partial')) done0[t.tk] = (done0[t.tk] || 0) + doneMin(t) });
   const M = {}; ex.sub.forEach(s => M[s] = meta(p.exam, ex, s));
-  if (p.ordOn && p.ord) ex.sub.forEach(s => { const r = +p.ord[s]; M[s].order = r >= 1 && r <= 9 ? r : 10 + M[s].order });   // learner's own study order: round 1 first; subjects in the same round are studied together; unpicked subjects follow in AceLife's order
+  if (p.ordOn && p.ord) ex.sub.forEach(s => { const r = +p.ord[s]; M[s].order = r >= 1 && r <= 9 ? r : 10 + M[s].order });   // learner's own study order: round 1 first; subjects in the same round are studied together; unpicked subjects follow in Tasky's order
   const isW = (s, t) => weak.includes(s) || tweak.has(s + '|' + t.n), isD = (s, t) => tdone.has(s + '|' + t.n);   // topic-level choices from the setup syllabus step
   const w = s => Math.max(.1, M[s].p / 100) * (weak.includes(s) ? 1.5 : M[s].topics.some(t => tweak.has(s + '|' + t.n)) ? 1.25 : 1) * (L.weights[s] || 1);
   const subs = ex.sub.filter(s => !done.includes(s) && M[s].topics.some(t => !isD(s, t))), items = []; let demand = 0;   // 2. demand

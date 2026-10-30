@@ -9,7 +9,7 @@ function checkAuth(u,p,q,m){u=(u||'').trim().toLowerCase();
  if(!p)return'Enter your password.';
  return /^\d{1,12}$/.test((q||'').trim())?'':'Your favourite number must be digits only (up to 12).'}
 function authView(){const s=AUTH.mode==='signup';
- return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AceLife</h1><p class="lead" style="margin:0">${s?'Create an account to keep your plan safe and use it on any phone.':'Welcome back. Log in to load your plan.'}</p></section>`
+ return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">Tasky</h1><p class="lead" style="margin:0">${s?'Create an account to keep your plan safe and use it on any phone.':'Welcome back. Log in to load your plan.'}</p></section>`
  +`<section class="card" style="margin-top:14px"><div class="seg" role="group" aria-label="Account mode"><button data-a="aumode" data-v="login" aria-pressed="${!s}">Log in</button><button data-a="aumode" data-v="signup" aria-pressed="${s}">Create account</button></div>`
  +inp('au_u','Username',`data-au="u" autocomplete="username" autocapitalize="none" maxlength="20" value="${esc(AUTH.u)}"`)
  +inp('au_p',s?'Password (8+ characters, letters and a number)':'Password',`type="password" data-au="p" autocomplete="${s?'new-password':'current-password'}" maxlength="64" value="${esc(AUTH.p)}"`)

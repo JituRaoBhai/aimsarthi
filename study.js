@@ -1,7 +1,8 @@
 /* STUDY tab (v15): tests (custom module tests), flashcards, notes, videos, public channels, courses.
    Your own shipped content goes in content.js. Users add their own links and notes here too.
    Loaded after app.js and tests.js. */
-const SBX=[['tests','Tests','Custom and topic tests','<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/>'],
+const SBX=[['ctest','Custom test','Choose topics, count and time','<path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="4"/>'],
+ ['tests','Topic tests','Ready-made, one topic at a time','<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/>'],
  ['fc','Flashcards','Quick recall practice','<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 3h12a2 2 0 012 2v10"/>'],
  ['note','Notes','Your own short notes','<path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 13h8M8 17h6"/>'],
  ['vid','Videos','YouTube and lecture links','<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/>'],
@@ -21,12 +22,13 @@ const pgd=t=>`<p class="pgd">${t}</p>`;
 /* ---------- hub ---------- */
 const lk=k=>{const n=sItems(k).length;return n?n+(n>1?' links':' link'):''};
 function studyHub(){const tN=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam).length,dueN=fcDue().length;
- const cnt={tests:tN?tN+' taken':'',fc:fcAll().length?fcAll().length+(fcAll().length>1?' cards':' card')+(dueN?' · '+dueN+' due':''):'',note:(n=>n?n+(n>1?' notes':' note'):'')(sItems('note').length),vid:lk('vid'),chan:lk('chan'),crs:lk('crs')};
+ const cu=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam&&h.cu).length,cnt={ctest:cu?cu+' taken':'',tests:tN-cu>0?(tN-cu)+' taken':'',fc:fcAll().length?fcAll().length+(fcAll().length>1?' cards':' card')+(dueN?' · '+dueN+' due':''):'',note:(n=>n?n+(n>1?' notes':' note'):'')(sItems('note').length),vid:lk('vid'),chan:lk('chan'),crs:lk('crs')};
  return`<h1>Study</h1>${pgd('Everything you learn from, in one place. Pick a section to start.')}<div class="sbg">${SBX.map(([k,t,d,ic])=>`<button type="button" class="sbt" data-a="sv" data-v="${k}"><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${t}</b><span class="sm mu">${d}</span>${cnt[k]?`<span class="bd">${cnt[k]}</span>`:''}</button>`).join('')}</div>`
  +(dueN?`<section class="card"><h2>Cards due today</h2><p class="sm mu">${dueN} flashcard${dueN>1?'s':''} ready for review.</p><button class="btn" data-a="fcgo">Review now</button></section>`:'')
  +`<p class="sm mu">Tip: add your favourite video, channel and course links so everything is one tap away while you study.</p>`}
 function studyView(){const k=V.sv;if(!k||!SBT[k])return studyHub();
- if(k==='tests')return testsHub();if(k==='fc')return fcView();return listView(k)}
+ if(k==='ctest')return testsHub();if(k==='tests')return topicView();if(k==='fc')return fcView();return listView(k)}
+function topicView(){return svBack('Topic tests')+pgd('Take a ready-made test for one topic. Your scores and missed questions are tracked in Progress.')+testsView()+`<section class="card"><h2>Want to mix topics?</h2><p class="sm mu">Build your own test from any subjects or topics.</p><button class="btn o" data-a="sv" data-v="ctest">Make a custom test</button></section>`}
 
 /* ---------- links and notes ---------- */
 function listView(k){const T=SBT[k],L=sItems(k),sub=V.sf||'';
@@ -37,7 +39,7 @@ function listView(k){const T=SBT[k],L=sItems(k),sub=V.sf||'';
   +(ss.length>1?`<div class="chips" style="margin:12px 0" role="group" aria-label="Filter by subject"><button type="button" class="chip" data-a="sfl" data-v="" aria-pressed="${!sub}">All</button>${ss.map(s=>`<button type="button" class="chip" data-a="sfl" data-v="${esc(s)}" aria-pressed="${sub===s}">${esc(s)}</button>`).join('')}</div>`:'')
   +(L.length?Object.keys(G).sort().map(s=>`<h3 class="gh">${esc(s)}</h3>`+G[s].map(z=>itemCard(k,z)).join('')).join(''):`<section class="card"><p class="mu" style="margin:0">Nothing here yet. Tap the button above to add your first one.</p></section>`)}
 function itemCard(k,z){const u=z.u||'',pl=k==='vid'||k==='chan'?playOf(u):null,y=pl&&pl.t==='yt',h=hostOf(u);
- return`<article class="card si"><div class="row sp"><b style="min-width:0;overflow-wrap:anywhere">${esc(z.t||'Untitled')}</b>${z.own?'':'<span class="bd">From AceLife</span>'}</div>`
+ return`<article class="card si"><div class="row sp"><b style="min-width:0;overflow-wrap:anywhere">${esc(z.t||'Untitled')}</b>${z.own?'':'<span class="bd">From Tasky</span>'}</div>`
   +(k!=='note'&&h?`<p class="sm mu" style="margin:2px 0 0">${esc(h)}</p>`:'')
   +((k==='note'?z.text:z.note)?`<p class="sm" style="margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere">${esc(z.text||z.note)}</p>`:'')
   +`<div class="row" style="margin-top:10px;flex-wrap:wrap">`
@@ -63,8 +65,14 @@ Object.assign(A,{
  sdl:d=>{const z=(S.lib||[]).find(x=>x.id===d.id);if(!z)return;sheet(`<h2>Delete this?</h2><p>${esc(z.t)}</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep it</button><button class="btn" style="flex:1" data-a="sdlok" data-id="${esc(z.id)}">Delete</button></div>`)},
  sdlok:d=>{S.lib=(S.lib||[]).filter(x=>x.id!==d.id);closeSheet();save();render();toast('Deleted')},
  syt:d=>{const z=[...sItems('vid'),...sItems('chan')].find(x=>x.id===d.id),pl=z&&playOf(z.u);if(!pl)return;
-  const src=pl.t==='yt'?`https://www.youtube-nocookie.com/embed/${pl.id}?rel=0&playsinline=1&autoplay=1`:`https://t.me/${pl.ch}/${pl.id}?embed=1&mode=tme&userpic=false`;
-  sheet(`<h2 style="overflow-wrap:anywhere">${esc(z.t)}</h2><div class="yt${pl.t==='tg'?' tg':''}"><iframe src="${src}" title="${esc(z.t)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><p class="sm mu" style="margin:8px 0 0">${pl.t==='tg'?'If the post does not load here, it may be from a private channel. Use Open in Telegram.':'Does not play? Use Open in YouTube.'}</p><div class="row" style="margin-top:10px"><button class="btn o" style="flex:1" data-a="x">Close</button><a class="btn" style="flex:1;text-align:center" href="${esc(z.u)}" target="_blank" rel="noopener noreferrer">${pl.t==='tg'?'Open in Telegram':'Open in YouTube'}</a></div>`)}});
+  const tg=pl.t==='tg',open=`<a class="btn" style="flex:1;text-align:center" href="${esc(z.u)}" target="_blank" rel="noopener noreferrer">${tg?'Open in Telegram':'Open in YouTube'}</a>`,off=!navigator.onLine,
+   src=pl.t==='yt'?`https://www.youtube-nocookie.com/embed/${pl.id}?rel=0&playsinline=1&autoplay=1`:`https://t.me/${pl.ch}/${pl.id}?embed=1&mode=tme&userpic=false`;
+  sheet(`<h2 style="overflow-wrap:anywhere">${esc(z.t)}</h2><div class="yt${tg?' tg':''}">${off?`<div class="ytl"><b>No internet connection</b><span class="sm">Connect to the internet to play this video.</span></div>`:`<div class="ytl" id="ytl"><div class="spin" aria-hidden="true"></div><span id="ytm">Loading video...</span></div><iframe src="${src}" title="${esc(z.t)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`}</div>${off?'':`<div class="row" style="margin:8px 0 0" role="group" aria-label="Screen direction"><button type="button" class="btn o s" style="flex:1" data-a="ytpt">&#9647; Portrait</button><button type="button" class="btn o s" style="flex:1" data-a="ytls">&#9645; Landscape</button><button type="button" class="btn o s" style="flex:1" data-a="ytfs">&#10530; Full screen</button></div>`}<p class="sm mu" style="margin:8px 0 0">${tg?'If the post does not load here, it may be from a private channel. Use Open in Telegram.':'Does not play? Use Open in YouTube.'}</p><div class="row" style="margin-top:10px"><button class="btn o" style="flex:1" data-a="x">Close</button>${open}</div>`);
+  const f=$('#shb iframe');if(!f)return;const t0=Date.now();let done=0;
+  const fin=()=>{if(done)return;done=1;const l=$('#ytl');if(l){l.classList.add('out');setTimeout(()=>l.remove(),350)}};
+  f.addEventListener('load',()=>setTimeout(fin,Math.max(0,900-(Date.now()-t0))));
+  setTimeout(()=>{const m=$('#ytm');if(!done&&m)m.textContent='Still loading. Your connection may be slow...'},8000);
+  setTimeout(()=>{const m=$('#ytm');if(!done&&m)m.textContent='This is taking long. Try Open in '+(tg?'Telegram':'YouTube')+'.'},20000)}});
 
 /* ---------- flashcards (spaced repetition) ---------- */
 const FCI=[0,1,3,7,14,30];
@@ -98,7 +106,7 @@ Object.assign(A,{
 const cbd=()=>V.cb=V.cb||{keys:[],n:20,spq:60};
 function qbKeys(){const B=qbAll();return Object.keys(B).filter(k=>qbN(k)>0)}
 function testsHub(){const x=S.p.exam,E=EX[x];
- let h=svBack('Tests')+pgd('Make your own test from any subjects or topics, or take a ready-made topic test. Every result shows up in Progress.');
+ let h=svBack('Custom test')+pgd('Build your own test from any subjects or topics. Every result shows up in Progress.');
  if(!qbOn())return h+`<section class="card"><h2>Not available yet</h2><p class="sm mu">Question banks are ready for ${(window.TEST_EXAMS||[]).map(k=>esc(EX[k]?EX[k].n:k)).join(', ')}. ${esc(E.n)} will get tests in a future update.</p></section>`+recentTests();
  if(!qbLoaded[x]||!QB[x])return h+`<section class="card"><p class="mu">Loading questions...</p></section>`;
  const ks=qbKeys();if(!ks.length)return h+`<section class="card"><h2>No questions yet</h2><p class="sm mu">No questions have been added for ${esc(E.n)} yet.</p></section>`;
@@ -110,7 +118,7 @@ function testsHub(){const x=S.p.exam,E=EX[x];
   +`<p class="sm mu" style="margin:12px 0 6px">2. How many questions?</p><div class="chips" role="group" aria-label="Number of questions">${[10,20,30,50,100].map(v=>`<button type="button" class="chip" data-a="cbn" data-v="${v}" aria-pressed="${c.n===v}">${v}</button>`).join('')}</div>`
   +`<p class="sm mu" style="margin:12px 0 6px">3. Time per question</p><div class="chips" role="group" aria-label="Time per question">${[[45,'45 sec'],[60,'1 min'],[90,'1.5 min'],[120,'2 min']].map(([v,l])=>`<button type="button" class="chip" data-a="cbt" data-v="${v}" aria-pressed="${c.spq===v}">${l}</button>`).join('')}</div>`
   +`<p class="note" style="margin:14px 0 10px" aria-live="polite">${pool?`<b>${n} questions</b> from ${c.keys.length} topic${c.keys.length>1?'s':''}, ${qxFmt(n*c.spq)} minutes.${pool<c.n?' That is every question available for your choice.':''}`:'Choose at least one subject or topic to begin.'}</p><button class="btn w" data-a="cbrun"${pool?'':' disabled'}>Start custom test</button></section>`
-  +`<section class="card"><h2>Topic tests</h2><p class="sm mu">One topic at a time, with your best score and missed questions for each.</p><button class="btn o" data-a="pt" data-v="tests">Open topic tests</button></section>`+recentTests();
+  +`<section class="card"><h2>Topic tests</h2><p class="sm mu">One topic at a time, with your best score and missed questions for each.</p><button class="btn o" data-a="sv" data-v="tests">Open topic tests</button></section>`+recentTests();
  return h}
 function recentTests(){const H=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam).slice(-5).reverse();if(!H.length)return'';
  return`<section class="card"><h2>Recent tests</h2>${H.map(h=>`<p class="row sp" style="margin:0 0 6px"><span class="sm">${esc(h.cu?h.lb:h.key.split('|').slice(1).join('|'))}<br><span class="mu">${fD(h.at.slice(0,10))}${h.cu?' · custom':''}</span></span><span class="bd ${pcOf(h)>=80?'ok':pcOf(h)>=60?'wn':'no'}">${h.c}/${h.n}</span></p>`).join('')}<button class="btn o s" data-a="pt" data-v="tests">See all in Progress</button></section>`}
@@ -135,4 +143,18 @@ function custCard(){const H=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam&&h.cu);
   +`<button class="btn o s" data-a="stt">Make another custom test</button></section>`}
 function testSum(){const H=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam);
  return`<section class="card"><h2>Tests</h2>`+(H.length?`<div class="stats"><div><b>${H.length}</b><span>Taken</span></div><div><b>${Math.round(sum(H,pcOf)/H.length)}%</b><span>Average</span></div><div><b>${H.filter(h=>h.cu).length}</b><span>Custom</span></div></div><button class="btn o s" data-a="pt" data-v="tests">See test details</button>`:`<p class="sm mu">No tests taken yet. Try a custom test from any topics you choose.</p><button class="btn s" data-a="stt">Take a test</button>`)+`</section>`}
-A.stt=()=>{V.sv='tests';if(V.tab!=='study')A.tab({v:'study'});else{V.fx=true;render()}};
+A.stt=()=>{V.sv='ctest';if(V.tab!=='study')A.tab({v:'study'});else{V.fx=true;render()}};
+
+/* ---- player direction: portrait, landscape (locks the screen where Android allows it, otherwise turns the video sideways) and full screen ---- */
+const ytBox=()=>document.querySelector('#shb .yt');
+function ytExit(){const b=ytBox();if(b)b.classList.remove('ls');const x=document.getElementById('ytx');if(x)x.remove();
+ try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}}
+Object.assign(A,{
+ ytpt:()=>{ytExit();vib(6)},
+ ytfs:async()=>{const b=ytBox();if(!b)return;try{await b.requestFullscreen()}catch(e){toast('Full screen is not available here. Use the button inside the video.')}},
+ ytls:async()=>{const b=ytBox();if(!b)return;vib(6);
+  try{await b.requestFullscreen();await screen.orientation.lock('landscape');return}catch(e){}
+  try{if(document.fullscreenElement)await document.exitFullscreen()}catch(e){}
+  b.classList.add('ls');if(!document.getElementById('ytx')){const x=document.createElement('button');x.id='ytx';x.type='button';x.setAttribute('aria-label','Exit landscape');x.textContent='\u2715';x.addEventListener('click',ytExit);document.body.appendChild(x)}}});
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement){try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}}});
+(function(){const c=window.closeSheet;if(typeof c==='function')window.closeSheet=function(){ytExit();return c.apply(this,arguments)}})();

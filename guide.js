@@ -62,3 +62,16 @@ Object.assign(A,{
  rtt:d=>{if(d.k>today()){toast('You can tick this on the day.');return}const rd=S.rd=S.rd||{},a=rd[d.k]=rd[d.k]||[],i=a.indexOf(d.id);i<0?a.push(d.id):a.splice(i,1);if(!a.length)delete rd[d.k];vib(8);save();render()},
  rtm:d=>{const r=(S.rt||[]).find(x=>x.id===d.id);if(!r)return;sheet(`<h2 style="overflow-wrap:anywhere">${esc(r.t)}</h2><p class="sm mu">${esc(rtLab(r))}</p><div class="stack"><button class="btn o" data-a="radd" data-id="${r.id}">Edit</button><button class="btn o dng" data-a="rtdl" data-id="${r.id}">Delete this routine</button><button class="btn o" data-a="x">Close</button></div>`)},
  rtdl:d=>{S.rt=(S.rt||[]).filter(x=>x.id!==d.id);Object.keys(S.rd||{}).forEach(k=>{S.rd[k]=S.rd[k].filter(i=>i!==d.id);if(!S.rd[k].length)delete S.rd[k]});closeSheet();save();render();toast('Routine deleted')}});
+
+/* ---- slow phones and slow servers: busy bar, retry, error safety net ---- */
+A.reload=()=>location.reload();
+const Busy={n:0,t:0,e:null,
+ on(){Busy.n++;if(Busy.n===1){clearTimeout(Busy.t);Busy.t=setTimeout(Busy.show,1200)}},
+ off(){Busy.n=Math.max(0,Busy.n-1);if(!Busy.n){clearTimeout(Busy.t);Busy.hide()}},
+ show(){let e=Busy.e;if(!e){e=Busy.e=document.createElement('div');e.id='bz';e.setAttribute('role','status');e.innerHTML='<i></i><span>Working... the connection looks slow</span>';document.body.appendChild(e)}e.classList.add('on')},
+ hide(){if(Busy.e)Busy.e.classList.remove('on')}};
+(function(){const f=window.fetch;if(!f)return;window.fetch=function(u){const url=String(u&&u.url||u||''),track=/\/api\/ai\b/.test(url);if(!track)return f.apply(this,arguments);Busy.on();return f.apply(this,arguments).finally(Busy.off)}})();
+(function(){const p=window.pullCloud;if(typeof p==='function')window.pullCloud=async function(){Busy.on();try{return await p.apply(this,arguments)}finally{Busy.off()}};
+ const q=window.qbLoad;if(typeof q==='function')window.qbLoad=function(){const r=q.apply(this,arguments);Busy.on();Promise.resolve(r).finally(Busy.off);return r}})();
+(function(){let E=[],shown=false;const bump=()=>{const n=Date.now();E=E.filter(t=>n-t<10000);E.push(n);if(E.length>=3&&!shown&&typeof sheet==='function'){shown=true;try{sheet(`<h2>Something is not working</h2><p>The app ran into a problem, maybe because the phone or connection is slow. Your saved data is safe.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep using</button><button class="btn" style="flex:1" data-a="reload">Reload</button></div>`)}catch(e){}}};
+ addEventListener('error',e=>{if(e&&e.target===window)bump()});addEventListener('unhandledrejection',bump)})();

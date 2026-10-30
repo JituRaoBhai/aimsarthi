@@ -1,4 +1,4 @@
-/* OWN CONTENT YOU SHIP WITH THE APP (optional). Everything here shows up in the Study tab for every user, marked "From AceLife".
+/* OWN CONTENT YOU SHIP WITH THE APP (optional). Everything here shows up in the Study tab for every user, marked "From Tasky".
    Users can still add their own items; theirs can be edited or deleted, yours cannot.
    x (optional) = exam key such as 'neetpg'. Leave it out to show the item for every exam.  s (optional) = subject name exactly as in exams.js.
    After editing, redeploy and bump the cache name (const V) in sw.js so the update reaches phones.

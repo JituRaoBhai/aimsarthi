@@ -411,3 +411,25 @@ body.spo{overflow:hidden}
 .spt{margin:0;font-size:16px;letter-spacing:.04em;opacity:0;transform:translateY(8px);animation:spFade .7s 1.9s ease forwards}
 @keyframes spFade{to{opacity:.92;transform:none}}
 @media(prefers-reduced-motion:reduce){.spg,.spm i,.spr u{animation:none}.spm .r1{animation:none;stroke-dashoffset:0}.spa{animation:none;transform:none}.spw b,.spt{animation:none;opacity:1;transform:none;filter:none}.spr i{animation:none}}
+/* ===== v17: loaders, slow phones, video loading ===== */
+.ldb{width:180px;height:4px;border-radius:3px;background:var(--soft);overflow:hidden;margin:14px auto 0}.ldb i,.spb i{display:block;width:40%;height:100%;border-radius:3px;animation:spBar 1.2s ease-in-out infinite}.ldb i{background:var(--pr)}
+@keyframes spBar{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+.sps{display:none;flex-direction:column;align-items:center;gap:10px;text-align:center;font-size:14px;max-width:270px;margin-top:4px}.sps p{margin:0;opacity:.9}#spl.slow .sps{display:flex}
+.spb{width:170px;height:4px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}.spb i{background:#FFC94A}
+#spre{min-height:40px;padding:0 22px;border-radius:12px;border:1.5px solid #fff;background:none;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+#bz{position:fixed;top:0;left:0;right:0;z-index:90;display:none;flex-direction:column;align-items:center;pointer-events:none}#bz.on{display:flex}
+#bz i{display:block;width:100%;height:4px;background:linear-gradient(90deg,transparent,#FFC94A,transparent);background-size:50% 100%;background-repeat:no-repeat;animation:bzs 1.1s linear infinite}
+@keyframes bzs{from{background-position:-50% 0}to{background-position:150% 0}}
+#bz span{margin-top:4px;padding:3px 12px;border-radius:0 0 10px 10px;background:var(--tx);color:var(--bg);font-size:13px;font-weight:600}
+.ytl{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;background:#0b0e24;text-align:center;padding:12px;transition:opacity .35s}.ytl.out{opacity:0}
+.ytl .spin{border-color:rgba(255,255,255,.25);border-top-color:#FFC94A}.tg .ytl{background:var(--sf);color:var(--tx)}
+.sbt:last-child:nth-child(odd){grid-column:1/-1}
+/* slow or low-memory phones: no decoration, the loaders stay */
+.lite *,.lite *::before,.lite *::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important;scroll-behavior:auto!important}
+.lite .spin{animation-duration:1s!important}.lite .ldb i,.lite .spb i{animation-duration:1.4s!important}.lite #bz i{animation-duration:1.1s!important}
+.lite .spg{display:none}.lite .card,.lite .hero,.lite nav{box-shadow:none!important}
+
+/* v17: video direction */
+.yt:fullscreen{padding-top:0;width:100%;height:100%;border-radius:0;background:#000}
+.yt.ls{position:fixed;z-index:60;top:0;left:100vw;width:100vh;height:100vw;padding-top:0;margin:0;border-radius:0;transform-origin:0 0;transform:rotate(90deg)}
+#ytx{position:fixed;z-index:61;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:20px;cursor:pointer}

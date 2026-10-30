@@ -1,4 +1,4 @@
-AceLife v8 - hosting and files
+Tasky v8 - hosting and files
 
 SET UP (GitHub Pages, from a phone)
 1. Extract this zip. Create a Public GitHub repository, tap Add file > Upload files, select ALL extracted files, commit.

@@ -1,5 +1,5 @@
 'use strict';
-/* AceLife AI endpoint: POST /api/ai  (Firebase Hosting rewrites /api/ai to this function).
+/* Tasky AI endpoint: POST /api/ai  (Firebase Hosting rewrites /api/ai to this function).
    - The Gemini key lives in Secret Manager (GEMINI_API_KEY). It is never sent to the browser.
    - Only logged-in users may call it (Firebase ID token in the Authorization header).
    - The browser sends a task name and data, never a free-form prompt, so this cannot be used as a general Gemini proxy.

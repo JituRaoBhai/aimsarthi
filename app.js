@@ -1,5 +1,5 @@
 'use strict';
-const VER='v16, 30 Oct 2026';
+const VER='v18, 31 Oct 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -72,7 +72,7 @@ function remote(c,n){if(!S||!c||!c.p||(c.upd||0)<=(S.upd||0))return;if(sheetOpen
 async function afterAuth(){await loadState();if(!S.p.onboarded)V.step=1;V.tab='home';ready=true}
 async function boot(){
  V.lm='Starting up';render();
- const slowT=setTimeout(()=>{if(!ready){V.slow=true;render()}},6000);
+ const slowT=setTimeout(()=>{if(!ready){V.slow=true;render()}},4000);
  V.lm='Connecting';render();try{await wait(window.cloudReady,6000,true)}catch(e){}
  V.lm='Loading your plan';render();
  await loadState();ready=true;clearTimeout(slowT);V.slow=false;
@@ -107,14 +107,14 @@ function chk(s){const p=S.p;
  if(s===3){if(!okD(p.examDate))return'Enter a valid exam date.';const n=diff(today(),p.examDate);if(n<2)return'The exam date must be at least 2 days from today.';if(n>1100)return'The exam date must be within about 3 years.';const t=(p.target||'').trim();return t&&t.length<=80?'':'Enter a target score or rank (up to 80 characters).'}
  if(s===4){const h=+p.hours,w=+p.workHrs;if(!(h>=.5&&h<=16))return'Daily study hours must be between 0.5 and 16.';if(!(w>=0&&w<=16))return'Work hours must be between 0 and 16.';return h+w<=20?'':'Study plus work hours leave under 4 hours for sleep and meals. Please lower one.'}
  if(s===5)return p.level?'':'Choose your current level.';
- if(s===7)return p.ordOn&&!ordSubs().some(x=>+(p.ord||{})[x]>=1)?'Pick a round for at least one subject, or choose "Let AceLife decide".':'';
+ if(s===7)return p.ordOn&&!ordSubs().some(x=>+(p.ord||{})[x]>=1)?'Pick a round for at least one subject, or choose "Let Tasky decide".':'';
  if(s===8)return(p.resOther||'').length>120?'Keep other resources under 120 characters.':'';
  return''}
 
 /* live hint under the fields: updated while typing, without re-rendering (keeps keyboard focus) */
 function wizHint(){const p=S.p,s=V.step;
  if(s===3){if(!okD(p.examDate))return'Pick the date of your exam, or tap a shortcut above.';const n=diff(today(),p.examDate);if(n<2)return'<b class="er">The exam date must be at least 2 days from today.</b>';
-  return`<b>${n} days to go</b> (about ${Math.max(1,Math.round(n/7))} weeks). AceLife will build a <b>${esc(Engine.modeName(Engine.modeFor(n),p.level))}</b>.`}
+  return`<b>${n} days to go</b> (about ${Math.max(1,Math.round(n/7))} weeks). Tasky will build a <b>${esc(Engine.modeName(Engine.modeFor(n),p.level))}</b>.`}
  if(s===4){const h=+p.hours||0,w=+p.workHrs||0,r=Math.max(0,24-h-w);
   return`<div class="day" aria-hidden="true"><i class="su" style="width:${h/24*100}%"></i><i class="wo" style="width:${w/24*100}%"></i></div><p class="sm" style="margin:8px 0 0"><span class="lg su"></span>Study <b>${hm(h*60)}</b> <span class="lg wo"></span>Work <b>${hm(w*60)}</b> <span class="lg"></span>Rest, meals, sleep <b>${hm(r*60)}</b></p>${h+w>20?'<p class="er sm" style="margin:6px 0 0">That leaves under 4 hours for sleep and meals. Please lower one.</p>':h>=10?'<p class="sm mu" style="margin:6px 0 0">Long days are hard to keep up. Steady hours beat marathon days.</p>':''}`}
  return''}
@@ -143,11 +143,11 @@ const DOWL=DOW;
 const RN=5,ordSubs=()=>EX[S.p.exam].sub.filter(s=>!(S.p.done||[]).includes(s));
 function ordSummary(){const o=S.p.ord||{},L=ordSubs(),R=[];
  for(let r=1;r<=RN;r++){const x=L.filter(s=>+o[s]===r);if(x.length)R.push(`<p class="sm" style="margin:0 0 4px"><b>Round ${r}</b>${r===1?' (first)':''}: ${x.map(esc).join(', ')}</p>`)}
- const u=L.filter(s=>!(+o[s]>=1));if(u.length&&R.length)R.push(`<p class="sm mu" style="margin:0">Then, in AceLife's order: ${u.map(esc).join(', ')}</p>`);
+ const u=L.filter(s=>!(+o[s]>=1));if(u.length&&R.length)R.push(`<p class="sm mu" style="margin:0">Then, in Tasky's order: ${u.map(esc).join(', ')}</p>`);
  return R.join('')||'<p class="sm mu" style="margin:0">Pick a round for at least one subject.</p>'}
 function ordStep(){const p=S.p,on=!!p.ordOn,o=p.ord||{};
  const M=(v,t,d)=>`<button type="button" class="xc" data-a="ordm" data-v="${v}" aria-pressed="${on===!!v}"><span class="xt"><b>${t}</b><span class="sm mu">${d}</span></span><span class="xk" aria-hidden="true">&#10003;</span></button>`;
- let h=`<div class="xcs" role="group" aria-label="Study order">${M(0,'Let AceLife decide','Foundation subjects first, then the rest. Recommended.')}${M(1,'I will choose the order','Pick what goes first and what is studied together.')}</div>`;
+ let h=`<div class="xcs" role="group" aria-label="Study order">${M(0,'Let Tasky decide','Foundation subjects first, then the rest. Recommended.')}${M(1,'I will choose the order','Pick what goes first and what is studied together.')}</div>`;
  if(!on)return h;
  return h+`<p class="sm mu" style="margin:14px 0 8px"><b>Round 1</b> is studied first. Subjects in the <b>same round</b> are studied together, mixed through the same weeks. A later round starts when the earlier one is finished. Subjects marked Auto follow afterwards.</p>`
   +`<div class="row" style="flex-wrap:wrap;margin:8px 0"><button type="button" class="btn o s" data-a="ordweak">Weak subjects first</button><button type="button" class="btn o s" data-a="ordclr">Clear all</button></div>`
@@ -155,15 +155,15 @@ function ordStep(){const p=S.p,on=!!p.ordOn,o=p.ord||{};
   +`<div class="card" style="margin:12px 0 0"><h3 style="margin:0 0 6px">Your order</h3>${ordSummary()}</div>`}
 function review(){const p=S.p,n=diff(today(),p.examDate),E=EX[p.exam],d=(p.tdone||[]).length,w=(p.tweak||[]).length,tot=allTopics(p.exam);
  const R=(st,l,v)=>`<div class="rv"><span class="mu">${l}</span><b>${v}</b><button type="button" class="lnk" data-a="goto" data-v="${st}" aria-label="Edit ${l}">Edit</button></div>`;
- return`<div class="card rvc">${R(1,'Name',esc(p.name))}${R(2,'Exam',esc(E.n))}${R(3,'Exam date',esc(fD(p.examDate))+' &middot; '+n+' days')}${R(3,'Target',esc(p.target))}${R(4,'Study per day',hm((+p.hours)*60))}${R(4,'Work per day',hm((+p.workHrs)*60))}${R(4,'Weekly day off',p.off===''||p.off==null?'None':DOWL[+p.off])}${R(5,'Level',esc(p.level))}${R(6,'Syllabus',d+' of '+tot+' topics done'+(w?', '+w+' need work':''))}${R(7,'Study order',p.ordOn?'Your own order':'AceLife decides')}${R(8,'Resources',(p.res&&p.res.length?p.res.length+' selected':'None selected'))}</div>`
- +`<p class="note"><b>What happens next.</b> AceLife schedules the ${Math.max(0,tot-d)} topics still to study, gives weak topics more time, and plans light revision for the ${d} you finished. You review the draft before anything is saved to your calendar.</p>`}
+ return`<div class="card rvc">${R(1,'Name',esc(p.name))}${R(2,'Exam',esc(E.n))}${R(3,'Exam date',esc(fD(p.examDate))+' &middot; '+n+' days')}${R(3,'Target',esc(p.target))}${R(4,'Study per day',hm((+p.hours)*60))}${R(4,'Work per day',hm((+p.workHrs)*60))}${R(4,'Weekly day off',p.off===''||p.off==null?'None':DOWL[+p.off])}${R(5,'Level',esc(p.level))}${R(6,'Syllabus',d+' of '+tot+' topics done'+(w?', '+w+' need work':''))}${R(7,'Study order',p.ordOn?'Your own order':'Tasky decides')}${R(8,'Resources',(p.res&&p.res.length?p.res.length+' selected':'None selected'))}</div>`
+ +`<p class="note"><b>What happens next.</b> Tasky schedules the ${Math.max(0,tot-d)} topics still to study, gives weak topics more time, and plans light revision for the ${d} you finished. You review the draft before anything is saved to your calendar.</p>`}
 
 function wiz(){const p=S.p,s=V.step;
- if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">AceLife</h1><p class="lead">Your study guide from today to exam day. Build a realistic plan, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p>`
+ if(!s)return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">Tasky</h1><p class="lead">Your study guide from today to exam day. Build a realistic plan, track study time, keep a streak, and recover from missed days without piling everything onto tomorrow.</p>`
   +`<ul class="feat"><li><b>Plan</b><span>Topic-by-topic schedule that fits your hours</span></li><li><b>Track</b><span>Study timer, streak and weekly progress</span></li><li><b>Recover</b><span>Missed days are spread out, never piled up</span></li></ul>`
   +`<p class="note">Built first for NEET PG aspirants who are also doing an internship. ${Object.keys(EX).length} exams across medical, nursing, teaching, law, management and government jobs. Plans are suggestions from your answers, not verified advice, and cannot promise any score or rank.</p><button class="btn w" style="margin-top:16px" data-a="next">Get started</button><p class="sm" style="margin:10px 0 0;text-align:center;opacity:.8">Takes about 3 minutes</p></section>`;
  const an=V.sa;V.sa=false;let b='';
- if(s===1)b=`<p class="note">${mode==='cloud'?'You are signed in as <b>'+esc(CL().user.username)+'</b>. Your plan is saved to your account.':'Your plan is saved on this phone.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" enterkeyhint="next" value="${esc(p.name||'')}"`);
+ if(s===1)b=`${typeof langChips==='function'?'<div style="margin:0 0 14px">'+langChips()+'</div>':''}<p class="note">${mode==='cloud'?'You are signed in as <b>'+esc(CL().user.username)+'</b>. Your plan is saved to your account.':'Your plan is saved on this phone.'}</p>`+inp('w_n','Your name',`data-f="name" maxlength="40" autocomplete="given-name" enterkeyhint="next" value="${esc(p.name||'')}"`);
  if(s===2)b=`${examList()}<p class="sm mu" style="margin-top:10px">Pick the exam you are preparing for. You can change it later from your plan.</p>`;
  if(s===3)b=`<label for="w_d">Exam date</label><input id="w_d" type="date" data-f="examDate" min="${addD(today(),2)}" max="${addD(today(),1100)}" value="${esc(p.examDate||'')}"><div class="chips" style="margin:10px 0" role="group" aria-label="Date shortcuts">${[['1 month',30],['2 months',60],['3 months',90],['6 months',180],['1 year',365]].map(([l,n])=>`<button type="button" class="chip" data-a="qd" data-v="${n}" aria-pressed="${p.examDate===addD(today(),n)}">${l}</button>`).join('')}</div><div id="lv" class="note" aria-live="polite">${wizHint()}</div>`+inp('w_t','Target score or rank',`data-f="target" maxlength="80" placeholder="For example: rank under 2,000" value="${esc(p.target||'')}"`)+'<p class="sm mu" style="margin-top:8px">Your target is for motivation. It does not change what is possible.</p>';
  if(s===4)b=`<div class="sl"><div class="row sp"><label for="w_h" style="margin:0">Study hours per day</label><output id="o_h" for="w_h">${hm((+p.hours||0)*60)}</output></div><input id="w_h" type="range" data-f="hours" min="0.5" max="16" step="0.5" value="${esc(p.hours)}"></div>`
@@ -175,7 +175,7 @@ function wiz(){const p=S.p,s=V.step;
  if(s===7)b=ordStep();
  if(s===9)b=review();
  const dots=WS.slice(1).map((l,i)=>{const n=i+1;return n<s?`<button type="button" class="sg ok" data-a="goto" data-v="${n}" aria-label="Back to ${l}"></button>`:`<i class="sg${n===s?' now':''}" aria-hidden="true"></i>`}).join('');
- return`<div class="wz${an?' in':''}"><header class="wzh"><span class="wzb"><span class="wzl" aria-hidden="true">A</span>AceLife</span><span class="sm mu">Step ${s} of ${WN} &middot; ${WS[s]}</span></header><div class="stp" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="${WN}" aria-valuenow="${s}">${dots}</div><h1 class="wzt" tabindex="-1">${WT[s]}</h1><div class="wzc">${V.edit&&s<WN?'<p class="note">You are editing one answer. Change it, then tap <b>Build my plan</b>. The other steps are optional.</p>':''}${b}</div><p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p></div>`
+ return`<div class="wz${an?' in':''}"><header class="wzh"><span class="wzb"><span class="wzl" aria-hidden="true">T</span>Tasky</span><span class="sm mu">Step ${s} of ${WN} &middot; ${WS[s]}</span></header><div class="stp" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="${WN}" aria-valuenow="${s}">${dots}</div><h1 class="wzt" tabindex="-1">${WT[s]}</h1><div class="wzc">${V.edit&&s<WN?'<p class="note">You are editing one answer. Change it, then tap <b>Build my plan</b>. The other steps are optional.</p>':''}${b}</div><p class="er" role="alert" style="margin-top:8px">${esc(V.err)}</p></div>`
   +(V.edit&&s<WN?`<div class="wzf wze"><button class="btn o" data-a="ecan">Cancel</button><button class="btn o" data-a="next">Next step</button><button class="btn" style="flex:1" data-a="ebuild">Build my plan</button></div>`:`<div class="wzf"><button class="btn o" data-a="back">${V.edit&&s===WN?'Previous':'Back'}</button><button class="btn" style="flex:1" data-a="next">${s<WN?'Continue':'Build my plan'}</button></div>`)}
 
 function cal(act){act=act||'pday';const[y,m]=V.cal.split('-').map(Number),f=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(f.getDay()+6)%7;
@@ -236,10 +236,11 @@ function planCard(d){const sm=d?d.summary:S.p.summary,m=d?d.mode:S.p.planMode;if
  +(sm.later?`<p class="sm mu" style="margin:8px 0 0">Showing the first ${sm.emit} days. Rebuild later to continue from where you are.</p>`:'')+'</section>'}
 function planBody(){
  const d=S.draft,L=d?d.tasks:S.tasks,st=d?d.start:(S.p.planStart||today());
- if(!L.length)return`<h1>Plan</h1><div class="card"><h2>No plan yet</h2><p class="mu">Build a suggested plan from your answers, review it, then accept it.</p><button class="btn w" data-a="regen">Build my plan</button></div>`;
+ if(!L.length)return`<h1>Plan</h1><div class="card"><h2>No plan yet</h2><p class="mu">Build a suggested plan from your answers, review it, then accept it. The other sections open after that.</p><button class="btn w" data-a="regen">Build my plan</button><button class="btn o w" style="margin-top:8px" data-a="redo">Edit my answers</button></div>`;
  const W={};L.forEach(t=>{const w=Math.max(0,Math.floor(diff(st,t.date)/7));(W[w]=W[w]||[]).push(t)});
  const ms=L.filter(t=>t.type!=='study'&&t.date>=today()).sort((a,b)=>a.date<b.date?-1:1).slice(0,5),rp=S.tasks.filter(repl).length;
  const LR=Engine.learn(S.p.exam,STRATEGIES.concat(S.top));let h=`<h1>${d?'Review your plan':'Your plan'}</h1><p class="note"><b>Suggestions, not verified facts.</b> ${LR.enough?`Tuned with ${LR.n} verified strategies and your answers.`:`Built from your answers and proven study habits: spaced revision, practice questions and weekly mocks.`} About 85% of your ${S.p.hours} daily hours is planned and the rest stays free for catching up. Check topics against your official syllabus. No plan can guarantee a score or rank.</p>`;
+ h+=planGate()?'<p class="note" style="margin-top:12px">The other sections (Today, Study, Progress and Profile) open as soon as you accept this plan. You can also edit your answers first.</p>':'';
  h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p>${d.agreed?'<button class="btn w" data-a="accept">Accept plan</button>':'<button class="btn w" data-a="disc">Read the terms to continue</button>'}<div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
  :`<div class="row" style="margin:12px 0;flex-wrap:wrap"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button></div>`;
  h+=planCard(d);if(!d)h+=planCal();h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
@@ -270,15 +271,15 @@ function progressMain(){
  +`<section class="card"><h2>Tasks and consistency</h2><p>${T.filter(t=>t.status==='done').length} of ${T.length} tasks completed. ${out.length} outstanding, ${out.filter(t=>t.date<today()).length} of them already past.</p><p>${el.length?ac+' of '+el.length+' days active this week.':'This week has not started yet.'}</p><button class="btn o s" data-a="share">Share today's progress</button></section>`
  +(typeof testSum==='function'?testSum():'')+`<section class="card"><h2>Subject-wise progress</h2>${Object.keys(SB).length?Object.entries(SB).sort((x,y)=>y[1].p-x[1].p).map(([s,o])=>{const p=Math.round(o.c/o.p*100);return`<p class="row sp" style="margin:0 0 2px"><span>${esc(s)}</span><span class="sm mu">${p}% · ${hm(o.c)} of${hm(o.p)}</span></p><div class="bar g" style="margin-bottom:10px"><i style="width:${p}%"></i></div>`}).join(''):'<p class="mu">Subject progress appears once you have tasks.</p>'}</section>`}
 const TABS=['home','study','roadmap','progress','profile'];
-const planGate=()=>!!(S&&S.draft&&!S.tasks.length&&S.p.onboarded);   // first plan only: the other tabs open once you accept it (or choose to edit it)
-function discSheet(){sheet(`<h2>Before you continue</h2><p>AceLife builds a <b>suggested</b> study plan from your answers. Please read this:</p><ul class="sm dsc"><li><b>No guarantee.</b> We do not promise success, a score, a rank or a selection in any exam. Your result depends on your effort and many things outside this app.</li><li><b>Check the syllabus.</b> Topics, order and timings are suggestions. Confirm them with your exam's official notification.</li><li><b>You stay in control.</b> You can edit your answers or any task at any time.</li><li>AI replies and toppers' strategies are guidance only and can contain mistakes. They are not professional advice.</li></ul><p class="sm mu">By continuing you accept our <a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p><div class="stack"><button class="btn" data-a="agree">I agree and continue</button><button class="btn o" data-a="disced">No, let me edit my answers</button></div>`);$('#sh').dataset.lock='1'}
+const planGate=()=>!!(S&&S.p.onboarded&&!S.tasks.length);   // until a plan is accepted, only the Plan page is open (you can accept it or choose to edit it)
+function discSheet(){sheet(`<h2>Before you continue</h2><p>Tasky builds a <b>suggested</b> study plan from your answers. Please read this:</p><ul class="sm dsc"><li><b>No guarantee.</b> We do not promise success, a score, a rank or a selection in any exam. Your result depends on your effort and many things outside this app.</li><li><b>Check the syllabus.</b> Topics, order and timings are suggestions. Confirm them with your exam's official notification.</li><li><b>You stay in control.</b> You can edit your answers or any task at any time.</li><li>AI replies and toppers' strategies are guidance only and can contain mistakes. They are not professional advice.</li></ul><p class="sm mu">By continuing you accept our <a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p><div class="stack"><button class="btn" data-a="agree">I agree and continue</button><button class="btn o" data-a="disced">No, let me edit my answers</button></div>`);$('#sh').dataset.lock='1'}
 function profile(){const p=S.p,ex=EX[p.exam]||{n:''},a=act();let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}
  const nT=(p.tdone||[]).length,nW=(p.tweak||[]).length,rows=[[1,'Name',p.name||'-'],[2,'Exam',ex.n],[3,'Exam date and target',(p.examDate?fD(p.examDate):'-')+(p.target?' · '+p.target:'')],[4,'Daily study time',hm((+p.hours||0)*60)+(+p.workHrs?' · work '+hm(+p.workHrs*60):'')],[5,'Level',p.level||'-'],[6,'Syllabus',nT+' topics done, '+nW+' weak'],[7,'Study order',p.ordOn?'Your own order':'Automatic'],[8,'Resources',(p.res||[]).join(', ')||'-']];
  return`<h1>Profile</h1><section class="card pf"><button type="button" class="av avp" data-a="phot" aria-label="Change profile photo">${typeof avHtml==='function'?avHtml():esc((p.name||'?').trim().charAt(0).toUpperCase())}<i class="cam" aria-hidden="true">+</i></button><input type="file" id="phf" accept="image/*" hidden><div style="min-width:0"><h2 style="margin:0">${esc(p.name||'Student')}</h2><p class="sm mu" style="margin:2px 0 6px">${esc(ex.n)}</p><span class="pill">${st}-day streak</span> <span class="pill">${hm(totalMins())} studied</span>${p.photo?' <button type="button" class="lgm" data-a="phrm">Remove photo</button>':''}</div></section>`
  +accountCard()
  +`<section class="card"><h2>Your answers</h2><p class="sm mu">Change anything you told us at set-up. Your plan is rebuilt from the new answers and nothing is applied until you accept it. The back button cancels.</p>${rows.map(r=>`<div class="row sp ans"><span style="min-width:0"><b>${r[1]}</b><br><span class="sm mu">${esc(r[2])}</span></span><button class="btn o s" data-a="redo" data-v="${r[0]}" aria-label="Edit ${r[1]}">Edit</button></div>`).join('')}</section>`
- +`<section class="card"><h2>Help</h2><p class="sm mu">New to AceLife, or want a reminder of what each tab does?</p><button class="btn o" data-a="tour">Take the 1-minute tour</button></section>`+timerCard()+(typeof focusCard==='function'?focusCard():'')+(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+icsCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
- +library()+(typeof aboutCard==='function'?aboutCard():`<p class="sm mu" style="text-align:center">AceLife ${esc(VER)}</p>`)}
+ +`<section class="card"><h2>Help</h2><p class="sm mu">New to Tasky, or want a reminder of what each tab does?</p><button class="btn o" data-a="tour">Take the 1-minute tour</button></section>`+(typeof langCard==='function'?langCard():'')+timerCard()+(typeof focusCard==='function'?focusCard():'')+(typeof themeCard==='function'?themeCard():'')+(typeof permCard==='function'?permCard():'')+remCard()+icsCard()+dataCard()+(typeof liveCard==='function'?liveCard():'')
+ +library()+(typeof aboutCard==='function'?aboutCard():`<p class="sm mu" style="text-align:center">Tasky ${esc(VER)}</p>`)}
 function library(){
  const x=V.lx||S.p.exam,E=STRATEGIES.concat(S.top).filter(e=>e.exam===x);
  return socCard()+aiCard()+`<h2 class="sec">Strategy library</h2>`
@@ -378,7 +379,7 @@ const A={
   S.rem.on=true;try{await reg.periodicSync.register('study-reminder',{minInterval:12*36e5});S.rem.bg=true}catch(e){S.rem.bg=false}
   save();render();toast(S.rem.bg?'Reminders are on':'Reminders are on while the app is open')},
  remoff:()=>{S.rem.on=false;save();render()},
- remtest:async()=>{toast(await notify({title:'AceLife',body:'Reminders are working.',tag:'test'})?'Test sent':'Could not show a notification')},
+ remtest:async()=>{toast(await notify({title:'Tasky',body:'Reminders are working.',tag:'test'})?'Test sent':'Could not show a notification')},
  go:async d=>{
   if(S.timer)A.timer();
   const t=d.id?byId(d.id):null,g=t?Math.max(30,Math.round((t.mins-logged(t))/15)*15):0;
@@ -520,14 +521,14 @@ A.sdel=d=>{const x=S.sessions.find(y=>y.id===d.id);if(!x)return;sheet(`<h2>Delet
 A.sdelok=d=>{S.sessions=S.sessions.filter(y=>y.id!==d.id);closeSheet();save();render();toast('Session deleted')};
 A.csvx=()=>{const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',r=[['date','start','end','minutes','subject','topic']];
  S.sessions.slice().sort((a,b)=>a.start<b.start?-1:1).forEach(x=>{const t=x.taskId?byId(x.taskId):null;r.push([x.day,x.start,x.end,x.mins,t?t.subject:'',t?t.topic:''])});
- dl('acelife-sessions-'+today()+'.csv','\ufeff'+r.map(a=>a.map(q).join(',')).join('\r\n'),'text/csv');toast('Sessions downloaded')};
+ dl('tasky-sessions-'+today()+'.csv','\ufeff'+r.map(a=>a.map(q).join(',')).join('\r\n'),'text/csv');toast('Sessions downloaded')};
 A.fs=()=>{if(!S.timer||Date.now()-(V.dg||0)<350)return;V.fs=!V.fs;wake(V.fs);vib(10);render()};
 A.mini=()=>{if(!S.timer||Date.now()-(V.dg||0)<350)return;V.mn=!V.mn;V.fs=false;vib(8);render()};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S&&S.timer){armAlarm();checkAlarm();if(V.fs)wake(true);render()}});
 addEventListener('error',e=>{if(Date.now()-errAt>1e4){errAt=Date.now();try{toast('Something went wrong. Your data is safe.')}catch(x){}}console.error(e.error||e.message)});
 addEventListener('unhandledrejection',e=>console.error(e.reason));
 const BSTEPS=['Reading your answers','Ordering subjects, foundation first','Fitting topics into your hours','Balancing priorities and revision','Placing mock tests and checking every day fits'];
-const loadView=()=>`<section class="load"><div class="spin" aria-hidden="true"></div><h2>AceLife</h2><p class="mu">${esc(V.lm||'Starting up')}...</p>${V.slow?'<p class="sm mu">This is taking longer than usual. Your connection may be slow.</p><button class="btn o" data-a="offline">Continue with saved data</button>':''}</section>`;
+const loadView=()=>`<section class="load" role="status" aria-live="polite"><div class="spin" aria-hidden="true"></div><h2>Tasky</h2><p class="mu">${esc(V.lm||'Starting up')}...</p><div class="ldb" aria-hidden="true"><i></i></div>${V.slow?'<p class="sm mu">This is taking longer than usual. Your connection or the server may be slow. Please wait, nothing is lost.</p><div class="stack" style="max-width:320px;margin:12px auto 0"><button class="btn o" data-a="offline">Continue with saved data</button><button class="btn o" data-a="reload">Try again</button></div>':''}</section>`;
 function buildView(){const b=V.build;
  if(b.err)return`<div class="card"><h2>Could not build the plan</h2><p class="mu">Your answers are saved. Please try again.</p><button class="btn w" data-a="regen">Try again</button></div>`;
  const n=BSTEPS.length;return`<section class="load"><div class="spin" aria-hidden="true"></div><h2>Building your plan</h2><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${b.i}" style="margin:12px 0"><i style="width:${b.i/n*100}%"></i></div><ul class="steps">${BSTEPS.map((s,i)=>`<li class="${i<b.i?'ok':i===b.i?'now':''}">${esc(s)}</li>`).join('')}</ul><p class="sm mu">This runs on your phone, so it keeps working on a slow connection.</p></section>`}
@@ -581,9 +582,9 @@ A.pomo=async()=>{const T=S.timer;if(!T||T.pz)return;unlockAudio();pomoStep(1);
  armAlarm();save();render();toast(T.pomo?'Pomodoro on: '+PF()+' min focus, '+PB()+' min break':'Pomodoro off');
  if(T.pomo&&window.Notification&&Notification.permission==='default')try{await Notification.requestPermission()}catch(e){}};
 
-A.bkx=()=>{dl('acelife-backup-'+today()+'.json',JSON.stringify(S,null,1),'application/json');toast('Backup downloaded')};
+A.bkx=()=>{dl('tasky-backup-'+today()+'.json',JSON.stringify(S,null,1),'application/json');toast('Backup downloaded')};
 A.bki=()=>{const f=$('#bk');if(f){f.value='';f.click()}};
-function okBk(o){if(!o||typeof o!=='object'||Array.isArray(o)||!o.p||typeof o.p!=='object'||!Array.isArray(o.tasks)||!Array.isArray(o.sessions))return'This is not an AceLife backup. It needs a profile, tasks and sessions.';
+function okBk(o){if(!o||typeof o!=='object'||Array.isArray(o)||!o.p||typeof o.p!=='object'||!Array.isArray(o.tasks)||!Array.isArray(o.sessions))return'This is not an Tasky backup. It needs a profile, tasks and sessions.';
  if(o.p.exam&&!EX[o.p.exam])return'This backup is for an exam this version does not have.';
  const s=v=>typeof v==='string',tasks=o.tasks.filter(t=>t&&s(t.id)&&s(t.subject)&&s(t.topic)&&okD(t.date)&&t.mins>0&&t.mins<=600&&['todo','done','partial','incomplete'].includes(t.status)&&['High','Medium','Low'].includes(t.pri)&&['study','revision','mock'].includes(t.type));
  const ses=o.sessions.filter(x=>x&&s(x.id)&&s(x.start)&&!isNaN(new Date(x.start))&&okD(x.day)&&x.mins>0&&x.mins<=1440);
@@ -592,10 +593,10 @@ function okBk(o){if(!o||typeof o!=='object'||Array.isArray(o)||!o.p||typeof o.p!
   ai:{hist:o.ai&&Array.isArray(o.ai.hist)?o.ai.hist.filter(x=>x&&s(x.id)&&['quiz','split','coach'].includes(x.k)&&(x.k!=='quiz'||Number.isFinite(x.score))).slice(-60):[]}}));
  if(!(+h.p.hours>=.5&&+h.p.hours<=16))h.p.hours=4;h.timer=null;h.soc.run=null;return h}
 document.addEventListener('change',async e=>{if(e.target.id!=='bk')return;const f=e.target.files[0];if(!f)return;
- if(f.size>2e6){toast('That file is too big to be an AceLife backup.');return}
+ if(f.size>2e6){toast('That file is too big to be an Tasky backup.');return}
  try{const r=okBk(JSON.parse(await f.text()));if(typeof r==='string'){toast(r);return}V.imp=r;
   sheet(`<h2>Import backup?</h2><p class="sm">${r.tasks.length} tasks and ${r.sessions.length} study sessions${r.p.exam&&EX[r.p.exam]?' for '+esc(EX[r.p.exam].n):''}.</p><div class="stack"><button class="btn" data-a="bkm">Merge with my data</button><button class="btn o" data-a="bkr">Replace my data</button><button class="btn o" data-a="x">Cancel</button></div>`)}
- catch(x){toast('That file could not be read as an AceLife backup.')}});
+ catch(x){toast('That file could not be read as an Tasky backup.')}});
 A.bkr=()=>{if(!V.imp)return;clearInterval(iv);S=V.imp;S.upd=Date.now();V.imp=null;V.step=S.p.onboarded?0:1;V.tab='home';closeSheet();save();render();toast('Backup restored')};
 A.bkm=()=>{const o=V.imp;if(!o)return;const ids=new Set(S.tasks.map(t=>t.id)),sid=new Set(S.sessions.map(x=>x.id)),tid=new Set(S.top.map(x=>x.id)),hid=new Set(S.ai.hist.map(x=>x.id));
  if(!S.p.onboarded&&o.p.onboarded)S.p=o.p;else S.p.dayCap=Object.assign({},o.p.dayCap,S.p.dayCap);
@@ -608,22 +609,22 @@ const icsF=l=>{const o=[],E=new TextEncoder();let c='',b=0;for(const ch of l){co
 const icsD=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'T'+pad(d.getHours())+pad(d.getMinutes())+'00';
 A.ics=()=>sheet(`<h2>Export week to Calendar</h2><p class="sm mu">Your study blocks for the next 7 days become calendar events, placed one after another from the time you choose. Open the file to add them to Google Calendar or Apple Calendar.</p>${inp('ic_t','First block starts at',`type="time" value="${esc(S.p.icsT||pad(usualHour())+':00')}"`)}<div class="row" style="margin-top:12px"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="icsok">Download .ics</button></div>`);
 A.icsok=()=>{const v=$('#ic_t').value;if(!/^\d{2}:\d{2}$/.test(v)){toast('Pick a start time.');return}S.p.icsT=v;
- const[hh,mm]=v.split(':').map(Number),stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,''),L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AceLife//Study Plan//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:AceLife study plan'];let n=0;
+ const[hh,mm]=v.split(':').map(Number),stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,''),L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Tasky//Study Plan//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Tasky study plan'];let n=0;
  for(let i=0;i<7;i++){const k=addD(today(),i);let s=pd(k);s.setHours(hh,mm,0,0);
   tasksOn(k).forEach(t=>{const e=new Date(s.getTime()+t.mins*6e4);n++;
-   L.push('BEGIN:VEVENT','UID:'+t.id+'@acelife','DTSTAMP:'+stamp,'DTSTART:'+icsD(s),'DTEND:'+icsD(e),icsF('SUMMARY:'+icsT(t.subject+': '+t.topic)),icsF('DESCRIPTION:'+icsT('Priority: '+t.pri+(t.type!=='study'?'. '+t.type:'')+(t.why?'. '+t.why:'')+'. Planned with AceLife')),'BEGIN:VALARM','TRIGGER:-PT10M','ACTION:DISPLAY','DESCRIPTION:Study block starts soon','END:VALARM','END:VEVENT');s=e})}
+   L.push('BEGIN:VEVENT','UID:'+t.id+'@tasky','DTSTAMP:'+stamp,'DTSTART:'+icsD(s),'DTEND:'+icsD(e),icsF('SUMMARY:'+icsT(t.subject+': '+t.topic)),icsF('DESCRIPTION:'+icsT('Priority: '+t.pri+(t.type!=='study'?'. '+t.type:'')+(t.why?'. '+t.why:'')+'. Planned with Tasky')),'BEGIN:VALARM','TRIGGER:-PT10M','ACTION:DISPLAY','DESCRIPTION:Study block starts soon','END:VALARM','END:VEVENT');s=e})}
  if(!n){toast('No tasks in the next 7 days.');return}
- L.push('END:VCALENDAR');closeSheet();save();dl('acelife-week-'+today()+'.ics',L.join('\r\n')+'\r\n','text/calendar');toast(n+' study blocks exported')};
+ L.push('END:VCALENDAR');closeSheet();save();dl('tasky-week-'+today()+'.ics',L.join('\r\n')+'\r\n','text/calendar');toast(n+' study blocks exported')};
 
 const stk=()=>{const a=act();let st=0,c=today();if(!a.has(c))c=addD(c,-1);while(a.has(c)){st++;c=addD(c,-1)}return st};
 async function shareImg(){
- const k=today(),T=tasksOn(k),est=sum(T,t=>t.mins),pc=est?Math.round(sum(T,doneMin)/est*100):0,n=diff(k,S.p.examDate),st=stk(),dn=T.filter(t=>t.status==='done'),ex=EX[S.p.exam]?EX[S.p.exam].n:'AceLife';
+ const k=today(),T=tasksOn(k),est=sum(T,t=>t.mins),pc=est?Math.round(sum(T,doneMin)/est*100):0,n=diff(k,S.p.examDate),st=stk(),dn=T.filter(t=>t.status==='done'),ex=EX[S.p.exam]?EX[S.p.exam].n:'Tasky';
  const cs=getComputedStyle(document.documentElement),col=(v,d)=>cs.getPropertyValue(v).trim()||d,H1=col('--h1','#27348B'),H2=col('--h2','#4658D0'),AC=col('--ac','#E8A200');
  try{await document.fonts.load('800 40px Mukta')}catch(e){}
  const c=document.createElement('canvas');c.width=1080;c.height=1350;const x=c.getContext('2d'),F=(w,s)=>w+' '+s+'px Mukta,system-ui,sans-serif';
  const fit=(t,w)=>{if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'...').width>w)t=t.slice(0,-1);return t+'...'};
  const g=x.createLinearGradient(0,0,1080,1350);g.addColorStop(0,H1);g.addColorStop(1,H2);x.fillStyle=g;x.fillRect(0,0,1080,1350);
- x.textBaseline='alphabetic';x.textAlign='left';x.fillStyle=AC;x.font=F(800,44);x.fillText('AceLife',80,120);
+ x.textBaseline='alphabetic';x.textAlign='left';x.fillStyle=AC;x.font=F(800,44);x.fillText('Tasky',80,120);
  x.fillStyle='#fff';x.font=F(800,84);x.fillText(fit(ex,920),80,250);
  x.fillStyle='rgba(255,255,255,.88)';x.font=F(600,52);x.fillText(n>0?n+' days to go':n===0?'Exam day':'Exam date has passed',80,330);
  x.fillStyle=AC;x.font=F(800,170);x.fillText(String(st),80,640);x.fillStyle='#fff';x.font=F(600,44);x.fillText('-day streak',80,710);
@@ -636,22 +637,22 @@ async function shareImg(){
   x.strokeStyle=H1;x.lineWidth=6;x.lineCap='round';x.lineJoin='round';x.beginPath();x.moveTo(94,y-13);x.lineTo(101,y-5);x.lineTo(115,y-22);x.stroke();
   x.fillStyle='#fff';x.font=F(600,40);x.fillText(fit(t.subject+': '+t.topic,860),148,y)});
  x.fillStyle=AC;x.font=F(800,48);x.fillText('Timed today: '+hm(dayMins(k)),80,1240);
- x.fillStyle='rgba(255,255,255,.65)';x.font=F(400,32);x.textAlign='center';x.fillText('Planned with AceLife',540,1306);
+ x.fillStyle='rgba(255,255,255,.65)';x.font=F(400,32);x.textAlign='center';x.fillText('Planned with Tasky',540,1306);
  const b=await new Promise(r=>c.toBlob(r,'image/png'));if(!b){toast('Could not make the picture.');return}
  if(V.shu)URL.revokeObjectURL(V.shu);V.shb=b;V.shu=URL.createObjectURL(b);
  sheet(`<h2>Your progress</h2><img src="${V.shu}" alt="Progress picture: ${pc}% of today done, ${st}-day streak" style="width:100%;border-radius:14px;margin-top:8px"><div class="stack"><button class="btn" data-a="shimg">Share image</button><button class="btn o" data-a="shdl">Download PNG</button><button class="btn o" data-a="x">Close</button></div>`)}
 A.share=()=>shareImg().catch(e=>{console.error(e);toast('Could not make the picture.')});
-A.shimg=async()=>{const b=V.shb;if(!b)return;const f=new File([b],'acelife-progress-'+today()+'.png',{type:'image/png'});
- try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'AceLife',text:'Planned with AceLife'});return}}catch(e){if(e&&e.name==='AbortError')return}
+A.shimg=async()=>{const b=V.shb;if(!b)return;const f=new File([b],'tasky-progress-'+today()+'.png',{type:'image/png'});
+ try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Tasky',text:'Planned with Tasky'});return}}catch(e){if(e&&e.name==='AbortError')return}
  toast('Sharing is not available here. Downloading instead.');A.shdl()};
-A.shdl=()=>{if(V.shb)dl('acelife-progress-'+today()+'.png',V.shb)};
+A.shdl=()=>{if(V.shb)dl('tasky-progress-'+today()+'.png',V.shb)};
 
 const SOC=[['ig','Instagram','#C13584','instagram://app','https://instagram.com'],['yt','YouTube','#E62117','vnd.youtube://','https://youtube.com'],['wa','WhatsApp','#1FA855','whatsapp://','http://whatsapp.com'],['x','X','#14171A','twitter://','https://x.com/'],['fb','Facebook','#1877F2','fb://','https://facebook.com/'],['sc','Snapchat','#C9A800','snapchat://','https://snapchat.com'],['tg','Telegram','#229ED9','tg://','https://telegram.org'],['rd','Reddit','#FF4500','reddit://','https://reddit.com'],['li','LinkedIn','#0A66C2','linkedin://','https://linkedin.com']];
 const socUse=(id,k)=>((S.soc.use[k||today()]||{})[id])||0,socLeft=id=>Math.max(0,S.soc.apps[id].lim-socUse(id)),socList=()=>SOC.filter(a=>S.soc.apps[a[0]]);
 const tile=a=>`<span class="stl" style="background:${a[2]}" aria-hidden="true">${esc(a[1][0])}</span>`,socEx=()=>EX[S.p.exam]?EX[S.p.exam].n:'your exam';
 function socAdd(id,m){const k=today(),u=S.soc.use;u[k]=u[k]||{};u[k][id]=(u[k][id]||0)+m;Object.keys(u).sort().slice(0,-14).forEach(z=>delete u[z])}
 function socCard(){const L=socList(),tot=sum(L,a=>socUse(a[0]));
- return`<section class="card"><h2>Social media time</h2><p class="sm mu">${L.length?'Today: '+hm(tot)+' across '+L.length+' app'+(L.length>1?'s':'')+'. Time counts from opening an app with the Rest button until you return to AceLife, or when you add it yourself.':'Choose the apps you use and how long you want to spend on each. Browsers cannot see what you do in other apps, so AceLife counts the time between opening an app from Rest and coming back.'}</p>`
+ return`<section class="card"><h2>Social media time</h2><p class="sm mu">${L.length?'Today: '+hm(tot)+' across '+L.length+' app'+(L.length>1?'s':'')+'. Time counts from opening an app with the Rest button until you return to Tasky, or when you add it yourself.':'Choose the apps you use and how long you want to spend on each. Browsers cannot see what you do in other apps, so Tasky counts the time between opening an app from Rest and coming back.'}</p>`
  +L.map(a=>{const u=socUse(a[0]),l=S.soc.apps[a[0]].lim;return`<p class="row sp" style="margin:8px 0 2px"><span class="row" style="gap:8px">${tile(a)}${esc(a[1])}</span><span class="sm ${u>=l?'er':'mu'}">${hm(u)} of ${hm(l)}</span></p><div class="bar ${u>=l?'ov':'g'}"><i style="width:${Math.min(100,Math.round(u/l*100))}%"></i></div>`}).join('')
  +`<div class="row" style="flex-wrap:wrap;margin-top:12px"><button class="btn s" data-a="soclim">Choose apps and limits</button>${L.length?'<button class="btn o s" data-a="socadd">Add time I spent</button>':''}<button class="btn o s" data-a="socrem">Reminder: ${S.soc.rem?'on':'off'}</button></div></section>`}
 A.rest=()=>{const L=socList();

@@ -1,6 +1,6 @@
 ACELIFE ON GOOGLE PLAY (v13)
 ============================
-AceLife is a PWA. Google Play accepts it as a "Trusted Web Activity" (TWA): a thin Android shell that opens your hosted app full screen.
+Tasky is a PWA. Google Play accepts it as a "Trusted Web Activity" (TWA): a thin Android shell that opens your hosted app full screen.
 You do NOT rewrite anything. Your website stays the app, and every web update appears instantly for Play users too.
 
 0. WHAT IS ALREADY DONE IN THE CODE (this version)
@@ -22,7 +22,7 @@ You do NOT rewrite anything. Your website stays the app, and every web update ap
  a) Go to https://www.pwabuilder.com , paste your site address, tap Start. Fix anything it highlights in red.
  b) Package for stores > Android > Google Play. Fill:
       Package ID: something unique and permanent, e.g. com.yourname.acelife  (cannot be changed later)
-      App name: AceLife   Version: 1  Version code: 1
+      App name: Tasky   Version: 1  Version code: 1
       Signing key: "Create new" (let it generate). It gives you a zip containing the .aab file, a signing key file, a password file and an assetlinks.json.
  c) BACK UP THE KEY FILE AND PASSWORDS in two places. If you lose them you cannot update the app the normal way.
  (Alternative for developers: Bubblewrap CLI does the same.)
@@ -37,7 +37,7 @@ You do NOT rewrite anything. Your website stays the app, and every web update ap
  - Create app > App, Free, English.
  - Production/closed testing: Google currently requires NEW personal developer accounts to run a closed test with a minimum number of testers (check the Console; it has been 12 testers for 14 days) before you can apply for production. Organisation accounts are exempt. Start this early.
  - Store listing:
-     App name: AceLife - Study Planner for Exams   (max 30 chars; shorten if the Console complains)
+     App name: Tasky - Study Planner for Exams   (max 30 chars; shorten if the Console complains)
      Short description (max 80): Daily study plan, timer and topic tests for NEET PG and other exams.
      Full description (max 4000): describe plan builder, timer with pause, topic tests, progress, themes, backup.
      Do NOT claim "official", do NOT use NEET/NBEMS/AIIMS logos, and do not promise ranks or results.
@@ -68,5 +68,5 @@ You do NOT rewrite anything. Your website stays the app, and every web update ap
 6. THINGS THAT CAN GET AN APP REJECTED (check yours)
  - Placeholders left in privacy-policy.html / terms.html / assetlinks.json.
  - Question bank content copied from copyrighted books or paid test series. Use only questions you are allowed to publish, or write your own. Your qbank/ files are YOUR responsibility.
- - Names/logos of exams or institutions used as if the app were official. Keep the "not affiliated" wording in the store description: "AceLife is an independent study tool and is not affiliated with NBEMS, NTA, UPSC or any exam authority."
+ - Names/logos of exams or institutions used as if the app were official. Keep the "not affiliated" wording in the store description: "Tasky is an independent study tool and is not affiliated with NBEMS, NTA, UPSC or any exam authority."
  - A "live students" number that is not real. The app shows the real count; the Demo preview is for your own phone only. Never ship a fake count as real.

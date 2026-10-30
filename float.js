@@ -45,7 +45,7 @@
    Float.ms()},
   ms(){if(!('mediaSession' in navigator))return;const ms=navigator.mediaSession,T=S&&S.timer;if(!T)return;
    try{const el=Math.floor(stMs(T)/1e3),t=T.taskId&&byId(T.taskId);
-    ms.metadata=new MediaMetadata({title:(T.pz?'Paused ':'Studying ')+hm(el/60),artist:t?t.subject:'AceLife study timer',album:'AceLife',artwork:[{src:'icon-512.png',sizes:'512x512',type:'image/png'}]});
+    ms.metadata=new MediaMetadata({title:(T.pz?'Paused ':'Studying ')+hm(el/60),artist:t?t.subject:'Tasky study timer',album:'Tasky',artwork:[{src:'icon-512.png',sizes:'512x512',type:'image/png'}]});
     ms.playbackState=T.pz?'paused':'playing';
     ms.setActionHandler('pause',()=>{if(S.timer&&!S.timer.pz)A.pause()});ms.setActionHandler('play',()=>{if(S.timer&&S.timer.pz)A.pause()});
     ms.setActionHandler('stop',()=>{if(S.timer)A.timer()});
