@@ -1,0 +1,15 @@
+<!-- Add these to the <manifest> of the Android app that wraps Tasky in a WebView (NOT a Trusted Web Activity: a TWA cannot expose
+     TaskyNative to the page). Each permission is only ASKED when the person taps "Allow" in Study > Focus mode. -->
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>              <!-- runtime prompt on Android 13+ -->
+<uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>     <!-- Do Not Disturb access: user grants it in a Settings screen -->
+<uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions"/>  <!-- Usage access: Settings screen -->
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>            <!-- Display over other apps: Settings screen -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+
+<application ...>
+  <service android:name=".FocusService" android:exported="false" android:foregroundServiceType="specialUse">
+    <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Study focus session timer and distraction reminder"/>
+  </service>
+</application>
