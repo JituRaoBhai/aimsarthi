@@ -12,6 +12,8 @@ document.addEventListener('change',e=>{if(!e.target||e.target.id!=='phf')return;
 
 /* ---- quick actions ---- */
 const QK=[['go','Start timer','Study with a stopwatch','<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',' data-id=""'],
+ ['focusgo','Focus mode','Stay off your phone while you study','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/>',''],
+ ['share','Share progress','Send a picture of today','<path d="M12 3v12M8 7l4-4 4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/>',''],
  ['add','Add task','Put your own task on a day','<path d="M12 5v14M5 12h14"/>',''],
  ['stt','Take a test','Custom or topic tests','<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/>',''],
  ['fcgo','Flashcards','Quick revision cards','<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 3h12a2 2 0 012 2v10"/>',''],
@@ -19,7 +21,7 @@ const QK=[['go','Start timer','Study with a stopwatch','<circle cx="12" cy="13" 
  ['tab','Progress','Charts and test scores','<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',' data-v="progress"']];
 function quickCard(){
  return(S.p.toured?'':`<div class="note tourn"><b>New here?</b> Take a one-minute tour of the app.<div class="row" style="margin-top:8px"><button class="btn s" data-a="tour">Show me around</button><button class="btn o s" data-a="tourx">Skip</button></div></div>`)
- +`<div class="qrow" role="group" aria-label="Shortcuts">${QK.filter(q=>q[1]!=='Your plan'&&q[1]!=='Progress').map(([a,t,d,ic,x])=>`<button type="button" class="qch" data-a="${a}"${x}><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg>${t}</button>`).join('')}</div>`}
+ +`<div class="qrow" data-noswipe role="group" aria-label="Shortcuts">${QK.filter(q=>q[1]!=='Your plan'&&q[1]!=='Progress').map(([a,t,d,ic,x])=>`<button type="button" class="qch" data-a="${a}"${x}><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg>${t}</button>`).join('')}</div>`}
 
 /* ---- tour ---- */
 const Guide={};
@@ -43,7 +45,7 @@ const rtLab=r=>(r.m?hm(r.m)+' · ':'')+(r.d==='all'?'every day':DO.filter(i=>r.d
 function routCard(k){const L=(S.rt||[]).filter(r=>rtOn(r,k)),dn=(S.rd||{})[k]||[];if(!L.length)return'';
  return`<section class="card"><div class="row sp"><h2 style="margin:0">Daily routine</h2><span class="sm mu">${L.filter(r=>dn.includes(r.id)).length} of ${L.length} done</span></div>`
  +L.map(r=>{const c=dn.includes(r.id);return`<div class="rtr${c?' done':''}"><button type="button" class="chk${c?' done':''}" data-a="rtt" data-id="${r.id}" data-k="${k}" aria-pressed="${c}" aria-label="${esc(r.t)}, ${c?'done':'not done'}">${c?'&#10003;':''}</button><div class="m"><b>${esc(r.t)}</b><span class="sm mu">${esc(rtLab(r))}</span></div><button type="button" class="more" data-a="rtm" data-id="${r.id}" aria-label="Options for ${esc(r.t)}">&#8943;</button></div>`}).join('')
- +`<p class="sm mu" style="margin:8px 0 0">Routine tasks repeat on their own and are never rescheduled.</p></section>`}
+ +`<button type="button" class="btn o w" style="margin-top:10px" data-a="radd">Add routine task</button><p class="sm mu" style="margin:8px 0 0">Routine tasks repeat on their own and are never rescheduled.</p></section>`}
 A.addstudy=A.add;
 A.add=()=>sheet(`<h2>Add a task</h2><div class="stack" style="margin-top:4px"><button class="btn" data-a="radd">Routine task<br><span class="sm" style="font-weight:400">Repeats daily or on days you choose</span></button><button class="btn o" data-a="addstudy">Study task<br><span class="sm" style="font-weight:400">One task on a single date</span></button><button class="btn o" data-a="x">Cancel</button></div>`);
 Object.assign(A,{
@@ -75,3 +77,5 @@ const Busy={n:0,t:0,e:null,
  const q=window.qbLoad;if(typeof q==='function')window.qbLoad=function(){const r=q.apply(this,arguments);Busy.on();Promise.resolve(r).finally(Busy.off);return r}})();
 (function(){let E=[],shown=false;const bump=()=>{const n=Date.now();E=E.filter(t=>n-t<10000);E.push(n);if(E.length>=3&&!shown&&typeof sheet==='function'){shown=true;try{sheet(`<h2>Something is not working</h2><p>The app ran into a problem, maybe because the phone or connection is slow. Your saved data is safe.</p><div class="row"><button class="btn o" style="flex:1" data-a="x">Keep using</button><button class="btn" style="flex:1" data-a="reload">Reload</button></div>`)}catch(e){}}};
  addEventListener('error',e=>{if(e&&e.target===window)bump()});addEventListener('unhandledrejection',bump)})();
+
+A.focusgo=()=>{if(S.p&&!S.p.onboarded)return;V.tab='study';V.sv='focus';V.fx=false;V.nav=[];scrollTo(0,0);render()};

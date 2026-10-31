@@ -26,7 +26,8 @@ function studyHub(){const tN=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam).lengt
  const cu=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam&&h.cu).length,cnt={ctest:cu?cu+' taken':'',tests:tN-cu>0?(tN-cu)+' taken':'',fc:fcAll().length?fcAll().length+(fcAll().length>1?' cards':' card')+(dueN?' · '+dueN+' due':''):'',note:(n=>n?n+(n>1?' notes':' note'):'')(sItems('note').length),vid:lk('vid'),chan:lk('chan'),crs:lk('crs')};
  return`<h1>Study</h1>${pgd('Everything you learn from, in one place. Pick a section to start.')}<div class="sbg">${SBX.map(([k,t,d,ic])=>`<button type="button" class="sbt" data-a="sv" data-v="${k}"><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${t}</b><span class="sm mu">${d}</span>${cnt[k]?`<span class="bd">${cnt[k]}</span>`:''}</button>`).join('')}</div>`
  +(dueN?`<section class="card"><h2>Cards due today</h2><p class="sm mu">${dueN} flashcard${dueN>1?'s':''} ready for review.</p><button class="btn" data-a="fcgo">Review now</button></section>`:'')
- +`<p class="sm mu">Tip: add your favourite video, channel and course links so everything is one tap away while you study.</p>`}
+ +`<p class="sm mu">Tip: add your favourite video, channel and course links so everything is one tap away while you study.</p>`
+ +`<section class="card"><h2 style="margin:0 0 8px">Search Google</h2><div class="row"><input id="gq" type="search" enterkeyhint="search" autocomplete="off" maxlength="200" placeholder="Search anything" aria-label="Search Google" style="flex:1;min-width:0"><button type="button" class="btn" data-a="gsrch">Search</button></div><p class="sm mu" style="margin:8px 0 0">Opens Google in your browser.</p></section>`}
 function studyView(){const k=V.sv;if(!k||!SBT[k])return studyHub();
  if(k==='focus')return focusView();if(k==='ctest')return testsHub();if(k==='tests')return topicView();if(k==='fc')return fcView();return listView(k)}
 function topicView(){return svBack('Topic tests')+pgd('Take a ready-made test for one topic. Your scores and missed questions are tracked in Progress.')+testsView()+`<section class="card"><h2>Want to mix topics?</h2><p class="sm mu">Build your own test from any subjects or topics.</p><button class="btn o" data-a="sv" data-v="ctest">Make a custom test</button></section>`}
@@ -91,7 +92,7 @@ function fcRun(R){const n=R.q.length;if(R.i>=n)return svBack('Review done')+`<se
   +`<section class="card fcc" aria-live="polite"><p class="sm mu" style="margin:0 0 6px">${esc(z.s||'General')}</p><p class="fcq">${esc(z.f)}</p>${R.sh?`<hr><p class="fca">${esc(z.b)}</p>`:''}</section>`
   +(R.sh?`<div class="row"><button class="btn o" style="flex:1" data-a="fcr" data-v="0">Again</button><button class="btn" style="flex:1" data-a="fcr" data-v="1">Good</button><button class="btn o" style="flex:1" data-a="fcr" data-v="2">Easy</button></div>`:`<button class="btn w" data-a="fcsh">Show answer</button>`)}
 Object.assign(A,{
- fcgo:()=>{const q=shuf(fcDue()).slice(0,30);if(!q.length){toast('No cards are due.');return}V.sv='fc';V.tab='study';V.fr={q,i:0,sh:false,n:q.length,g:0,a:0};V.fx=true;scrollTo(0,0);render()},
+ fcgo:()=>{const q=shuf(fcDue()).slice(0,30);if(!q.length){toast('No cards are due.');return}V.sv='fc';V.tab='study';V.fr={q,i:0,sh:false,n:q.length,g:0,a:0};V.fx=false;scrollTo(0,0);render()},
  fcsh:()=>{if(V.fr){V.fr.sh=true;render()}},
  fcr:d=>{const R=V.fr;if(!R)return;const z=R.q[R.i],p=fcSt(z),v=+d.v;S.fcp=S.fcp||{};
   if(v===0){S.fcp[z.id]={lv:0,due:today()};R.a++;R.q.push(z);R.n=Math.max(R.n,R.q.length)}else{const lv=Math.min(FCI.length-1,p.lv+v);S.fcp[z.id]={lv,due:addD(today(),FCI[lv])};R.g++}
@@ -159,3 +160,7 @@ Object.assign(A,{
   b.classList.add('ls');if(!document.getElementById('ytx')){const x=document.createElement('button');x.id='ytx';x.type='button';x.setAttribute('aria-label','Exit landscape');x.textContent='\u2715';x.addEventListener('click',ytExit);document.body.appendChild(x)}}});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement){try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}}});
 (function(){const c=window.closeSheet;if(typeof c==='function')window.closeSheet=function(){ytExit();return c.apply(this,arguments)}})();
+
+A.gsrch=()=>{const e=document.getElementById('gq'),q=e?e.value.trim():'';if(!q){toast('Type what you want to search.');if(e)e.focus();return}
+ if(window.PWA&&PWA.needNet())return;const w=window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank','noopener,noreferrer');if(!w)location.href='https://www.google.com/search?q='+encodeURIComponent(q)};
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='gq'){e.preventDefault();A.gsrch()}});

@@ -1,5 +1,5 @@
 'use strict';
-const VER='v19, 31 Oct 2026';
+const VER='v20, 1 Nov 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -226,7 +226,7 @@ function home(){
  +`<div class="seg" role="tablist" aria-label="Today sections"><button role="tab" aria-selected="${hv!=='rt'}" data-a="hv" data-v="tasks">${k===today()?"Today's tasks":'Tasks'}</button><button role="tab" aria-selected="${hv==='rt'}" data-a="hv" data-v="rt">Daily routine</button></div>`
  +(hv==='rt'?(typeof routCard==='function'&&routCard(k)?routCard(k):`<section class="card"><p class="mu" style="margin:0 0 10px">No routine tasks for this day yet. Routine tasks repeat by themselves and are never rescheduled.</p><button class="btn" data-a="radd">Add a routine task</button></section>`)
  :`<section class="card"><div class="row sp"><span class="sm mu">${nd} of ${T.length} done</span><button class="btn o s" data-a="add">Add task</button></div>${capRow(k)}${T.length?T.map(trow).join(''):'<p class="mu" style="margin:12px 0 0">No tasks on this day. Add one, or pick another day.</p>'}${k===today()&&!S.timer?'<button class="btn o w" style="margin-top:10px" data-a="go" data-id="">Start a timer without a task</button>':''}<p class="sm mu" style="margin:10px 0 0">Tap the circle when a task is done. The three dots have more options.</p></section>`+sessCard(k))
- +`<div class="row" style="margin:0 0 14px"><button class="btn o s" style="flex:1" data-a="rest">Rest day</button><button class="btn o s" style="flex:1" data-a="share">Share progress</button></div>`}
+ +`<div class="row" style="margin:0 0 14px"><button class="btn o s" style="flex:1" data-a="rest">Rest day</button></div>`}
 function planCard(d){const sm=d?d.summary:S.p.summary,m=d?d.mode:S.p.planMode;if(!sm)return'';
  const cur=Engine.modeFor(Math.max(1,diff(today(),S.p.examDate))),sk=sm.skipped||[],ch=!d&&m&&m!==cur;
  return(ch?`<div class="note" style="margin-bottom:12px"><b>Your exam is now closer.</b> Rebuild to switch to the ${esc(Engine.modeName(cur,S.p.level))}. Finished work is kept.<br><button class="btn s" style="margin-top:8px" data-a="regen">Build a new draft</button></div>`:'')
