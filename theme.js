@@ -7,12 +7,12 @@
 /* "Colourful": a new palette every 5 minutes, cycling through these. [name, dark?, colours] */
  const mk=(n,d,bg,sf,tx,mu,ln,pr,h1,h2,soft,ac,pt)=>[n,d,{'--bg':bg,'--sf':sf,'--tx':tx,'--mu':mu,'--ln':ln,'--pr':pr,'--pt':pt||(d?'#0B1020':'#FFFFFF'),'--h1':h1,'--h2':h2,'--soft':soft,'--ac':ac}];
  const P=[
-  mk('Aurora',0,'#EFF9F6','#FFFFFF','#0F2A27','#4A6B66','#CBE7DF','#0E7C6B','#0E7C6B','#2BB39A','#D8F3EC','#E8A200'),
-  mk('Sunrise',0,'#FFF3EA','#FFFFFF','#3A2118','#7A5A4C','#F2D6C4','#C2552B','#C2552B','#F08A5D','#FFE4D3','#E8A200'),
-  mk('Ocean',0,'#EBF5FF','#FFFFFF','#0E2438','#4B6479','#CBE0F3','#0F5FA8','#0F5FA8','#38A0E8','#D9ECFF','#F2A900'),
-  mk('Lavender',0,'#F5F0FF','#FFFFFF','#241639','#65558A','#DDD2F3','#6B3FC4','#6B3FC4','#A27BEA','#E9DEFF','#E8A200'),
-  mk('Rose',0,'#FFF0F4','#FFFFFF','#3A1522','#7C5260','#F3CFDA','#C2185B','#C2185B','#F06292','#FFDCE7','#F2A900'),
-  mk('Meadow',0,'#F3F9EC','#FFFFFF','#1B2A12','#556B45','#D8E8C6','#3F7D1F','#3F7D1F','#7BBF4A','#E3F2D2','#E8A200'),
+  mk('Aurora',0,'#EFF9F6','#F7F6F3','#0F2A27','#4A6B66','#CBE7DF','#0E7C6B','#0E7C6B','#2BB39A','#D8F3EC','#E8A200'),
+  mk('Sunrise',0,'#FFF3EA','#F7F6F3','#3A2118','#7A5A4C','#F2D6C4','#C2552B','#C2552B','#F08A5D','#FFE4D3','#E8A200'),
+  mk('Ocean',0,'#EBF5FF','#F7F6F3','#0E2438','#4B6479','#CBE0F3','#0F5FA8','#0F5FA8','#38A0E8','#D9ECFF','#F2A900'),
+  mk('Lavender',0,'#F5F0FF','#F7F6F3','#241639','#65558A','#DDD2F3','#6B3FC4','#6B3FC4','#A27BEA','#E9DEFF','#E8A200'),
+  mk('Rose',0,'#FFF0F4','#F7F6F3','#3A1522','#7C5260','#F3CFDA','#C2185B','#C2185B','#F06292','#FFDCE7','#F2A900'),
+  mk('Meadow',0,'#F3F9EC','#F7F6F3','#1B2A12','#556B45','#D8E8C6','#3F7D1F','#3F7D1F','#7BBF4A','#E3F2D2','#E8A200'),
   mk('Twilight',1,'#120F26','#1B1740','#EDE9FF','#A9A2D6','#322C63','#B39DFF','#3B2C8F','#7357E0','#2A2458','#FFC857'),
   mk('Midnight',1,'#0A1222','#111C36','#E6EEFF','#97A9D1','#233256','#7CB8FF','#14357A','#2F6FDB','#1A2A4E','#F2B429'),
   mk('Ember',1,'#1C1210','#2A1A16','#FFEDE6','#D2A99B','#4A2C25','#FF9A6B','#8A2F17','#E0592A','#3A211B','#FFC857'),

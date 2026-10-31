@@ -46,6 +46,9 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    // Ad-free status. Written only by the Cloud Function after Paytm confirms a payment (functions bypass rules). The app cannot write it.
+    match /entitlements/{uid} { allow read: if isOwner(uid); allow write: if false; }
+    match /orders/{id} { allow read, write: if false; }
     match /admins/{uid} {
       allow read: if isOwner(uid);
       allow write: if false;

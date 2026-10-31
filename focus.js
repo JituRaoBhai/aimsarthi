@@ -34,3 +34,29 @@ function focusCard(){const f=fm();if(!f)return'';
  +row('on','Focus mode','Counts every time you leave the app while studying.')
  +(f.on?row('nudge','Come-back reminder','Sends a notification if you stay away for 15 seconds.')+row('strict','Strict mode','Time spent away is not counted as study time.'):'')
  +`<div class="fmr" style="display:block"><button class="btn o" style="width:100%" data-a="fmwb">Block apps with Android Focus mode</button><p class="sm mu" style="margin:8px 0 0">Blocking other apps, reading app usage and detecting calls needs a native Android app. A web app cannot do this, so Tasky uses Android's Digital Wellbeing for the actual blocking. Calls are never blocked there.</p></div></section>`}
+
+/* ---------- Focus mode inside Study (v18) ----------
+   In the Android app (a WebView wrapper, see android/), window.TaskyNative exists and can ask Android for the permissions that
+   really block distractions. In a browser or a Trusted Web Activity it does not exist, so the page shows what the Android app adds
+   and the in-app focus features above keep working. Every permission is asked only when the person taps its button. */
+const NP=[['notif','Notifications','Shows the running timer and your come-back reminder.'],
+ ['dnd','Do Not Disturb access','Silences notifications while you focus. Calls from your starred contacts can still ring.'],
+ ['usage','Usage access','Lets Tasky see which app is open so it can bring you back when you open a distracting one.'],
+ ['overlay','Display over other apps','Shows a gentle "back to study" screen on top of a blocked app.']];
+const nat=()=>window.TaskyNative&&typeof TaskyNative.getPermissions==='function'?TaskyNative:null;
+function nPerms(){const n=nat();if(!n)return null;try{return JSON.parse(n.getPermissions())||{}}catch(e){return{}}}
+function focusView(){const f=fm(),p=nPerms(),d=V.fd||45,run=!!S.timer;
+ const rows=NP.map(([k,t,s])=>{const on=p&&p[k];return`<div class="pm"><div style="min-width:0"><b>${t}</b> <span class="tag ${on?'ok':''}">${p?(on?'On':'Off'):'Android app'}</span><br><span class="sm mu">${s}</span></div>${p&&!on?`<button type="button" class="btn s" data-a="fnp" data-k="${k}">Allow</button>`:''}</div>`}).join('');
+ return svBack('Focus mode')+pgd('Start a timed session. Tasky counts every time you leave the app and reminds you to come back.')
+  +`<section class="card"><h2 style="margin:0 0 8px">Start a focus session</h2><div class="chips" role="group" aria-label="Length">${[25,45,60,90].map(m=>`<button type="button" class="chip" data-a="fdur" data-v="${m}" aria-pressed="${d===m}">${m} min</button>`).join('')}</div>`
+  +`<button type="button" class="btn w" style="margin-top:12px" data-a="fgo"${run?' disabled':''}>${run?'A timer is already running':'Start focusing'}</button>`
+  +`<p class="sm mu" style="margin:8px 0 0">The timer rings when the time is up. Calls and alarms are never blocked.</p></section>`
+  +focusCard()
+  +`<section class="card" id="fperm"><h2 style="margin:0 0 4px">Permissions</h2><p class="sm mu" style="margin:0 0 6px">${p?'Allow only what you want. You can switch each one off later in Android Settings.':'These need the Tasky Android app. A web page cannot get them, so nothing is asked here.'}</p>${rows}</section>`}
+Object.assign(A,{
+ fdur:d=>{V.fd=+d.v;render()},
+ fnp:d=>{const n=nat();if(!n)return;try{n.requestPermission(d.k)}catch(e){toast('Could not open Android settings.')}},
+ fgo:async()=>{if(S.timer)return;const f=fm();f.on=true;
+  const m=V.fd||45;await A.go({id:''});if(f.nudge!==false&&typeof Notification!=='undefined'&&Notification.permission==='default')try{Notification.requestPermission()}catch(e){}if(S.timer){S.timer.goal=m;S.timer.fc=1;armAlarm();save();render();const n=nat();if(n&&n.startFocus)try{n.startFocus(m)}catch(e){}}}});
+(function(){const t=A.timer;A.timer=function(){const was=!!S.timer,r=t.apply(this,arguments);if(was&&!S.timer){const n=nat();if(n&&n.stopFocus)try{n.stopFocus()}catch(e){}}return r}})();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&V.tab==='study'&&V.sv==='focus'&&!sheetOpen())try{render()}catch(e){}});

@@ -7,6 +7,7 @@ const SBX=[['ctest','Custom test','Choose topics, count and time','<path d="M12 
  ['note','Notes','Your own short notes','<path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 13h8M8 17h6"/>'],
  ['vid','Videos','YouTube and lecture links','<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/>'],
  ['chan','Channels','Public Telegram channels','<path d="M21 4L3 11l6 2 2 6 3-4 5 3z"/>'],
+ ['focus','Focus mode','Stay in the app while you study','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/>'],
  ['crs','Courses','Coaching and course links','<path d="M3 8l9-5 9 5-9 5z"/><path d="M7 11v5c0 1.5 2.2 3 5 3s5-1.500 5-3v-5"/>']];
 const SBT=Object.fromEntries(SBX.map(x=>[x[0],x]));
 const CT=()=>window.STUDY_CONTENT||{},SJ=()=>EX[S.p.exam]?EX[S.p.exam].sub:[];
@@ -27,7 +28,7 @@ function studyHub(){const tN=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam).lengt
  +(dueN?`<section class="card"><h2>Cards due today</h2><p class="sm mu">${dueN} flashcard${dueN>1?'s':''} ready for review.</p><button class="btn" data-a="fcgo">Review now</button></section>`:'')
  +`<p class="sm mu">Tip: add your favourite video, channel and course links so everything is one tap away while you study.</p>`}
 function studyView(){const k=V.sv;if(!k||!SBT[k])return studyHub();
- if(k==='ctest')return testsHub();if(k==='tests')return topicView();if(k==='fc')return fcView();return listView(k)}
+ if(k==='focus')return focusView();if(k==='ctest')return testsHub();if(k==='tests')return topicView();if(k==='fc')return fcView();return listView(k)}
 function topicView(){return svBack('Topic tests')+pgd('Take a ready-made test for one topic. Your scores and missed questions are tracked in Progress.')+testsView()+`<section class="card"><h2>Want to mix topics?</h2><p class="sm mu">Build your own test from any subjects or topics.</p><button class="btn o" data-a="sv" data-v="ctest">Make a custom test</button></section>`}
 
 /* ---------- links and notes ---------- */

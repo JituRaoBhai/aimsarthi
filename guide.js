@@ -19,7 +19,7 @@ const QK=[['go','Start timer','Study with a stopwatch','<circle cx="12" cy="13" 
  ['tab','Progress','Charts and test scores','<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',' data-v="progress"']];
 function quickCard(){
  return(S.p.toured?'':`<div class="note tourn"><b>New here?</b> Take a one-minute tour of the app.<div class="row" style="margin-top:8px"><button class="btn s" data-a="tour">Show me around</button><button class="btn o s" data-a="tourx">Skip</button></div></div>`)
- +`<section class="card qa"><h2>Quick actions</h2><div class="qag">${QK.map(([a,t,d,ic,x])=>`<button type="button" class="qab" data-a="${a}"${x}><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${t}</b><span class="sm mu">${d}</span></button>`).join('')}</div></section>`}
+ +`<div class="qrow" role="group" aria-label="Shortcuts">${QK.filter(q=>q[1]!=='Your plan'&&q[1]!=='Progress').map(([a,t,d,ic,x])=>`<button type="button" class="qch" data-a="${a}"${x}><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg>${t}</button>`).join('')}</div>`}
 
 /* ---- tour ---- */
 const Guide={};

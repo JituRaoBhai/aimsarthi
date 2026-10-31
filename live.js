@@ -3,9 +3,9 @@
    The /api/live function counts the signals from the last 5 minutes and returns only that number. No names, no details. */
 (function(){
  const L={n:null,at:0,beat:0,on:false,busy:false,dn:20000+Math.floor(Math.random()*19)-9},DK='acelife:livedemo';
- const demo=()=>{try{return localStorage.getItem(DK)!=='0'}catch(e){return true}};window.Live=L;   // ← CHANGED: on by default
+ const demo=()=>{try{return localStorage.getItem(DK)==='1'}catch(e){return false}};window.Live=L;
  const cl=()=>window.Cloud&&Cloud.enabled&&Cloud.user&&Cloud.beat?Cloud:null;
- const msg=()=>{const n=demo()?L.dn:L.n;return demo()?`<b>${n.toLocaleString('en-US')}</b> students are studying right now <span class="tag">live</span>`:n>0?`<b>${n.toLocaleString('en-US')}</b> ${n===1?'student is':'students are'} studying right now`:'Nobody is studying right now. Start a session!'};
+ const msg=()=>{const n=demo()?L.dn:L.n;return demo()?`<b>${n.toLocaleString('en-US')}</b> students are studying right now <span class="tag">Demo</span>`:n>0?`<b>${n.toLocaleString('en-US')}</b> ${n===1?'student is':'students are'} studying right now`:'Nobody is studying right now. Start a session!'};
  const okNet=()=>!!(window.PWA&&PWA.verified&&PWA.online&&navigator.onLine);
  window.liveBox=()=>!okNet()||(L.n==null&&!demo())?'':`<div class="lvn" id="lvn" role="status" aria-live="polite"><i aria-hidden="true"></i><span>${msg()}</span></div>`;
  const show=()=>!!(typeof ready!=='undefined'&&ready&&S&&S.p.onboarded&&!V.build&&!(authOn()&&!CL().user));
@@ -26,7 +26,7 @@
 /* ---- DEMO PREVIEW (for testing the look only) ----
    Turned on by you in Profile, stored only on this phone, and always labelled "Demo" in the box. It is never shown to other students.
    Real students always see the real number. */
-(function(){const L=window.Live,DK='acelife:livedemo',on=()=>{try{return localStorage.getItem(DK)!=='0'}catch(e){return true}};   // ← CHANGED: on by default
+(function(){const L=window.Live,DK='acelife:livedemo',on=()=>{try{return localStorage.getItem(DK)==='1'}catch(e){return false}};
  const step=()=>{if(!on()||!window.PWA||!PWA.verified)return;const d=(1+Math.floor(Math.random()*9))*(Math.random()<.5?-1:1);L.dn=Math.min(20150,Math.max(19850,L.dn+d));   // moves by 1 to 9 every 10 seconds
   const e=document.getElementById('lvs');if(e)e.innerHTML=liveBox()};
  setInterval(step,1e4);

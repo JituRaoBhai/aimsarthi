@@ -1,0 +1,1 @@
+(function(){try{var n=navigator,c=n.connection||{},slow=(n.deviceMemory&&n.deviceMemory<=2)||(n.hardwareConcurrency&&n.hardwareConcurrency<=4)||c.saveData||/2g|3g/.test(c.effectiveType||'')||localStorage.getItem('tasky:slow')==='1';if(slow)document.documentElement.classList.add('lite')}catch(e){}})()
