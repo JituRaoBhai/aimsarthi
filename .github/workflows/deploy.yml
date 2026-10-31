@@ -12,4 +12,5 @@ jobs:
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          projectId: taskymj # <-- Add your actual Firebase Project ID here
           channelId: live
