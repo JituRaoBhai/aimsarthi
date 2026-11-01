@@ -4,3 +4,4 @@
 window.FIREBASE_CONFIG={apiKey:'AIzaSyCbVqAbyTtY0xax62Hc_D2Rp3w6CvCzLaA',authDomain:'taskymj.firebaseapp.com',projectId:'taskymj',storageBucket:'taskymj.firebasestorage.app',messagingSenderId:'496800945394',appId:'1:496800945394:web:5bcfda2df2aa051167ac6b',measurementId:'G-FPZ8BR3WZW'};
 window.EMAIL_DOMAIN='aimsarthi.invalid';   // a username becomes username@aimsarthi.invalid inside Firebase Authentication
 window.cloudReady=new Promise(r=>{window._cloudResolve=r;setTimeout(()=>r(null),7000)});
+window.AI_ENDPOINT='https://tasky-ai.YOURNAME.workers.dev';
