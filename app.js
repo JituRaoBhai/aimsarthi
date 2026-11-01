@@ -1,5 +1,5 @@
 'use strict';
-const VER='v20, 1 Nov 2026';
+const VER='v21, 1 Nov 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};

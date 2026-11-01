@@ -1,14 +1,15 @@
-/* AI helpers. Gemini is called by your own Cloud Function at /api/ai, so the API key never reaches the browser.
+/* AI helpers. Gemini is called by your own server (a free Cloudflare Worker, or the Firebase Cloud Function at /api/ai), so the API key never reaches the browser.
    Loaded after app.js and account.js (uses their wait, sheet, toast, esc, byId, S and so on). Every AI answer is checked here and shown with esc(). */
 const AI={
  LIM:5,                                                                  // AI requests per person per day (the server enforces the same number in functions/index.js)
  day:()=>new Date(Date.now()+198e5).toISOString().slice(0,10),           // the date in India (UTC+5:30); the server counts days the same way
  left(){const u=S&&S.ai&&S.ai.use;return Math.max(0,AI.LIM-(u&&u.day===AI.day()?u.n:0))},
- on:()=>!!(window.Cloud&&Cloud.enabled&&Cloud.user&&navigator.onLine),
+ url:()=>{const u=String(window.AI_ENDPOINT||'').trim();return /^(https:\/\/|\/api\/)/.test(u)?u:''},   // set in firebase-config.js: your Cloudflare Worker address (free) or /api/ai (Firebase Cloud Function)
+ on:()=>!!(AI.url()&&window.Cloud&&Cloud.enabled&&Cloud.user&&navigator.onLine),
  async ask(task,data){
   if(AI.left()<=0)throw new Error('You have used all '+AI.LIM+' AI requests for today. They reset at midnight.');
   let tok;try{tok=await Cloud.token()}catch(e){throw new Error('Please log in again.')}
-  const r=await wait(fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({task,data})}).then(async x=>({ok:x.ok,st:x.status,j:await x.json().catch(()=>({}))})),75000);
+  const r=await wait(fetch(AI.url(),{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({task,data})}).then(async x=>({ok:x.ok,st:x.status,j:await x.json().catch(()=>({}))})),75000);
   if(r==='timeout')throw new Error('The AI took too long. Try again.');
   if(r.ok&&Number.isFinite(r.j.used)){S.ai.use={day:AI.day(),n:r.j.used};save()}
   if(r.st===429){S.ai.use={day:AI.day(),n:AI.LIM};save()}
