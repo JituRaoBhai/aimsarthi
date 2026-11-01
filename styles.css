@@ -497,3 +497,28 @@ body.nbo .tbar{top:22px}
 .rw[data-a]{cursor:pointer;border-radius:10px;padding:6px 8px;margin-left:-8px;margin-right:-8px}.rw[data-a]:active{background:var(--soft)}
 .lite .hero::before,.lite .hero::after,.lite .tod,.lite .hq svg{animation:none}
 @media(prefers-reduced-motion:reduce){.hero::before,.hero::after,.tod,.hq svg{animation:none}}
+
+/* v27: continuous colourful ECG, colourful Tasky name, colourful headings */
+.ecg{animation:ehue 12s linear infinite;animation-delay:var(--gh,0s)}
+@keyframes ehue{to{filter:hue-rotate(360deg)}}
+.ecg .e0{stroke:url(#eg);stroke-opacity:.5;stroke-width:1.6}
+.ecg .e1{stroke:url(#eg);stroke-opacity:1;stroke-width:2.6;stroke-dasharray:140 3000;stroke-dashoffset:140px;filter:drop-shadow(0 0 4px rgba(255,255,255,.9));animation:ecgrun 3.2s linear infinite;animation-delay:var(--ge,0s)}
+.brand b{background:linear-gradient(90deg,#7DF9FF,#FFE066,#FF9ED8,#7DF9FF);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#FFE066;animation:bshift 6s linear infinite;animation-delay:var(--gh,0s)}
+@keyframes bshift{to{background-position:220% 0}}
+.lite .ecg,.lite .brand b{animation:none}
+@media(prefers-reduced-motion:reduce){.ecg,.brand b{animation:none}}
+/* headings: each section has its own pair of colours (darker on light themes, brighter on dark) */
+#app{--ha:#3B5BDB;--hb:#0C8599}
+#app[data-t=home]{--ha:#D9480F;--hb:#C2185B}
+#app[data-t=study]{--ha:#6741D9;--hb:#1971C2}
+#app[data-t=roadmap]{--ha:#0B7A5F;--hb:#1864AB}
+#app[data-t=progress]{--ha:#C2255C;--hb:#E8590C}
+#app[data-t=profile]{--ha:#3B5BDB;--hb:#0C8599}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) #app{--ha:#91A7FF;--hb:#66D9E8}
+ :root:not([data-theme=light]) #app[data-t=home]{--ha:#FF9F68;--hb:#FF6FA3}:root:not([data-theme=light]) #app[data-t=study]{--ha:#B197FC;--hb:#66D9E8}
+ :root:not([data-theme=light]) #app[data-t=roadmap]{--ha:#63E6BE;--hb:#74C0FC}:root:not([data-theme=light]) #app[data-t=progress]{--ha:#FF8FAB;--hb:#FFC078}:root:not([data-theme=light]) #app[data-t=profile]{--ha:#91A7FF;--hb:#66D9E8}}
+:root[data-theme=dark] #app{--ha:#91A7FF;--hb:#66D9E8}
+:root[data-theme=dark] #app[data-t=home]{--ha:#FF9F68;--hb:#FF6FA3}:root[data-theme=dark] #app[data-t=study]{--ha:#B197FC;--hb:#66D9E8}
+:root[data-theme=dark] #app[data-t=roadmap]{--ha:#63E6BE;--hb:#74C0FC}:root[data-theme=dark] #app[data-t=progress]{--ha:#FF8FAB;--hb:#FFC078}:root[data-theme=dark] #app[data-t=profile]{--ha:#91A7FF;--hb:#66D9E8}
+#app>h1,#app .card h2,#app>.row>h2{width:max-content;max-width:100%;color:var(--ha);background:linear-gradient(90deg,var(--ha),var(--hb));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#app>h1::after{background:linear-gradient(90deg,var(--ha),var(--hb))}

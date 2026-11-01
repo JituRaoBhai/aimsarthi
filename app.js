@@ -1,5 +1,5 @@
 'use strict';
-const VER='v26, 1 Nov 2026';
+const VER='v27, 1 Nov 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -244,6 +244,7 @@ function planBody(){
  h+=d?`<div class="card" style="margin-top:12px"><p>${hm(sum(d.tasks,t=>t.mins))} across ${d.tasks.length} tasks. ${rp?`Accepting replaces ${rp} untouched suggested task${rp>1?'s':''} from your earlier plan. Finished, partial, moved and manual tasks stay.`:''}</p>${d.agreed?'<button class="btn w" data-a="accept">Accept plan</button>':'<button class="btn w" data-a="disc">Read the terms to continue</button>'}<div class="row" style="margin-top:8px"><button class="btn o" style="flex:1" data-a="regen">Rebuild</button><button class="btn o" style="flex:1" data-a="redo">Edit answers</button></div></div>`
  :`<div class="row" style="margin:12px 0;flex-wrap:wrap"><button class="btn o s" data-a="regen">Build a new draft</button><button class="btn o s" data-a="redo">Edit answers</button></div>`;
  h+=planCard(d);if(!d)h+=planCal();h+=`<section class="card"><h2>Revision and mock milestones</h2>${ms.length?ms.map(t=>`<p class="row sp" style="margin:0 0 6px"><span>${esc(t.type==='mock'?'Mock test':'Revision: '+t.subject)}</span><span class="sm mu">${fD(t.date)}</span></p>`).join(''):'<p class="mu">None scheduled.</p>'}</section>`;
+ if(!d)h+=`<div class="row sp" style="margin:14px 0 6px"><h2 style="margin:0">Planned weeks</h2><button type="button" class="btn o s" data-a="add">Add task</button></div>`;
  Object.keys(W).forEach(w=>{const X=W[w],ds=[...new Set(X.map(t=>t.date))].sort(),foc=[...new Set(X.filter(t=>t.type==='study').map(t=>t.subject))].slice(0,4).join(', ')||'revision';
   h+=`<details class="card" ${w==='0'?'open':''}><summary><b>Week ${+w+1}</b> <span class="sm mu">${fD(ds[0])} to ${fD(ds[ds.length-1])}</span><br><span class="sm">Goal: cover ${esc(foc)}; ${X.filter(t=>t.type==='revision').length} revision and ${X.filter(t=>t.type==='mock').length} mock sessions. ${hm(sum(X,t=>t.mins))} planned.</span></summary>`
   +ds.map(k=>`<h3>${fD(k)}</h3>`+X.filter(t=>t.date===k).map(t=>`<p class="rw ${t.status}"${d?'':` data-a="tm" data-id="${t.id}" role="button" tabindex="0" aria-label="Options for ${esc(t.subject)}"`}><b>${esc(t.subject)}</b>: ${esc(tbase(t))}<br>${partLine(t)}<span class="sm mu">${hm(t.mins)} · <span class="pri ${t.pri}">${t.pri}</span>${t.type!=='study'?' · '+t.type:''}${d?' · suggested':''}</span></p>`).join('')).join('')+'</details>'});
@@ -696,7 +697,7 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
 
 /* ---- v9 interactivity: greeting, confetti, entrance animation, ring sweep, swipe between days ---- */
 const greet=()=>{const h=new Date().getHours();return h<5?'Hi':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Good night'};
-function postRender(){const a=$('#app');document.documentElement.style.setProperty('--gd',-(Date.now()%2400)+'ms');document.documentElement.style.setProperty('--ge',-(Date.now()%3200)+'ms');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(!V.fx)a.classList.remove('fx','swl','swr');if(V.fx){V.fx=false;a.classList.remove('fx','swl','swr');if(V.sw){a.classList.add(V.sw==='l'?'swl':'swr');V.sw=''}void a.offsetWidth;a.classList.add('fx')}
+function postRender(){const a=$('#app');document.documentElement.style.setProperty('--gd',-(Date.now()%2400)+'ms');document.documentElement.style.setProperty('--ge',-(Date.now()%3200)+'ms');document.documentElement.style.setProperty('--gh',-(Date.now()%12000)+'ms');a.dataset.t=V.tab;if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(!V.fx)a.classList.remove('fx','swl','swr');if(V.fx){V.fx=false;a.classList.remove('fx','swl','swr');if(V.sw){a.classList.add(V.sw==='l'?'swl':'swr');V.sw=''}void a.offsetWidth;a.classList.add('fx')}
  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.ring .v').forEach(e=>{e.style.strokeDashoffset=e.dataset.to})))}
 function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,C=['#FFC94A','#5BE3B5','#93A0FF','#FF7A6B','#4CC9F0'];
