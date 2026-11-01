@@ -459,3 +459,21 @@ body.nbo .tbar{top:auto}
 .lite .ecg .e1,.lite .bolt{animation:none}.lite .ecg .e1{stroke-dasharray:none}
 @media(prefers-reduced-motion:reduce){.ecg .e1,.bolt{animation:none!important}.ecg .e1{stroke-dasharray:none}}
 .cse{max-height:60vh;overflow:auto;-webkit-overflow-scrolling:touch}.cse .gsc-control-cse{padding:0!important;background:none!important;border:0!important}
+
+/* v25: the header is a solid brand bar that stays on screen when you scroll or swipe between tabs. White pulse, one at a time. */
+.tbar{position:sticky;top:0;z-index:9;margin:calc(-16px - env(safe-area-inset-top,0px)) -16px 14px;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 20px;min-height:0;
+ background:linear-gradient(135deg,var(--h1),var(--h2));color:#fff;border-radius:0 0 20px 20px;box-shadow:0 6px 18px rgba(15,20,60,.22);animation:none!important}
+.fx>.tbar,.fx.swl>.tbar,.fx.swr>.tbar{animation:none!important;transform:none!important}
+body.nbo .tbar{top:22px}
+.brand{color:#fff}
+.bolt{background:rgba(255,255,255,.16);box-shadow:none}
+.bolt svg{fill:#fff;filter:drop-shadow(0 0 3px rgba(255,255,255,.9))}
+.tbar .lvn{background:rgba(255,255,255,.14);border-color:transparent;color:rgba(255,255,255,.88)}.tbar .lvn b{color:#fff}
+.ecg{bottom:5px;height:20px}
+.ecg .e0{stroke:#fff;stroke-opacity:.28}
+.ecg .e1{stroke:#fff;stroke-width:2.2;stroke-dasharray:44 3000;stroke-dashoffset:44px;filter:drop-shadow(0 0 4px rgba(255,255,255,.95));animation:ecgrun 3.2s linear infinite;animation-delay:var(--ge,0s)}
+@keyframes ecgrun{from{stroke-dashoffset:44px}to{stroke-dashoffset:calc(-1*(min(100vw,560px) + 140px))}}
+/* the logo flashes once, at the moment the pulse starts */
+@keyframes zap{0%{box-shadow:0 0 14px 3px rgba(255,255,255,.55);transform:scale(1.08)}8%{box-shadow:0 0 6px 1px rgba(255,255,255,.2);transform:none}16%,100%{box-shadow:none;transform:none}}
+.lite .ecg .e1{stroke-dasharray:none;animation:none}
+@media(prefers-reduced-motion:reduce){.ecg .e1{stroke-dasharray:none}}
