@@ -1,0 +1,46 @@
+FREE AI FOR TASKY (Cloudflare Worker, no Firebase Blaze, no card) - all steps work in a phone browser
+Use Chrome with "Desktop site" ticked.
+
+1. Get a Gemini key
+   aistudio.google.com/apikey > Create API key > copy it. Never put it in GitHub or in the app.
+
+2. Cloudflare account
+   dash.cloudflare.com/sign-up > sign up with email, verify the email. No card is asked for the free plan.
+
+3. Create the Worker
+   Workers & Pages > Create > "Start with Hello World!" > name it tasky-ai > Deploy.
+   Tap "Edit code". Select all the sample code and delete it.
+   Open worker/ai-worker.js from your GitHub repo (or the file I sent), copy ALL of it, paste it into the editor.
+   Tap Deploy.
+
+4. Make the counter store (KV)
+   Left menu: Storage & Databases > KV > Create a namespace > name: tasky-usage > Add.
+
+5. Connect it to the Worker
+   Workers & Pages > tasky-ai > Settings > Bindings > Add > KV namespace.
+   Variable name must be exactly:  USAGE      Namespace: tasky-usage > Deploy.
+
+6. Add the settings
+   tasky-ai > Settings > Variables and Secrets > Add. Add these, then Deploy:
+   - Type SECRET   name GEMINI_API_KEY        value: your Gemini key
+   - Type TEXT     name FIREBASE_PROJECT_ID   value: your Firebase project id (Firebase console > Project settings)
+   - Type TEXT     name ALLOWED_ORIGINS       value: https://YOUR-PROJECT.web.app   (no slash at the end; separate several with commas, e.g. also your own domain)
+   - optional TEXT name DAILY_LIMIT           value: 5 (calls per person per day; the app also shows 5)
+
+7. Copy your Worker address
+   It looks like https://tasky-ai.YOURNAME.workers.dev  (shown on the Worker page).
+
+8. Tell the app
+   On GitHub open firebase-config.js > pencil > set   window.AI_ENDPOINT='https://tasky-ai.YOURNAME.workers.dev';   > Commit.
+   Wait for the green tick in the Actions tab, open the app twice, log in. The AI Coach card and the AI buttons now appear.
+
+LIMITS OF THE FREE PLANS (check the current numbers on the Cloudflare and Google pages)
+- Cloudflare Workers free: about 100,000 requests a day. KV free: about 1,000 writes a day, and each good AI answer is one write,
+  so about 1,000 AI answers a day across all users. Gemini's free tier has its own limits per minute and per day.
+- If many people use the AI, upgrade one of them or lower DAILY_LIMIT.
+
+IF IT DOES NOT WORK
+- "The AI is not set up yet": step 5 or 6 is missing (names are case sensitive).
+- "Not allowed": ALLOWED_ORIGINS does not exactly match the address in the browser bar.
+- "Please log in again": FIREBASE_PROJECT_ID is wrong, or you are not logged in to Tasky.
+- Workers & Pages > tasky-ai > Logs shows errors while you try.
