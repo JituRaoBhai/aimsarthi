@@ -79,3 +79,32 @@ const Busy={n:0,t:0,e:null,
  addEventListener('error',e=>{if(e&&e.target===window)bump()});addEventListener('unhandledrejection',bump)})();
 
 A.focusgo=()=>{if(S.p&&!S.p.onboarded)return;V.tab='study';V.sv='focus';V.fx=false;V.nav=[];scrollTo(0,0);render()};
+
+/* ---- v26: livelier Today (time-of-day icon, one daily line) ---- */
+const DLINES=['One focused hour beats three distracted ones.','Small steps, every single day.','Revise today what you learned yesterday.','Rest is part of the plan.','Start with the hardest topic while your mind is fresh.','Progress, not perfection.','Sleep well: memory is built overnight.','Test yourself: recall beats re-reading.','Phone away for the next 25 minutes.','Finish one thing before you start the next.','A short walk can reset a tired mind.','Explain it in your own words to learn it.','Consistency is quieter than motivation, and stronger.','You only need to beat yesterday.'];
+function dayLine(){const i=Math.floor((Date.now()+198e5)/864e5)%DLINES.length;return`<p class="hq"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/></svg><span>${esc(DLINES[i])}</span></p>`}
+function todIcon(){const h=new Date().getHours(),night=h>=19||h<5,I=night?'<path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/>':'<circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2L19 19M5 19l1.8-1.8M17.2 6.8L19 5"/>';
+ return`<svg class="tod${night?' nt':''}" viewBox="0 0 24 24" aria-hidden="true">${I}</svg>`}
+
+/* ---- v26: edit any task, and move it to any day (works for your own tasks and for tasks the app planned) ---- */
+const dayInfo=(k,m,self)=>{if(!okD(k))return'';const l=load(k)-(self||0),c=cap(k),over=l+m-c;return`${fD(k)} has ${hm(l)} planned${c?' of '+hm(c)+' a day':''}.`+(over>0?` This adds ${hm(over)} over your daily limit. You can still do it.`:'')};
+Object.assign(A,{
+ ted:d=>{const t=byId(d.id);if(!t)return;
+  sheet(`<h2>Edit task</h2>${inp('e_s','Subject',`maxlength="60" value="${esc(t.subject)}"`)}${inp('e_t','Topic','maxlength="100" value="'+esc(t.topic)+'"')}${inp('e_m','Minutes (30 to 600, steps of 15)',`type="number" inputmode="numeric" min="30" max="600" step="15" value="${t.mins}"`)}<label for="e_p">Priority</label><select id="e_p">${['High','Medium','Low'].map(p=>`<option${p===t.pri?' selected':''}>${p}</option>`).join('')}</select>${inp('e_d','Date',`type="date" min="${t.date<today()?t.date:today()}" max="${S.p.examDate}" value="${t.date}"`)}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="tedok" data-id="${t.id}">Save changes</button></div>`)},
+ tedok:d=>{const t=byId(d.id);if(!t)return;const s=$('#e_s').value.trim(),p=$('#e_t').value.trim(),m=+$('#e_m').value,k=$('#e_d').value;
+  const e=!s?'Enter a subject.':!p?'Enter a topic.':!okM(m)?'Minutes must be 30 to 600, in steps of 15.':(!okD(k)||(k!==t.date&&(k<today()||k>S.p.examDate)))?'Pick a date from today up to the last day of your schedule.':'';
+  if(e){$('#se').textContent=e;return}
+  if(k!==t.date)t.history=(t.history||[]).concat({from:t.date,to:k,at:new Date().toISOString()});
+  t.subject=s;t.topic=p;t.mins=m;t.pri=$('#e_p').value;t.date=k;t.edit=1;delete t.tk;closeSheet();save();render();toast('Task updated')},
+ tmv:d=>{const t=byId(d.id);if(!t)return;
+  if(t.status==='done'){toast('A finished task stays on the day you did it. Use Edit this task to change its date.');return}
+  const q=[['Today',0],['Tomorrow',1],['In 2 days',2],['Next week',7]].map(([l,n])=>`<button type="button" class="chip" data-a="tmq" data-v="${addD(today(),n)}">${l}</button>`).join('');
+  sheet(`<h2>Move to another day</h2><p class="mu">${esc(t.subject)}: ${esc(t.topic)} (${hm(t.mins)}). Now on ${fD(t.date)}.</p><div class="chips" role="group" aria-label="Quick choices">${q}</div>${inp('mv_d','Or pick any date',`type="date" min="${today()}" max="${S.p.examDate}" value="${t.date<today()?today():t.date}"`)}<p id="mv_i" class="sm mu" style="margin:8px 0 0"></p><p id="se" class="er" role="alert"></p><div class="row" style="margin-top:8px"><button class="btn o" data-a="x">Cancel</button><button class="btn" style="flex:1" data-a="tmvok" data-id="${t.id}">Move here</button></div>`);
+  V.mvt=t.id;A.tmi()},
+ tmq:d=>{const e=$('#mv_d');if(e){e.value=d.v;A.tmi()}},
+ tmi:()=>{const e=$('#mv_d'),i=$('#mv_i'),t=byId(V.mvt);if(e&&i&&t)i.textContent=dayInfo(e.value,t.mins,e.value===t.date?t.mins:0)},
+ tmvok:d=>{const t=byId(d.id);if(!t)return;const k=$('#mv_d').value;
+  if(!okD(k)||k<today()||k>S.p.examDate){$('#se').textContent='Pick a date from today up to the last day of your schedule.';return}
+  if(k===t.date){closeSheet();return}
+  moveT(t,k,t.mins);t.edit=1;closeSheet();save();render();toast('Moved to '+fD(k))}});
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='mv_d')A.tmi()});
