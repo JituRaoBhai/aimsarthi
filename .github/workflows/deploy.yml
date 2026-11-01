@@ -1,8 +1,7 @@
 name: Deploy to Firebase Hosting
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -10,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          projectId: taskymj # <-- Add your actual Firebase Project ID here
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
+          projectId: taskymj
