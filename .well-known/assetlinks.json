@@ -1,14 +1,8 @@
-[
-  {
-    "relation": [
-      "delegate_permission/common.handle_all_urls"
-    ],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "REPLACE.WITH.YOUR.PACKAGE.NAME",
-      "sha256_cert_fingerprints": [
-        "REPLACE:WITH:SHA256:FROM:PLAY:CONSOLE:APP:SIGNING"
-      ]
-    }
-  }
-]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.web.taskymj.twa",
+        "sha256_cert_fingerprints": ["77:29:B4:6B:B3:98:18:F0:05:50:BE:07:E1:D7:9F:BC:01:D3:C8:A7:7D:CF:65:E7:65:FB:74:FB:6F:F8:44:F3"]
+      }
+    }]
