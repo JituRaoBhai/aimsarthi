@@ -8,7 +8,7 @@ You do NOT rewrite anything. Your website stays the app, and every web update ap
  - privacy-policy.html, terms.html, delete-account.html  (Play requires a privacy policy URL and an account-deletion URL)
  - In-app account deletion (Profile > About and updates > Delete my account) + firestore.rules updated to allow it
  - In-app way to report problems / wrong AI answers (Profile > Report a problem or AI answer)  (Play's AI-content policy)
- - Offline support, update prompt, no ads, no location/camera/mic permissions
+ - Offline support, update prompt, ads after timer/plan/test (see ads.js), no location/camera/mic permissions
  - screenshots/ (5 phone screenshots, 1080x1920) and store/feature-graphic-1024x500.png for the store listing
  - .well-known/assetlinks.json template (you fill 2 values, see step 3)
 
@@ -47,7 +47,7 @@ You do NOT rewrite anything. Your website stays the app, and every web update ap
      Privacy policy URL: https://YOUR-SITE/privacy-policy.html
  - App content (all required):
      Privacy policy: the URL above
-     Ads: No
+     Ads: YES, the app contains ads (shown after a timer, plan or test). Say so here and in the store listing.
      App access: your app needs an account for sync. Give Google a test login (create a demo username/password/favourite number) in "App access"; the app also works without login if accounts are off.
      Content rating: answer the questionnaire honestly (no violence, no user-to-user chat yet). Expect an "Everyone"-type rating.
      Target audience: 13+ (the policies say 13+). Not "designed for children".

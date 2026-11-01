@@ -17,22 +17,6 @@
       "*.md",
       "*.csv"
     ],
-    "rewrites": [
-      {
-        "source": "/api/ai",
-        "function": {
-          "functionId": "ai",
-          "region": "us-central1"
-        }
-      },
-      {
-        "source": "/api/live",
-        "function": {
-          "functionId": "live",
-          "region": "us-central1"
-        }
-      }
-    ],
     "headers": [
       {
         "source": "**",
@@ -98,16 +82,5 @@
   },
   "firestore": {
     "rules": "firestore.rules"
-  },
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "*.log"
-      ]
-    }
-  ]
+  }
 }
