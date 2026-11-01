@@ -175,7 +175,7 @@ input[type=range]{padding:0;min-height:36px;border:0;background:none;accent-colo
 .chk{transition:background .2s,border-color .2s,transform .12s}.chk.pop{animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
 @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
 .cf{position:fixed;width:8px;height:12px;border-radius:2px;z-index:40;pointer-events:none}
-.pill{animation:glow 2.4s ease-in-out infinite}@keyframes glow{50%{box-shadow:0 0 0 5px rgba(255,201,74,.22)}}
+.pill{animation:glow 2.4s ease-in-out infinite;animation-delay:var(--gd,0s)}   /* v23: --gd keeps the glow in step across redraws, so it never restarts */
 nav button{transition:color .2s}nav button:active svg{transform:scale(.88)}nav svg{transition:transform .15s}
 @media(hover:hover){.card,.trow{transition:box-shadow .2s,transform .2s}.card:hover{box-shadow:0 2px 4px rgba(22,27,58,.06),0 12px 28px rgba(22,27,58,.1)}.btn:hover{filter:brightness(1.08)}.chip:hover,.xc:hover,.tb:hover,.wk button:hover,.cd:hover{border-color:var(--pr)}}
 @media(prefers-reduced-motion:reduce){.fx>*,.fx .bar i,.wz.in,.chk.pop,.cf,.pill,.live .clk{animation:none!important}.ring .v,.live,.live .cv,.day i{transition:none!important}}

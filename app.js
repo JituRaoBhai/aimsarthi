@@ -1,5 +1,5 @@
 'use strict';
-const VER='v21, 1 Nov 2026';
+const VER='v23, 1 Nov 2026';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const dk=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
@@ -693,7 +693,7 @@ window.onCloudUser=u=>{if(!ready||(typeof AUTH!=='undefined'&&AUTH.busy))return;
 
 /* ---- v9 interactivity: greeting, confetti, entrance animation, ring sweep, swipe between days ---- */
 const greet=()=>{const h=new Date().getHours();return h<5?'Hi':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Good night'};
-function postRender(){const a=$('#app');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(!V.fx)a.classList.remove('fx','swl','swr');if(V.fx){V.fx=false;a.classList.remove('fx','swl','swr');if(V.sw){a.classList.add(V.sw==='l'?'swl':'swr');V.sw=''}void a.offsetWidth;a.classList.add('fx')}
+function postRender(){const a=$('#app');document.documentElement.style.setProperty('--gd',-(Date.now()%2400)+'ms');if(typeof fxPos==='function')fxPos();if(typeof qbPrime==='function')qbPrime();if(!V.fx)a.classList.remove('fx','swl','swr');if(V.fx){V.fx=false;a.classList.remove('fx','swl','swr');if(V.sw){a.classList.add(V.sw==='l'?'swl':'swr');V.sw=''}void a.offsetWidth;a.classList.add('fx')}
  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.ring .v').forEach(e=>{e.style.strokeDashoffset=e.dataset.to})))}
 function burst(el){if(!el||!el.animate||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,C=['#FFC94A','#5BE3B5','#93A0FF','#FF7A6B','#4CC9F0'];
