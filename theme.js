@@ -38,7 +38,7 @@
   hours:'<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'};
  const svg=m=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[m]}</svg>`;
  /* the slim bar at the top of every tab: live-students pill (live.js) on the left, theme button on the right */
- window.topBar=()=>`<div class="tbar"><span id="lvs">${typeof liveBox==='function'?liveBox():''}</span></div>`;
+ window.topBar=()=>`<div class="tbar"><div class="brand"><span class="bolt" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5H11L9.5 22l9-11.5H12z"/></svg></span><b>Tasky</b></div><span id="lvs">${typeof liveBox==='function'?liveBox():''}</span><svg class="ecg" viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="e0" d="M0 24H30L34 20 38 24H52L56 28 61 4 66 32 70 24H84L92 17 100 24H150M150 24H180L184 20 188 24H202L206 28 211 4 216 32 220 24H234L242 17 250 24H300" pathLength="300"/><path class="e1" d="M0 24H30L34 20 38 24H52L56 28 61 4 66 32 70 24H84L92 17 100 24H150M150 24H180L184 20 188 24H202L206 28 211 4 216 32 220 24H234L242 17 250 24H300" pathLength="300"/></svg></div>`;
  window.themeBtn=()=>`<button type="button" class="thb m-${T.get()}" data-a="theme" aria-label="Theme: ${T.label()}. Tap to change.">${svg(T.get())}</button>`;   // shown beside the greeting on the Today tab only
  window.themeCard=()=>`<section class="card"><div class="row sp"><span><b>Appearance</b><br><span class="sm mu">${T.label()}</span></span><button type="button" class="btn o s" data-a="theme">Change</button></div></section>`;
  T.hook=()=>{Object.assign(A,{

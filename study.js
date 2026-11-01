@@ -24,10 +24,10 @@ const pgd=t=>`<p class="pgd">${t}</p>`;
 const lk=k=>{const n=sItems(k).length;return n?n+(n>1?' links':' link'):''};
 function studyHub(){const tN=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam).length,dueN=fcDue().length;
  const cu=(S.tests||[]).filter(h=>h&&h.exam===S.p.exam&&h.cu).length,cnt={ctest:cu?cu+' taken':'',tests:tN-cu>0?(tN-cu)+' taken':'',fc:fcAll().length?fcAll().length+(fcAll().length>1?' cards':' card')+(dueN?' · '+dueN+' due':''):'',note:(n=>n?n+(n>1?' notes':' note'):'')(sItems('note').length),vid:lk('vid'),chan:lk('chan'),crs:lk('crs')};
- return`<h1>Study</h1>${pgd('Everything you learn from, in one place. Pick a section to start.')}<div class="sbg">${SBX.map(([k,t,d,ic])=>`<button type="button" class="sbt" data-a="sv" data-v="${k}"><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${t}</b><span class="sm mu">${d}</span>${cnt[k]?`<span class="bd">${cnt[k]}</span>`:''}</button>`).join('')}</div>`
+ return`<h1>Study</h1><section class="card"><h2 style="margin:0 0 8px">Search Google</h2><div class="row"><input id="gq" type="search" enterkeyhint="search" autocomplete="off" maxlength="200" placeholder="Search anything" aria-label="Search Google" style="flex:1;min-width:0"><button type="button" class="btn" data-a="gsrch">Search</button></div></section>${pgd('Everything you learn from, in one place. Pick a section to start.')}<div class="sbg">${SBX.map(([k,t,d,ic])=>`<button type="button" class="sbt" data-a="sv" data-v="${k}"><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${t}</b><span class="sm mu">${d}</span>${cnt[k]?`<span class="bd">${cnt[k]}</span>`:''}</button>`).join('')}</div>`
  +(dueN?`<section class="card"><h2>Cards due today</h2><p class="sm mu">${dueN} flashcard${dueN>1?'s':''} ready for review.</p><button class="btn" data-a="fcgo">Review now</button></section>`:'')
  +`<p class="sm mu">Tip: add your favourite video, channel and course links so everything is one tap away while you study.</p>`
- +`<section class="card"><h2 style="margin:0 0 8px">Search Google</h2><div class="row"><input id="gq" type="search" enterkeyhint="search" autocomplete="off" maxlength="200" placeholder="Search anything" aria-label="Search Google" style="flex:1;min-width:0"><button type="button" class="btn" data-a="gsrch">Search</button></div><p class="sm mu" style="margin:8px 0 0">Opens Google in your browser.</p></section>`}
+}
 function studyView(){const k=V.sv;if(!k||!SBT[k])return studyHub();
  if(k==='focus')return focusView();if(k==='ctest')return testsHub();if(k==='tests')return topicView();if(k==='fc')return fcView();return listView(k)}
 function topicView(){return svBack('Topic tests')+pgd('Take a ready-made test for one topic. Your scores and missed questions are tracked in Progress.')+testsView()+`<section class="card"><h2>Want to mix topics?</h2><p class="sm mu">Build your own test from any subjects or topics.</p><button class="btn o" data-a="sv" data-v="ctest">Make a custom test</button></section>`}
@@ -161,6 +161,18 @@ Object.assign(A,{
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement){try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}}});
 (function(){const c=window.closeSheet;if(typeof c==='function')window.closeSheet=function(){ytExit();return c.apply(this,arguments)}})();
 
+/* Search. Google does not let any other app or page show its results inside a frame, so there are two honest options:
+   1) set SEARCH_CFG.cseId to a Google Programmable Search Engine id: results then appear INSIDE Tasky (free, may show Google ads);
+   2) otherwise the search opens on top of Tasky in Chrome's tab (in the installed app it slides over Tasky, and Back returns to it). */
+const SEARCH_CFG={cseId:''};   // create one at programmablesearchengine.google.com (search the entire web), copy its "Search engine ID"
+let cseN=0;
+function cseOpen(q){const id=++cseN,g='tk'+id;
+ sheet(`<h2>Search results</h2><div id="cse" class="cse"><p class="sm mu">Loading...</p></div><div class="row" style="margin-top:10px"><button type="button" class="btn o" style="flex:1" data-a="x">Close</button><button type="button" class="btn o" style="flex:1" data-a="gout" data-q="${esc(q)}">Open in browser</button></div>`);
+ const draw=()=>{try{const e=document.getElementById('cse');if(!e)return;e.innerHTML='<div id="cse'+id+'"></div>';google.search.cse.element.render({div:'cse'+id,tag:'searchresults-only',gname:g});google.search.cse.element.getElement(g).execute(q)}catch(x){A.gout({q})}};
+ if(window.google&&google.search&&google.search.cse&&google.search.cse.element){draw();return}
+ window.__gcse={parsetags:'explicit',callback:draw};const sc=document.createElement('script');sc.async=true;sc.src='https://cse.google.com/cse.js?cx='+encodeURIComponent(SEARCH_CFG.cseId);sc.onerror=()=>A.gout({q});document.head.appendChild(sc);
+ setTimeout(()=>{const e=document.getElementById('cse');if(e&&!e.querySelector('.gsc-control-cse')&&id===cseN&&sheetOpen())A.gout({q})},9000)}
+A.gout=d=>{const u='https://www.google.com/search?q='+encodeURIComponent(d.q||'');if(sheetOpen())closeSheet();const w=window.open(u,'_blank','noopener,noreferrer');if(!w)location.href=u};
 A.gsrch=()=>{const e=document.getElementById('gq'),q=e?e.value.trim():'';if(!q){toast('Type what you want to search.');if(e)e.focus();return}
- if(window.PWA&&PWA.needNet())return;const w=window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank','noopener,noreferrer');if(!w)location.href='https://www.google.com/search?q='+encodeURIComponent(q)};
+ if(window.PWA&&PWA.needNet())return;if(SEARCH_CFG.cseId)cseOpen(q);else A.gout({q})};
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='gq'){e.preventDefault();A.gsrch()}});

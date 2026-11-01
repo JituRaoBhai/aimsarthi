@@ -442,3 +442,20 @@ body.spo{overflow:hidden}
 .plns{display:grid;gap:8px;margin:10px 0}.pln{display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;padding:12px 14px;border-radius:14px;border:2px solid var(--ln);background:var(--sf);color:var(--tx);font:inherit;cursor:pointer}
 .pln .pp{font-weight:800;font-size:18px}.pln .sm{grid-column:1/-1}.pln[aria-pressed=true]{border-color:var(--pr);background:var(--soft)}
 .adb{padding:14px;border:1px dashed var(--ln);border-radius:14px;background:var(--soft)}
+
+/* v24: living header. Brand + live pill + an ECG line with an electric pulse running left to right. */
+.tbar{position:relative;top:auto;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;margin:0 0 12px;padding:0 0 12px;pointer-events:auto}
+.tbar #lvs{margin:0;min-width:0}.tbar #lvs:empty{display:none}.tbar .lvn{margin:0;box-shadow:none;padding:5px 11px}
+body.nbo .tbar{top:auto}
+.brand{display:flex;align-items:center;gap:8px;font:800 20px/1 Mukta,system-ui,sans-serif;color:var(--pr);letter-spacing:.2px}
+.bolt{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--h1),var(--h2));box-shadow:0 0 0 0 rgba(255,201,74,.0);animation:zap 3.2s ease-in-out infinite;animation-delay:var(--ge,0s)}
+.bolt svg{width:18px;height:18px;fill:#FFC94A;filter:drop-shadow(0 0 3px rgba(255,201,74,.8))}
+@keyframes zap{0%,88%,100%{box-shadow:0 0 0 0 rgba(255,201,74,0);transform:none}91%{box-shadow:0 0 14px 3px rgba(255,201,74,.55);transform:scale(1.08)}95%{box-shadow:0 0 6px 1px rgba(255,201,74,.25);transform:none}}
+.ecg{position:absolute;left:0;right:0;bottom:0;width:100%;height:22px;overflow:visible;pointer-events:none}
+.ecg path{fill:none;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.ecg .e0{stroke:var(--mu);stroke-opacity:.38;stroke-width:1.5}
+.ecg .e1{stroke:var(--ac);stroke-width:2.2;stroke-dasharray:34 266;stroke-dashoffset:34;filter:drop-shadow(0 0 3px var(--ac));animation:ecgrun 3.2s linear infinite;animation-delay:var(--ge,0s)}
+@keyframes ecgrun{to{stroke-dashoffset:-266}}
+.lite .ecg .e1,.lite .bolt{animation:none}.lite .ecg .e1{stroke-dasharray:none}
+@media(prefers-reduced-motion:reduce){.ecg .e1,.bolt{animation:none!important}.ecg .e1{stroke-dasharray:none}}
+.cse{max-height:60vh;overflow:auto;-webkit-overflow-scrolling:touch}.cse .gsc-control-cse{padding:0!important;background:none!important;border:0!important}
