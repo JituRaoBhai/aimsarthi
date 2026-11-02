@@ -7,24 +7,25 @@ async function hashAnswer(a,salt){const k=await crypto.subtle.importKey('raw',ne
  return b64(await crypto.subtle.deriveBits({name:'PBKDF2',salt:unb64(salt),iterations:150000,hash:'SHA-256'},k,256))}
 const newSalt=()=>b64(crypto.getRandomValues(new Uint8Array(16)));
 Cloud.hash=hashAnswer;Cloud.salt=newSalt;
-const MSG={'auth/email-already-in-use':'That username is already taken.','auth/invalid-credential':'Username or password is incorrect.','auth/wrong-password':'Username or password is incorrect.','auth/user-not-found':'Username or password is incorrect.','auth/invalid-login-credentials':'Username or password is incorrect.','auth/too-many-requests':'Too many attempts. Wait a few minutes and try again.','auth/network-request-failed':'No connection. Check your internet and try again.','auth/weak-password':'Choose a stronger password.','auth/requires-recent-login':'Please log in again, then retry.','auth/invalid-email':'That username is not accepted. Use letters and numbers only.'};
+const MSG={'auth/email-already-in-use':'That username is already taken.','auth/invalid-credential':'Username or password is incorrect.','auth/wrong-password':'Username or password is incorrect.','auth/user-not-found':'Username or password is incorrect.','auth/invalid-login-credentials':'Username or password is incorrect.','auth/too-many-requests':'Too many attempts. Wait a few minutes and try again.','auth/network-request-failed':'No connection. Check your internet and try again.','auth/weak-password':'Choose a stronger password.','auth/requires-recent-login':'Please log in again, then retry.','auth/invalid-email':'Enter a valid email address.','auth/missing-email':'Enter your email address.','auth/operation-not-allowed':'Email and password sign-in is switched off in Firebase (Authentication > Sign-in method).'};
 Cloud.msg=e=>e&&e.message==='answer'?'Your favourite number does not match.':(MSG[e&&e.code]||'Something went wrong. Please try again.');
 if(!C.projectId||!C.apiKey)window._cloudResolve(Cloud);
 else(async()=>{try{
  const{initializeApp}=await import(B+'firebase-app.js'),A=await import(B+'firebase-auth.js'),F=await import(B+'firebase-firestore.js');
- const app=initializeApp(C),auth=A.getAuth(app),mail=u=>u+'@'+(window.EMAIL_DOMAIN||'aimsarthi.invalid');
+ const app=initializeApp(C),auth=A.getAuth(app),isMail=u=>String(u).includes('@'),slug=s=>String(s||'').toLowerCase().replace(/[^a-z0-9_.]/g,'').slice(0,30)||'user',mail=u=>isMail(u)?u:u+'@'+(window.EMAIL_DOMAIN||'aimsarthi.invalid');
  const db=(()=>{try{return F.initializeFirestore(app,{localCache:F.persistentLocalCache({tabManager:F.persistentMultipleTabManager()})})}catch(e){return F.getFirestore(app)}})();   // offline cache: writes made offline are sent when the phone reconnects
  const uref=()=>F.doc(db,'users',auth.currentUser.uid),sref=()=>F.doc(db,'users',auth.currentUser.uid,'data','state'),lref=()=>F.doc(db,'states',auth.currentUser.uid);   // the plan lives in users/{uid}/data/state; states/{uid} is the old location, read once to migrate
  Cloud.enabled=true;
  const profile=async u=>{let p={};try{const s=await F.getDoc(F.doc(db,'users',u.uid));if(s.exists())p=s.data()}catch(e){}return{uid:u.uid,username:p.username||u.email.split('@')[0],email:p.contactEmail||''}};
  await new Promise(r=>{let first=true;A.onAuthStateChanged(auth,async u=>{Cloud.user=u?await profile(u):null;if(first){first=false;r()}else if(window.onCloudUser)window.onCloudUser(Cloud.user)})});
- const mkDoc=async(uid,u,ans)=>{const salt=newSalt();await F.setDoc(F.doc(db,'users',uid),{username:u,qSalt:salt,qHash:await hashAnswer(ans,salt),createdAt:F.serverTimestamp(),lastActive:F.serverTimestamp()})};
+ const mkDoc=async(uid,u,ans,em)=>{const salt=newSalt();await F.setDoc(F.doc(db,'users',uid),{username:u,...(em?{contactEmail:em}:{}),qSalt:salt,qHash:await hashAnswer(ans,salt),createdAt:F.serverTimestamp(),lastActive:F.serverTimestamp()})};
  const nref=u=>F.doc(db,'usernames',u),claim=async(uid,u)=>{try{await F.setDoc(nref(u),{uid})}catch(e){}};   // public "this name is taken" marker (holds only the uid)
  Cloud.nameFree=async u=>{try{return!(await F.getDoc(nref(u))).exists()}catch(e){return null}};   // null = could not check
- Cloud.signUp=async(u,p,ans)=>{const c=await A.createUserWithEmailAndPassword(auth,mail(u),p);await mkDoc(c.user.uid,u,ans);await claim(c.user.uid,u);Cloud.user={uid:c.user.uid,username:u,email:''}};
+ Cloud.signUp=async(u,p,ans)=>{const em=isMail(u)?u:'',un=em?slug(em.split('@')[0]):u,c=await A.createUserWithEmailAndPassword(auth,mail(u),p);await mkDoc(c.user.uid,un,ans,em);if(!em)await claim(c.user.uid,un);Cloud.user={uid:c.user.uid,username:un,email:em}};
+ Cloud.resetPassword=e=>A.sendPasswordResetEmail(auth,e);
  Cloud.logIn=async(u,p,ans)=>{const c=await A.signInWithEmailAndPassword(auth,mail(u),p),s=await F.getDoc(F.doc(db,'users',c.user.uid));
-  if(s.exists()){const d=s.data();if(await hashAnswer(ans,d.qSalt)!==d.qHash){await A.signOut(auth);Cloud.user=null;throw new Error('answer')}claim(c.user.uid,d.username||u);Cloud.user={uid:c.user.uid,username:d.username||u,email:d.contactEmail||''}}
-  else{await mkDoc(c.user.uid,u,ans);Cloud.user={uid:c.user.uid,username:u,email:''}}};
+  if(s.exists()){const d=s.data();if(await hashAnswer(ans,d.qSalt)!==d.qHash){await A.signOut(auth);Cloud.user=null;throw new Error('answer')}if(!isMail(u))claim(c.user.uid,d.username||u);Cloud.user={uid:c.user.uid,username:d.username||(isMail(u)?slug(u.split('@')[0]):u),email:d.contactEmail||(isMail(u)?u:'')}}
+  else{const em=isMail(u)?u:'',un=em?slug(em.split('@')[0]):u;await mkDoc(c.user.uid,un,ans,em);Cloud.user={uid:c.user.uid,username:un,email:em}}};
  Cloud.logOut=async()=>{await A.signOut(auth);Cloud.user=null};
  Cloud.changePassword=async(o,n)=>{const u=auth.currentUser;await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,o));await A.updatePassword(u,n)};
  Cloud.saveProfile=async f=>{await F.setDoc(uref(),{...f,lastActive:F.serverTimestamp()},{merge:true})};

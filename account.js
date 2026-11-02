@@ -1,5 +1,10 @@
 /* Login, account and feedback screens. Loaded after app.js. Needs Cloud (cloud.js); Cloud.enabled is false until firebase-config.js is filled in. */
-const AUTH={mode:'login',err:'',busy:false,u:'',p:'',q:'',lastFb:0};
+const AUTH={mode:'login',k:'user',err:'',busy:false,u:'',e:'',p:'',q:'',lastFb:0};
+/* full-screen "please wait" window shown while logging in, creating an account, loading the plan or logging out */
+const Wait={show(t){let b=document.getElementById('busy');if(!b){b=document.createElement('div');b.id='busy';b.setAttribute('role','status');b.setAttribute('aria-live','assertive');document.body.appendChild(b)}
+  b.innerHTML='<div class="bzc"><span class="bsp" aria-hidden="true"></span><p></p><small>This can take a few seconds on a slow connection.</small></div>';b.querySelector('p').textContent=t;b.className='on'},
+ set(t){const p=document.querySelector('#busy p');if(p)p.textContent=t},
+ hide(){const b=document.getElementById('busy');if(b){b.className='';setTimeout(()=>{if(b.className!=='on')b.remove()},250)}}};
 const authOn=()=>!!(window.Cloud&&Cloud.enabled);
 /* username: spaces become underscores, lower case, only a-z 0-9 _ . */
 const normName=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_.]/g,'').replace(/_+/g,'_');
@@ -14,9 +19,10 @@ function pwErr(p,u){p=String(p||'');if(p.length<6)return'Password needs 6 or mor
  return''}
 const okPw=p=>!pwErr(p,'');
 const okMail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)&&v.length<=120;
-function checkAuth(u,p,q,m){u=normName(u);
- if(!/^[a-z0-9_.]{3,30}$/.test(u))return'Username must be 3 to 30 letters, numbers, dots or underscores.';
- if(m==='signup'&&pwErr(p||'',u))return pwErr(p||'',u);
+function checkAuth(u,p,q,m,k,e){u=normName(u);e=(e||'').trim().toLowerCase();
+ if(k==='mail'){if(!okMail(e))return'Enter a valid email address.';if(m==='signup'&&pwErr(p||'',e.split('@')[0]))return pwErr(p||'',e.split('@')[0])}
+ else{if(!/^[a-z0-9_.]{3,30}$/.test(u))return'Username must be 3 to 30 letters, numbers, dots or underscores.';
+ if(m==='signup'&&pwErr(p||'',u))return pwErr(p||'',u)}
  if(!p)return'Enter your password.';
  return /^\d{1,12}$/.test((q||'').trim())?'':'Your favourite number must be digits only (up to 12).'}
 /* shows the cleaned-up username the person will get, and (from the database) whether it is free */
@@ -30,13 +36,15 @@ function nameCheck(){clearTimeout(nmT);const u=normName(AUTH.u),el=document.getE
  nmT=setTimeout(async()=>{const my=++nmSeq,free=await Cloud.nameFree(u);if(my!==nmSeq)return;
   NM.u=u;NM.st=free===true?' <span style="color:var(--ok)">&#10003; available</span>':free===false?' <span style="color:var(--bad,#d33)">&#10007; already taken</span>':'';
   const e2=document.getElementById('au_n');if(e2&&normName(AUTH.u)===u)e2.innerHTML=unameNote()},450)}
-function authView(){const s=AUTH.mode==='signup';
+function authView(){const s=AUTH.mode==='signup',mail=AUTH.k==='mail';
  return`<section class="welcome"><div class="road lg" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="partial"></i><i class="done"></i><i></i><i></i><i></i></div><h1 class="logo">Tasky</h1><p class="lead" style="margin:0">${s?'Create an account to keep your plan safe and use it on any phone.':'Welcome back. Log in to load your plan.'}</p></section>`
  +`<section class="card" style="margin-top:14px"><div class="seg" role="group" aria-label="Account mode"><button data-a="aumode" data-v="login" aria-pressed="${!s}">Log in</button><button data-a="aumode" data-v="signup" aria-pressed="${s}">Create account</button></div>`
- +inp('au_u','Username',`data-au="u" autocomplete="username" autocapitalize="none" maxlength="30" value="${esc(AUTH.u)}"`)
- +(s?`<p class="sm mu" id="au_n" style="margin:4px 0 0" aria-live="polite">${unameNote()}</p>`:'')
+ +`<div class="seg" style="margin-top:10px" role="group" aria-label="Use"><button type="button" data-a="aukind" data-v="user" aria-pressed="${!mail}">Username</button><button type="button" data-a="aukind" data-v="mail" aria-pressed="${mail}">Email</button></div>`
+ +(mail?inp('au_e','Email address',`type="email" data-au="e" autocomplete="email" autocapitalize="none" maxlength="120" value="${esc(AUTH.e)}"`):inp('au_u','Username',`data-au="u" autocomplete="username" autocapitalize="none" maxlength="30" value="${esc(AUTH.u)}"`))
+ +(s&&!mail?`<p class="sm mu" id="au_n" style="margin:4px 0 0" aria-live="polite">${unameNote()}</p>`:'')
  +inp('au_p',s?'Password (6 or more characters)':'Password',`type="password" data-au="p" autocomplete="${s?'new-password':'current-password'}" maxlength="64" value="${esc(AUTH.p)}"`)
  +inp('au_q','Your favourite number?',`inputmode="numeric" data-au="q" maxlength="12" autocomplete="off" value="${esc(AUTH.q)}"`)
+ +(mail&&!s?`<p class="sm" style="margin:8px 0 0"><button type="button" class="lkb" data-a="aureset">Forgot password?</button></p>`:'')+(s&&!mail?`<p class="sm mu" style="margin:6px 0 0">Tip: choose Email if you want to be able to reset a forgotten password.</p>`:'')
  +`<p class="sm mu" style="margin-top:8px">${s?'Remember this number. You are asked for it every time you log in.':'Enter the number you chose when you created the account.'}</p><p class="er" role="alert">${esc(AUTH.err)}</p><button class="btn w" data-a="auth" ${AUTH.busy?'disabled':''}>${AUTH.busy?'Please wait...':s?'Create account':'Log in'}</button></section>`}
 function accountCard(){
  if(!authOn())return'';
@@ -44,13 +52,18 @@ function accountCard(){
  return`<section class="card"><h2>Account</h2><p style="margin:0 0 10px"><b>${esc(u.username)}</b><br><span class="sm mu">${esc(u.email||'No email added')}</span></p><div class="row" style="flex-wrap:wrap"><button class="btn o s" data-a="acc">Email and password</button><button class="btn o s" data-a="fb">Report a problem</button><button class="btn o s" data-a="logout">Log out</button></div></section>`}
 Object.assign(A,{
  aumode:d=>{AUTH.mode=d.v;AUTH.err='';render();nameCheck()},
- auth:async()=>{const e=checkAuth(AUTH.u,AUTH.p,AUTH.q,AUTH.mode);if(e){AUTH.err=e;render();return}
-  if(AUTH.mode==='signup'&&Cloud.nameFree&&await Cloud.nameFree(normName(AUTH.u))===false){AUTH.err='That username is already taken. Try another.';render();return}
-  AUTH.busy=true;AUTH.err='';render();
-  try{const u=normName(AUTH.u),q=AUTH.q.trim(),r=await wait(AUTH.mode==='signup'?Cloud.signUp(u,AUTH.p,q):Cloud.logIn(u,AUTH.p,q),25000);if(r==='timeout')throw{code:'auth/network-request-failed'};AUTH.p=AUTH.q='';await afterAuth()}
-  catch(x){AUTH.err=Cloud.msg(x)}
-  AUTH.busy=false;render()},
- logout:async()=>{try{await flushNow()}catch(e){}loadedUid=null;if(unW){unW();unW=null}try{localStorage.removeItem(lkey())}catch(e){}await Cloud.logOut();S=fresh();V.tab='home';V.step=0;AUTH.mode='login';render()},
+ aukind:d=>{AUTH.k=d.v;AUTH.err='';render();nameCheck()},
+ aureset:async()=>{const e=(AUTH.e||'').trim().toLowerCase();if(!okMail(e)){AUTH.err='Type your email address above first.';render();return}
+  Wait.show('Sending reset link...');
+  try{await wait(Cloud.resetPassword(e),20000)}catch(x){if(x&&x.code==='auth/network-request-failed'){Wait.hide();AUTH.err=Cloud.msg(x);render();return}}
+  Wait.hide();AUTH.err='';render();toast('If that email has an account, a reset link is on its way. Check spam too.')},
+ auth:async()=>{const e=checkAuth(AUTH.u,AUTH.p,AUTH.q,AUTH.mode,AUTH.k,AUTH.e);if(e){AUTH.err=e;render();return}
+  if(AUTH.mode==='signup'&&AUTH.k!=='mail'&&Cloud.nameFree&&await Cloud.nameFree(normName(AUTH.u))===false){AUTH.err='That username is already taken. Try another.';render();return}
+  AUTH.busy=true;AUTH.err='';render();Wait.show(AUTH.mode==='signup'?'Creating your account...':'Logging you in...');
+  try{const u=AUTH.k==='mail'?AUTH.e.trim().toLowerCase():normName(AUTH.u),q=AUTH.q.trim(),r=await wait(AUTH.mode==='signup'?Cloud.signUp(u,AUTH.p,q):Cloud.logIn(u,AUTH.p,q),25000);if(r==='timeout')throw{code:'auth/network-request-failed'};AUTH.p=AUTH.q='';Wait.set('Loading your plan...');await afterAuth()}
+  catch(x){AUTH.err=x&&x.code==='auth/email-already-in-use'&&AUTH.k==='mail'?'That email already has an account. Choose Log in.':Cloud.msg(x)}
+  AUTH.busy=false;render();Wait.hide()},
+ logout:async()=>{Wait.show('Saving and logging out...');try{await flushNow()}catch(e){}loadedUid=null;if(unW){unW();unW=null}try{localStorage.removeItem(lkey())}catch(e){}try{await Cloud.logOut()}catch(e){}S=fresh();V.tab='home';V.step=0;AUTH.mode='login';render();Wait.hide()},
  acc:()=>sheet(`<h2>Email and password</h2>${inp('ac_e','Email (optional, so the developer can contact you)',`type="email" maxlength="120" autocomplete="email" value="${esc(CL().user.email)}"`)}<button class="btn w" style="margin-top:10px" data-a="emailok">Save email</button><h3 style="margin-top:20px">Change password</h3>${inp('ac_o','Current password','type="password" autocomplete="current-password" maxlength="64"')}${inp('ac_n','New password (6 or more characters)','type="password" autocomplete="new-password" maxlength="64"')}${inp('ac_c','Repeat new password','type="password" autocomplete="new-password" maxlength="64"')}<p id="se" class="er" role="alert"></p><div class="row"><button class="btn o" data-a="x">Close</button><button class="btn" style="flex:1" data-a="pwok">Change password</button></div>`),
  emailok:async()=>{const v=$('#ac_e').value.trim(),s=$('#se');if(v&&!okMail(v)){s.textContent='Enter a valid email address.';return}
   try{await Cloud.saveProfile({contactEmail:v});CL().user.email=v;s.textContent='';toast('Email saved');render()}catch(e){s.textContent='Could not save. Check your connection.'}},

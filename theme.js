@@ -38,10 +38,37 @@
   hours:'<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'};
  const svg=m=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[m]}</svg>`;
  /* the slim bar at the top of every tab: live-students pill (live.js) on the left, theme button on the right */
- window.topBar=()=>`<div class="tbar"><div class="brand"><span class="bolt" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5H11L9.5 22l9-11.5H12z"/></svg></span><b>Tasky</b></div><span id="lvs">${typeof liveBox==='function'?liveBox():''}</span><svg class="ecg" viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true" focusable="false"><defs><linearGradient id="eg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="300" y2="0"><stop offset="0" stop-color="#5CE1FF"/><stop offset=".33" stop-color="#7CFFB2"/><stop offset=".66" stop-color="#FFE066"/><stop offset="1" stop-color="#FF8AD4"/></linearGradient></defs><path class="e0" d="M0 24H30L34 20 38 24H52L56 28 61 4 66 32 70 24H84L92 17 100 24H150M150 24H180L184 20 188 24H202L206 28 211 4 216 32 220 24H234L242 17 250 24H300" pathLength="300"/><path class="e1" d="M0 24H30L34 20 38 24H52L56 28 61 4 66 32 70 24H84L92 17 100 24H150M150 24H180L184 20 188 24H202L206 28 211 4 216 32 220 24H234L242 17 250 24H300" pathLength="300"/></svg></div>`;
+ const ZAP='<span class="zap" data-a="zap" role="img" aria-label="Zap, the Tasky mascot. Tap me."><svg viewBox="0 0 40 44" aria-hidden="true" focusable="false"><defs><radialGradient id="zg" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#FFF3A8"/><stop offset=".55" stop-color="#FFC94A"/><stop offset="1" stop-color="#FF9A3C"/></radialGradient></defs><ellipse class="zsh" cx="20" cy="42" rx="11" ry="2"/><g class="zb"><path class="zt" d="M23 0 14 12h5.5l-2 7L27 8h-5.5z"/><circle cx="20" cy="27" r="15" fill="url(#zg)"/><circle cx="9.5" cy="31" r="2.3" fill="#FF6B6B" opacity=".45"/><circle cx="30.5" cy="31" r="2.3" fill="#FF6B6B" opacity=".45"/><g class="ze"><ellipse cx="14.5" cy="25" rx="3.6" ry="4.2" fill="#fff"/><ellipse cx="25.5" cy="25" rx="3.6" ry="4.2" fill="#fff"/><circle class="zp" cx="14.5" cy="25.5" r="2.1" fill="#1B2040"/><circle class="zp" cx="25.5" cy="25.5" r="2.1" fill="#1B2040"/></g><path class="zm" d="M15.5 32q4.5 3.8 9 0" fill="none" stroke="#7A3B00" stroke-width="1.6" stroke-linecap="round"/><text class="zz" x="31" y="14" font-size="9" font-weight="800" fill="#fff">z</text></g><circle class="zs s1" cx="4" cy="12" r="1.5"/><circle class="zs s2" cx="36" cy="16" r="1.3"/><circle class="zs s3" cx="35" cy="38" r="1.5"/></svg></span>';
+ /* the slim bar at the top of every tab: Zap the mascot + name on the left, live-students pill (live.js) on the right */
+ window.topBar=()=>`<div class="tbar"><div class="brand">${ZAP}<b>Tasky</b></div><span id="lvs">${typeof liveBox==='function'?liveBox():''}</span></div>`;
+ /* ---- Zap comes alive: eyes follow your finger, blinks, sleeps at night, cheers when a task is ticked, talks when tapped ---- */
+ const Z={n:null,bub:null,hide:0,px:0,py:0,raf:0,ex:0,ey:0};
+ const LINES={cheer:['Nice one! ⚡','Boom! Task done','Keep it up!','You are on fire!','One more down!'],tap:['Hi! Ready to study?','Small steps, big marks.','Take a sip of water.','Focus for 25 minutes?','Zzzap! Let’s go.','Revision beats worry.'],night:['Sleep is part of studying.','Rest well. See you tomorrow.']};
+ const pick=a=>a[Math.floor(Math.random()*a.length)],hrs=()=>new Date().getHours(),isNight=()=>hrs()>=23||hrs()<5;
+ const say=(t,ms)=>{const b=Z.bub;if(!b)return;b.textContent=t;b.classList.add('on');clearTimeout(Z.hide);Z.hide=setTimeout(()=>b.classList.remove('on'),ms||2600)};
+ const cheer=t=>{const z=document.querySelector('.zap');if(z){z.classList.remove('cheer');void z.offsetWidth;z.classList.add('cheer');setTimeout(()=>z.classList.remove('cheer'),1000)}if(t!==false)say(t||pick(LINES.cheer))};
+ const look=()=>{Z.raf=0;const z=document.querySelector('.zap');if(z){z.style.setProperty('--ex',Z.ex.toFixed(2)+'px');z.style.setProperty('--ey',Z.ey.toFixed(2)+'px')}
+  if(Z.n){Z.n.style.setProperty('--px',Z.px.toFixed(3));Z.n.style.setProperty('--py',Z.py.toFixed(3))}
+  const h=document.querySelector('.hero');if(h&&!R.classList.contains('lite'))h.style.transform='perspective(760px) rotateX('+(-Z.py*3).toFixed(2)+'deg) rotateY('+(Z.px*4).toFixed(2)+'deg)'};
+ const aim=(x,y)=>{const w=innerWidth||360,h=innerHeight||640;Z.px=Math.max(-1,Math.min(1,(x/w-.5)*2));Z.py=Math.max(-1,Math.min(1,(y/h-.5)*2));
+  const z=document.querySelector('.zap');if(z){const r=z.getBoundingClientRect(),dx=x-(r.left+r.width/2),dy=y-(r.top+r.height/2),d=Math.hypot(dx,dy)||1,k=Math.min(1,d/90)*1.7;Z.ex=dx/d*k;Z.ey=dy/d*k}
+  if(!Z.raf)Z.raf=requestAnimationFrame(look)};
+ let wired=0,lastDone=-1;
+ window.zapTick=()=>{try{
+  if(!Z.n){Z.n=document.createElement('div');Z.n.id='fx3';Z.n.setAttribute('aria-hidden','true');Z.n.innerHTML='<div class="o o1"><i></i></div><div class="o o2"><i></i></div><div class="o o3"><i></i></div>';document.body.insertBefore(Z.n,document.body.firstChild);
+   Z.bub=document.createElement('div');Z.bub.className='zsay';Z.bub.setAttribute('role','status');document.body.appendChild(Z.bub)}
+  if(!wired){wired=1;
+   addEventListener('pointermove',e=>aim(e.clientX,e.clientY),{passive:true});addEventListener('touchstart',e=>{const t=e.touches[0];if(t)aim(t.clientX,t.clientY)},{passive:true});
+   addEventListener('deviceorientation',e=>{if(e.gamma==null)return;Z.px=Math.max(-1,Math.min(1,e.gamma/30));Z.py=Math.max(-1,Math.min(1,((e.beta||0)-45)/30));if(!Z.raf)Z.raf=requestAnimationFrame(look)},{passive:true});
+   setInterval(()=>{if(document.hidden)return;Z.ex=(Math.random()-.5)*3.2;Z.ey=(Math.random()-.3)*2;if(!Z.raf)Z.raf=requestAnimationFrame(look)},5200)}
+  const z=document.querySelector('.zap');if(z)z.dataset.m=isNight()?'sleep':'';
+  const d=(window.S&&S.tasks?S.tasks.filter(t=>t.status==='done').length:0);
+  if(lastDone>=0&&d>lastDone)cheer();else if(lastDone<0&&z){const g=hrs()<12?'Good morning!':hrs()<17?'Good afternoon!':hrs()<22?'Good evening!':'Still up? Rest soon.';setTimeout(()=>say(g+' ⚡',2400),900)}
+  lastDone=d}catch(e){}};
  window.themeBtn=()=>`<button type="button" class="thb m-${T.get()}" data-a="theme" aria-label="Theme: ${T.label()}. Tap to change.">${svg(T.get())}</button>`;   // shown beside the greeting on the Today tab only
  window.themeCard=()=>`<section class="card"><div class="row sp"><span><b>Appearance</b><br><span class="sm mu">${T.label()}</span></span><button type="button" class="btn o s" data-a="theme">Change</button></div></section>`;
  T.hook=()=>{Object.assign(A,{
+  zap:()=>{vib&&vib(10);cheer(isNight()?pick(LINES.night):pick(LINES.tap))},
   theme:()=>{const cur=T.get();sheet(`<h2>Choose a theme</h2><div class="thm">${MODES.map(m=>`<button type="button" class="tho m-${m}${m===cur?' on':''}" data-a="thset" data-v="${m}" aria-pressed="${m===cur}"><span class="sw">${svg(m)}</span><span><b>${NAME[m]}${m==='system'?' (default)':''}</b><br><span class="sm mu">${SUB[m]}</span></span></button>`).join('')}</div><button class="btn o w" data-a="x" style="margin-top:12px">Close</button>`)},
   thset:d=>{T.set(d.v);vib(8);closeSheet();render();toast('Theme: '+T.label())}})};
 })();
