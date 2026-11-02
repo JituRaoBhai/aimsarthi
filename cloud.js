@@ -19,9 +19,11 @@ else(async()=>{try{
  const profile=async u=>{let p={};try{const s=await F.getDoc(F.doc(db,'users',u.uid));if(s.exists())p=s.data()}catch(e){}return{uid:u.uid,username:p.username||u.email.split('@')[0],email:p.contactEmail||''}};
  await new Promise(r=>{let first=true;A.onAuthStateChanged(auth,async u=>{Cloud.user=u?await profile(u):null;if(first){first=false;r()}else if(window.onCloudUser)window.onCloudUser(Cloud.user)})});
  const mkDoc=async(uid,u,ans)=>{const salt=newSalt();await F.setDoc(F.doc(db,'users',uid),{username:u,qSalt:salt,qHash:await hashAnswer(ans,salt),createdAt:F.serverTimestamp(),lastActive:F.serverTimestamp()})};
- Cloud.signUp=async(u,p,ans)=>{const c=await A.createUserWithEmailAndPassword(auth,mail(u),p);await mkDoc(c.user.uid,u,ans);Cloud.user={uid:c.user.uid,username:u,email:''}};
+ const nref=u=>F.doc(db,'usernames',u),claim=async(uid,u)=>{try{await F.setDoc(nref(u),{uid})}catch(e){}};   // public "this name is taken" marker (holds only the uid)
+ Cloud.nameFree=async u=>{try{return!(await F.getDoc(nref(u))).exists()}catch(e){return null}};   // null = could not check
+ Cloud.signUp=async(u,p,ans)=>{const c=await A.createUserWithEmailAndPassword(auth,mail(u),p);await mkDoc(c.user.uid,u,ans);await claim(c.user.uid,u);Cloud.user={uid:c.user.uid,username:u,email:''}};
  Cloud.logIn=async(u,p,ans)=>{const c=await A.signInWithEmailAndPassword(auth,mail(u),p),s=await F.getDoc(F.doc(db,'users',c.user.uid));
-  if(s.exists()){const d=s.data();if(await hashAnswer(ans,d.qSalt)!==d.qHash){await A.signOut(auth);Cloud.user=null;throw new Error('answer')}Cloud.user={uid:c.user.uid,username:d.username||u,email:d.contactEmail||''}}
+  if(s.exists()){const d=s.data();if(await hashAnswer(ans,d.qSalt)!==d.qHash){await A.signOut(auth);Cloud.user=null;throw new Error('answer')}claim(c.user.uid,d.username||u);Cloud.user={uid:c.user.uid,username:d.username||u,email:d.contactEmail||''}}
   else{await mkDoc(c.user.uid,u,ans);Cloud.user={uid:c.user.uid,username:u,email:''}}};
  Cloud.logOut=async()=>{await A.signOut(auth);Cloud.user=null};
  Cloud.changePassword=async(o,n)=>{const u=auth.currentUser;await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,o));await A.updatePassword(u,n)};
@@ -32,6 +34,7 @@ else(async()=>{try{
  Cloud.token=()=>auth.currentUser.getIdToken();
  Cloud.deleteAccount=async pw=>{const u=auth.currentUser,uid=u.uid;await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,pw));
   for(const r of [sref(),lref(),F.doc(db,'presence',uid),uref()]){try{await F.deleteDoc(r)}catch(e){}}   // plan, old copy, studying signal, profile
+  try{await F.deleteDoc(nref(Cloud.user.username))}catch(e){}
   await A.deleteUser(u);Cloud.user=null};
  Cloud.beat=async()=>{await F.setDoc(F.doc(db,'presence',auth.currentUser.uid),{t:F.serverTimestamp()})};   // "I am studying now" signal; the number of recent signals is the live count
  Cloud.unbeat=async()=>{await F.deleteDoc(F.doc(db,'presence',auth.currentUser.uid))};

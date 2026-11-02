@@ -6,6 +6,15 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
     function userKeys() { return ['username','qSalt','qHash','contactEmail','createdAt','lastActive','exam','examDate','level','daysUsed','streak','tasksTotal','tasksDone','minutesStudied','app']; }
 
+    // public list of taken usernames: anyone can check one name, nobody can list them
+    match /usernames/{name} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn() && name.matches('^[a-z0-9_.]{3,30}$') && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow delete: if isOwner(uid);   // account deletion
