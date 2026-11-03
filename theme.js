@@ -66,7 +66,7 @@
   if(lastDone>=0&&d>lastDone)cheer();else if(lastDone<0&&z){const g=hrs()<12?'Good morning!':hrs()<17?'Good afternoon!':hrs()<22?'Good evening!':'Still up? Rest soon.';setTimeout(()=>say(g+' ⚡',2400),900)}
   lastDone=d}catch(e){}};
  window.themeBtn=()=>`<button type="button" class="thb m-${T.get()}" data-a="theme" aria-label="Theme: ${T.label()}. Tap to change.">${svg(T.get())}</button>`;   // shown beside the greeting on the Today tab only
- window.themeCard=()=>`<section class="card"><div class="row sp"><span><b>Appearance</b><br><span class="sm mu">${T.label()}</span></span><button type="button" class="btn o s" data-a="theme">Change</button></div></section>`;
+ window.themeCard=()=>`<section class="card"><div class="row sp"><span><b>Appearance</b><br><span class="sm mu">${T.label()}</span></span><button type="button" class="btn o s" data-a="theme">Change</button></div>${window.Buddy?`<div class="row sp" style="margin-top:12px"><span><b>Mascot Pip</b><br><span class="sm mu">${Buddy.on()?'Walks around the screen':'Resting'}</span></span><button type="button" class="btn o s" data-a="pip">${Buddy.on()?'Turn off':'Turn on'}</button></div>`:''}</section>`;
  T.hook=()=>{Object.assign(A,{
   zap:()=>{vib&&vib(10);cheer(isNight()?pick(LINES.night):pick(LINES.tap))},
   theme:()=>{const cur=T.get();sheet(`<h2>Choose a theme</h2><div class="thm">${MODES.map(m=>`<button type="button" class="tho m-${m}${m===cur?' on':''}" data-a="thset" data-v="${m}" aria-pressed="${m===cur}"><span class="sw">${svg(m)}</span><span><b>${NAME[m]}${m==='system'?' (default)':''}</b><br><span class="sm mu">${SUB[m]}</span></span></button>`).join('')}</div><button class="btn o w" data-a="x" style="margin-top:12px">Close</button>`)},

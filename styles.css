@@ -593,3 +593,32 @@ nav button[aria-current=page] svg{transform:translateY(-3px) scale(1.2);filter:d
 #busy p{margin:0 0 6px;font-weight:700;font-size:16px}#busy small{color:var(--mu);font-size:12px}
 .lite #busy{-webkit-backdrop-filter:none;backdrop-filter:none}.lite #busy .bsp{animation-duration:1s!important}
 .lkb{background:none;border:0;padding:8px 0;color:var(--pr);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+
+/* ===== v31: Pip the walking mascot, setup pages ===== */
+.pip{position:absolute;left:0;top:0;width:32px;height:41px;z-index:30;pointer-events:none;will-change:transform;transition:opacity .25s}
+.pip svg{width:100%;height:100%;overflow:visible}.pip.fl svg{transform:scaleX(-1)}
+.pip .ln path,.pip .lg,.pip .ar{fill:none;stroke:#0E5F55;stroke-width:2.6;stroke-linecap:round}.pip .ft{fill:#0E5F55}.pip .tu{stroke:#0E5F55;stroke-width:2;stroke-linecap:round}.pip .psh{fill:rgba(0,0,0,.18)}
+.pip .lg,.pip .ar,.pip .ft{transform-box:fill-box;transform-origin:50% 0}.pip .ar{transform-origin:100% 0}.pip .ar2{transform-origin:0 0}
+.pip .pe{transform-box:fill-box;transform-origin:center;animation:pblink 4.2s infinite}
+@keyframes pblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.pip.idle .pm{animation:pbr 2.6s ease-in-out infinite;transform-origin:50% 100%;transform-box:fill-box}
+@keyframes pbr{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.97)}}
+.pip.walk .pm{animation:pbob .26s ease-in-out infinite alternate}
+@keyframes pbob{from{transform:translateY(0)}to{transform:translateY(-1.8px)}}
+.pip.walk .lg1,.pip.walk .ft1{animation:pwl .52s ease-in-out infinite}.pip.walk .lg2,.pip.walk .ft2{animation:pwl .52s ease-in-out infinite reverse}
+@keyframes pwl{0%,100%{transform:rotate(28deg)}50%{transform:rotate(-28deg)}}
+.pip.walk .ar1{animation:paw .52s ease-in-out infinite reverse}.pip.walk .ar2{animation:paw .52s ease-in-out infinite}
+@keyframes paw{0%,100%{transform:rotate(22deg)}50%{transform:rotate(-22deg)}}
+.pip.jump .pm{animation:pjp .5s ease-in-out infinite alternate;transform-origin:50% 100%;transform-box:fill-box}
+@keyframes pjp{from{transform:scale(.93,1.08)}to{transform:scale(1.04,.96)}}
+.pip.jump .lg1{transform:rotate(-30deg)}.pip.jump .lg2{transform:rotate(30deg)}.pip.jump .ar1{transform:rotate(-70deg)}.pip.jump .ar2{transform:rotate(70deg)}
+.pip.climb .ar1{animation:pcl .5s ease-in-out infinite;transform:rotate(-140deg)}.pip.climb .ar2{animation:pcl .5s ease-in-out infinite reverse;transform:rotate(140deg)}
+@keyframes pcl{0%,100%{transform:rotate(-150deg)}50%{transform:rotate(-95deg)}}
+.pip.climb .lg1{animation:pwl .5s ease-in-out infinite}.pip.climb .lg2{animation:pwl .5s ease-in-out infinite reverse}
+.pip.wave .ar2{animation:pwv .45s ease-in-out infinite alternate}
+@keyframes pwv{from{transform:rotate(130deg)}to{transform:rotate(60deg)}}
+.pip .pb{position:absolute;left:50%;bottom:100%;margin-bottom:2px;transform:translate(-50%,4px) scale(.7);opacity:0;font-size:15px;line-height:1;background:var(--sf);border:1.5px solid var(--ln);border-radius:12px;padding:3px 6px;transition:opacity .2s,transform .2s;white-space:nowrap}
+.pip .pb.on{opacity:1;transform:translate(-50%,0) scale(1)}.pip .pb:empty{display:none}
+@media(prefers-reduced-motion:reduce){.pip{display:none}}
+.wzs{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--ln)}.wzc .wzs:first-child{margin-top:0;padding-top:0;border:0}
+.trow .more{margin-right:-6px}
