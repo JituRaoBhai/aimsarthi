@@ -614,7 +614,6 @@ nav button[aria-current=page] svg{transform:translateY(-3px) scale(1.2);filter:d
 @keyframes shoot{0%,88%{opacity:0;transform:translate(0,0) rotate(28deg)}90%{opacity:1}100%{opacity:0;transform:translate(-90px,50px) rotate(28deg)}}
 .lite .sky i{animation:none!important}
 @media(prefers-reduced-motion:reduce){.sky i{animation:none!important}}
-.hero>*:not(.sky){position:relative}
 .garden .gsvg{width:100%;height:auto;max-height:190px;display:block;margin:6px 0 4px}
 .gs{fill:#6B4A2B;opacity:.5}.gl{animation:gsw 3s ease-in-out infinite alternate;transform-origin:120px 132px}
 .gw{transform-origin:120px 138px;animation:gsw 5s ease-in-out infinite alternate;animation-delay:var(--gd,0s)}
