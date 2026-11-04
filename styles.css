@@ -594,34 +594,34 @@ nav button[aria-current=page] svg{transform:translateY(-3px) scale(1.2);filter:d
 .lite #busy{-webkit-backdrop-filter:none;backdrop-filter:none}.lite #busy .bsp{animation-duration:1s!important}
 .lkb{background:none;border:0;padding:8px 0;color:var(--pr);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
 
-/* ===== v31: Pip the walking mascot, setup pages ===== */
-.pip{position:absolute;left:0;top:0;width:32px;height:41px;z-index:30;pointer-events:none;will-change:transform;transition:opacity .25s}
-.pip svg{width:100%;height:100%;overflow:visible}.pip.fl svg{transform:scaleX(-1)}
-.pip .ln path,.pip .lg,.pip .ar{fill:none;stroke:#0E5F55;stroke-width:2.6;stroke-linecap:round}.pip .ft{fill:#0E5F55}.pip .tu{stroke:#0E5F55;stroke-width:2;stroke-linecap:round}.pip .psh{fill:rgba(0,0,0,.18)}
-.pip .lg,.pip .ar,.pip .ft{transform-box:fill-box;transform-origin:50% 0}.pip .ar{transform-origin:100% 0}.pip .ar2{transform-origin:0 0}
-.pip .pe{transform-box:fill-box;transform-origin:center;animation:pblink 4.2s infinite}
-@keyframes pblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
-.pip.idle .pm{animation:pbr 2.6s ease-in-out infinite;transform-origin:50% 100%;transform-box:fill-box}
-@keyframes pbr{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.97)}}
-.pip.walk .pm{animation:pbob .26s ease-in-out infinite alternate}
-@keyframes pbob{from{transform:translateY(0)}to{transform:translateY(-1.8px)}}
-.pip.walk .lg1,.pip.walk .ft1{animation:pwl .52s ease-in-out infinite}.pip.walk .lg2,.pip.walk .ft2{animation:pwl .52s ease-in-out infinite reverse}
-@keyframes pwl{0%,100%{transform:rotate(28deg)}50%{transform:rotate(-28deg)}}
-.pip.walk .ar1{animation:paw .52s ease-in-out infinite reverse}.pip.walk .ar2{animation:paw .52s ease-in-out infinite}
-@keyframes paw{0%,100%{transform:rotate(22deg)}50%{transform:rotate(-22deg)}}
-.pip.jump .pm{animation:pjp .5s ease-in-out infinite alternate;transform-origin:50% 100%;transform-box:fill-box}
-@keyframes pjp{from{transform:scale(.93,1.08)}to{transform:scale(1.04,.96)}}
-.pip.jump .lg1{transform:rotate(-30deg)}.pip.jump .lg2{transform:rotate(30deg)}.pip.jump .ar1{transform:rotate(-70deg)}.pip.jump .ar2{transform:rotate(70deg)}
-.pip.climb .ar1{animation:pcl .5s ease-in-out infinite;transform:rotate(-140deg)}.pip.climb .ar2{animation:pcl .5s ease-in-out infinite reverse;transform:rotate(140deg)}
-@keyframes pcl{0%,100%{transform:rotate(-150deg)}50%{transform:rotate(-95deg)}}
-.pip.climb .lg1{animation:pwl .5s ease-in-out infinite}.pip.climb .lg2{animation:pwl .5s ease-in-out infinite reverse}
-.pip.wave .ar2{animation:pwv .45s ease-in-out infinite alternate}
-@keyframes pwv{from{transform:rotate(130deg)}to{transform:rotate(60deg)}}
-.pip .pb{position:absolute;left:50%;bottom:100%;margin-bottom:2px;transform:translate(-50%,4px) scale(.7);opacity:0;font-size:15px;line-height:1;background:var(--sf);border:1.5px solid var(--ln);border-radius:12px;padding:3px 6px;transition:opacity .2s,transform .2s;white-space:nowrap}
-.pip .pb.on{opacity:1;transform:translate(-50%,0) scale(1)}.pip .pb:empty{display:none}
-@media(prefers-reduced-motion:reduce){.pip{display:none}}
+/* ===== v31: setup pages ===== */
 .wzs{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--ln)}.wzc .wzs:first-child{margin-top:0;padding-top:0;border:0}
 .trow .more{margin-right:-6px}
 
-/* ===== v32: bubbles ===== */
-#bubs{position:fixed;left:0;top:0;width:100%;height:100%;z-index:15;pointer-events:none;transition:opacity .3s}
+/* ===== v33: living sky (Today card) and study garden (Progress) ===== */
+.sky{position:absolute;inset:0;z-index:-1;overflow:hidden;border-radius:inherit;pointer-events:none}
+.sky i{position:absolute;display:block}.sky .sg{inset:0}
+.sun{left:var(--sx);top:var(--sy);width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:radial-gradient(circle,#FFF7C8 0 40%,#FFD45A 70%);box-shadow:0 0 16px 5px rgba(255,205,90,.28);animation:sunp 5s ease-in-out infinite alternate}
+@keyframes sunp{to{box-shadow:0 0 22px 8px rgba(255,205,90,.34)}}
+.moon{left:var(--sx);top:var(--sy);width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#FFFDF0,#E6E1C8 70%);box-shadow:0 0 18px 6px rgba(230,225,200,.22),inset -4px -3px 0 rgba(150,150,170,.25)}
+.st{width:2px;height:2px;border-radius:50%;background:#fff;animation:twk 3s ease-in-out infinite}
+@keyframes twk{0%,100%{opacity:.25}50%{opacity:1}}
+.cl{height:12px;width:54px;border-radius:12px;background:rgba(255,255,255,.2);left:-30%;animation:cld linear infinite}
+.cl::before{content:"";position:absolute;left:16%;top:-7px;width:42%;height:14px;border-radius:50%;background:inherit}
+.c1{top:16%;animation-duration:70s}.c2{top:46%;width:40px;height:9px;animation-duration:95s;opacity:.8}.c3{top:72%;width:64px;animation-duration:55s;opacity:.6}
+@keyframes cld{to{left:112%}}
+.sh{left:70%;top:8%;width:46px;height:1.5px;background:linear-gradient(90deg,transparent,#fff);opacity:0;transform:rotate(28deg);animation:shoot 14s linear infinite}
+@keyframes shoot{0%,88%{opacity:0;transform:translate(0,0) rotate(28deg)}90%{opacity:1}100%{opacity:0;transform:translate(-90px,50px) rotate(28deg)}}
+.lite .sky i{animation:none!important}
+@media(prefers-reduced-motion:reduce){.sky i{animation:none!important}}
+.hero>*:not(.sky){position:relative}
+.garden .gsvg{width:100%;height:auto;max-height:190px;display:block;margin:6px 0 4px}
+.gs{fill:#6B4A2B;opacity:.5}.gl{animation:gsw 3s ease-in-out infinite alternate;transform-origin:120px 132px}
+.gw{transform-origin:120px 138px;animation:gsw 5s ease-in-out infinite alternate;animation-delay:var(--gd,0s)}
+@keyframes gsw{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
+.gf{transform-box:fill-box;transform-origin:center;animation:gfp 2.4s ease-in-out infinite}
+@keyframes gfp{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+.gbar{height:8px;border-radius:8px;background:var(--soft);overflow:hidden}.gbar i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,#3FA95A,#7EE08F);transition:width .6s}
+.gp{background:var(--soft);color:var(--tx)}
+.lite .gw,.lite .gl,.lite .gf{animation:none}
+@media(prefers-reduced-motion:reduce){.gw,.gl,.gf{animation:none}}
